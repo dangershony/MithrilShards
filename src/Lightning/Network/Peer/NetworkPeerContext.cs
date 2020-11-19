@@ -1,21 +1,19 @@
-﻿using System;
-using System.Net;
-using Bedrock.Framework.Protocols;
+﻿using System.Net;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Events;
 using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Processors;
-using Network.Transport;
+using Network.Peer.Transport;
 
-namespace MithrilShards.Example.Network
+namespace Network.Peer
 {
    public class NetworkPeerContext : PeerContext
    {
       public bool Handshaked { get; set; }
 
-      public INoiseProtocol HandshakePotocol { get; set; }
+      public IHandshakePotocol HandshakePotocol { get; set; }
 
       public NetworkPeerContext(ILogger logger,
          IEventBus eventBus,
@@ -24,11 +22,14 @@ namespace MithrilShards.Example.Network
          EndPoint localEndPoint,
          EndPoint publicEndPoint,
          EndPoint remoteEndPoint,
-         INetworkMessageWriter messageWriter,
-         INoiseProtocol noise)
+         INetworkMessageWriter messageWriter)
          : base(logger, eventBus, direction, peerId, localEndPoint, publicEndPoint, remoteEndPoint, messageWriter)
       {
-         this.HandshakePotocol = noise;
+      }
+
+      public void SetHandshakeProtocol(IHandshakePotocol handshakeProtocol)
+      {
+         this.HandshakePotocol = handshakeProtocol;
       }
 
       public override void AttachNetworkMessageProcessor(INetworkMessageProcessor messageProcessor)

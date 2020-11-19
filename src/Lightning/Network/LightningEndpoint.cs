@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Buffers;
 using System.Net;
 using MithrilShards.Core.DataTypes;
-using MithrilShards.Core.Network.Protocol;
-using MithrilShards.Core.Network.Protocol.Serialization;
 
-namespace MithrilShards.Example.Protocol.Messages
+namespace Network
 {
    public class LightningEndpoint
    {

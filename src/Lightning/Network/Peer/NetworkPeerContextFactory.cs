@@ -1,12 +1,9 @@
-﻿using System.Net;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network;
-using MithrilShards.Core.Network.Protocol;
-using Network.Transport;
 
-namespace MithrilShards.Example.Network
+namespace Network.Peer
 {
    public class NetworkPeerContextFactory : PeerContextFactory<NetworkPeerContext>
    {

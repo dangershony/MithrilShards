@@ -6,7 +6,7 @@ using System.Text;
 using MithrilShards.Core;
 using MithrilShards.Core.Network.Protocol.Serialization;
 
-namespace MithrilShards.Example.Protocol.Serialization
+namespace Network.Peer
 {
    /// <summary>
    /// Some helpful IBufferWriter extensions to serialize primitive types in our bitcoin-alike protocol.
@@ -64,7 +64,6 @@ namespace MithrilShards.Example.Protocol.Serialization
          writer.Advance(size);
          return size;
       }
-
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static int WriteInt(this IBufferWriter<byte> writer, int value, bool isBigEndian = false)

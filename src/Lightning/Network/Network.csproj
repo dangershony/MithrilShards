@@ -10,6 +10,12 @@
 
    <ItemGroup>
       <ProjectReference Include="..\..\MithrilShards.Core\MithrilShards.Core.csproj" />
+      <ProjectReference Include="..\..\MithrilShards.Example.Dev\MithrilShards.Example.Dev.csproj" />
       <ProjectReference Include="..\..\MithrilShards.Network.Bedrock\MithrilShards.Network.Bedrock.csproj" />
+   </ItemGroup>
+
+   <ItemGroup>
+     <Folder Include="Api\Models\Requests\" />
+     <Folder Include="Api\Models\Responses\" />
    </ItemGroup>
 </Project>

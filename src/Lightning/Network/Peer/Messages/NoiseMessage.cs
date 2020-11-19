@@ -1,9 +1,8 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Serialization;
 
-namespace MithrilShards.Example.Protocol.Messages
+namespace Network.Peer.Messages
 {
    [NetworkMessage(COMMAND)]
    public sealed class NoiseMessage : INetworkMessage

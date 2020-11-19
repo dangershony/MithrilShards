@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace Protocol
+﻿namespace Protocol.Channels
 {
-    public class Channels
-    {
-    }
+   public class Channels
+   {
+   }
 }
