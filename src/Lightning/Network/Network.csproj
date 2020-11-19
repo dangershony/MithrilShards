@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+   <PropertyGroup>
+      <TargetFramework>netcoreapp3.1</TargetFramework>
+   </PropertyGroup>
+
+   <!--<ItemGroup>
+    <PackageReference Include="Bedrock.Framework" Version="0.1.62-alpha.g8a965bbcba" />
+  </ItemGroup>-->
+
+   <ItemGroup>
+      <ProjectReference Include="..\..\MithrilShards.Core\MithrilShards.Core.csproj" />
+      <ProjectReference Include="..\..\MithrilShards.Network.Bedrock\MithrilShards.Network.Bedrock.csproj" />
+   </ItemGroup>
+</Project>

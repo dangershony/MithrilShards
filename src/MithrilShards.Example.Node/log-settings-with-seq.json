@@ -18,7 +18,7 @@
       "MinimumLevel": {
          "Default": "Debug",
          "Override": {
-            "Bedrock.Framework": "Warning",
+            "Bedrock.Framework": "Debug",
             "Microsoft": "Warning",
             "System": "Warning"
          }
