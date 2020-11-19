@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Extensions;
 using MithrilShards.Core.Network;
+using MithrilShards.Core.Network.Client;
 using MithrilShards.Core.Network.Events;
 using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Processors;
@@ -37,6 +38,9 @@ namespace MithrilShards.Network.Bedrock
 
       public override async Task OnConnectedAsync(ConnectionContext connection)
       {
+         // TODO: we could register processors as Scoped per connection and create a scope here
+         //using var serviceProviderScope = serviceProvider.CreateScope();
+
          if (connection is null)
          {
             throw new ArgumentNullException(nameof(connection));
@@ -47,11 +51,10 @@ namespace MithrilShards.Network.Bedrock
          ProtocolReader reader = connection.CreateReader();
          INetworkProtocolMessageSerializer protocol = serviceProvider.GetRequiredService<INetworkProtocolMessageSerializer>();
 
-         using IPeerContext peerContext = this.peerContextFactory.Create(PeerConnectionDirection.Outbound,
-                                                 connection.ConnectionId,
-                                                 connection.LocalEndPoint,
-                                                 connection.RemoteEndPoint,
-                                                 new NetworkMessageWriter(protocol, connection.CreateWriter()));
+         using IPeerContext peerContext = this.peerContextFactory.CreateOutgoingPeerContext(connection.ConnectionId,
+                                                                                            connection.LocalEndPoint,
+                                                                                            connection.Features.Get<OutgoingConnectionEndPoint>(),
+                                                                                            new NetworkMessageWriter(protocol, connection.CreateWriter()));
 
          connection.ConnectionClosed = peerContext.ConnectionCancellationTokenSource.Token;
          connection.Features.Set(peerContext);
@@ -59,6 +62,7 @@ namespace MithrilShards.Network.Bedrock
          protocol.SetPeerContext(peerContext);
 
          this.eventBus.Publish(new PeerConnected(peerContext));
+
 
          await this.networkMessageProcessorFactory.StartProcessorsAsync(peerContext).ConfigureAwait(false);
 
@@ -79,7 +83,7 @@ namespace MithrilShards.Network.Bedrock
                   break;
                }
 
-               await this.ProcessMessage(result.Message, peerContext, connection.ConnectionClosed)
+               await this.ProcessMessageAsync(result.Message, peerContext, connection.ConnectionClosed)
                   .WithCancellationAsync(connection.ConnectionClosed)
                   .ConfigureAwait(false);
             }
@@ -96,7 +100,7 @@ namespace MithrilShards.Network.Bedrock
          return;
       }
 
-      private async Task ProcessMessage(INetworkMessage message, IPeerContext peerContext, CancellationToken cancellation)
+      private async Task ProcessMessageAsync(INetworkMessage message, IPeerContext peerContext, CancellationToken cancellation)
       {
          using IDisposable logScope = this.logger.BeginScope("Processing message '{Command}'", message.Command);
 
