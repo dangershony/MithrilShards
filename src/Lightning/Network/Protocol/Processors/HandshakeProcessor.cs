@@ -56,8 +56,12 @@ namespace Network.Protocol.Processors
 
          if (this.PeerContext.Direction == PeerConnectionDirection.Outbound)
          {
-            await this.SendMessageAsync(this.Handshake(new ReadOnlySequence<byte>())).ConfigureAwait(false);
-            this.logger.LogDebug("Handshake ActOne sent.", ++this.HandshakeActNumber);
+            //Task.Run(() =>
+            //{
+            //   Task.Delay(30000).Wait();
+            //   return this.SendMessageAsync(this.Handshake(new ReadOnlySequence<byte>())).ConfigureAwait(false);
+            //});
+            //this.logger.LogDebug("Handshake ActOne sent.", ++this.HandshakeActNumber);
          }
       }
 
