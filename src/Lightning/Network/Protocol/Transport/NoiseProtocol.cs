@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Buffers;
-using MithrilShards.Core.DataTypes;
 
-namespace Network.Peer.Transport
+namespace Network.Protocol.Transport
 {
-   public interface IHandshakePotocol
+   public interface IHandshakeProtocol
    {
-      public UInt256 RemotePubKey { get; set; }
-      public UInt256 LocalPubKey { get; set; }
+      public string RemotePubKey { get; set; }
+      public string LocalPubKey { get; set; }
 
       public bool Initiator { get; set; }
 
@@ -20,10 +19,10 @@ namespace Network.Peer.Transport
       public void Handshake(ReadOnlySpan<byte> message, IBufferWriter<byte> output);
    }
 
-   public class HandshakeNoisePotocol : IHandshakePotocol
+   public class HandshakeNoiseProtocol : IHandshakeProtocol
    {
-      public UInt256 RemotePubKey { get; set; }
-      public UInt256 LocalPubKey { get; set; }
+      public string RemotePubKey { get; set; }
+      public string LocalPubKey { get; set; }
 
       public bool Initiator { get; set; }
 

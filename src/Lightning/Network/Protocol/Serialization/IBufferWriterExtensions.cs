@@ -6,7 +6,7 @@ using System.Text;
 using MithrilShards.Core;
 using MithrilShards.Core.Network.Protocol.Serialization;
 
-namespace Network.Peer
+namespace Network.Protocol.Serialization
 {
    /// <summary>
    /// Some helpful IBufferWriter extensions to serialize primitive types in our bitcoin-alike protocol.

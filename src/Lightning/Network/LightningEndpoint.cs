@@ -7,11 +7,11 @@ namespace Network
    public class LightningEndpoint
    {
       public EndPoint EndPoint { get; set; }
-      public UInt256 NodePubkey { get; set; }
+      public string NodeId { get; set; }
 
       public override string ToString()
       {
-         return $@"{this.NodePubkey}@{this.EndPoint}";
+         return $@"{this.NodeId}@{this.EndPoint}";
       }
 
       public static bool TryParse(string s, out LightningEndpoint result)
@@ -48,8 +48,8 @@ namespace Network
       {
          return new LightningEndpoint
          {
-            NodePubkey = UInt256.Parse(span.Slice(0, 32).ToString()),
-            EndPoint = IPEndPoint.Parse(span.Slice(33))
+            NodeId = span.Slice(0, span.IndexOf("@")).ToString(), // todo: do validation on this
+            EndPoint = IPEndPoint.Parse(span.Slice(span.IndexOf("@") + 1))
          };
       }
    }

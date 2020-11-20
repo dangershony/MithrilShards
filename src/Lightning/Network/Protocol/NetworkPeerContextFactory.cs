@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network;
 
-namespace Network.Peer
+namespace Network.Protocol
 {
    public class NetworkPeerContextFactory : PeerContextFactory<NetworkPeerContext>
    {

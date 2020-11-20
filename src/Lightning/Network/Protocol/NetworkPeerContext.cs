@@ -5,15 +5,17 @@ using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Events;
 using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Processors;
-using Network.Peer.Transport;
+using Network.Protocol.Transport;
 
-namespace Network.Peer
+namespace Network.Protocol
 {
    public class NetworkPeerContext : PeerContext
    {
-      public bool Handshaked { get; set; }
+      public bool HandshakeComplete { get; set; }
 
-      public IHandshakePotocol HandshakePotocol { get; set; }
+      public bool InitComplete { get; set; }
+
+      public IHandshakeProtocol HandshakeProtocol { get; set; }
 
       public NetworkPeerContext(ILogger logger,
          IEventBus eventBus,
@@ -27,9 +29,9 @@ namespace Network.Peer
       {
       }
 
-      public void SetHandshakeProtocol(IHandshakePotocol handshakeProtocol)
+      public void SetHandshakeProtocol(IHandshakeProtocol handshakeProtocol)
       {
-         this.HandshakePotocol = handshakeProtocol;
+         this.HandshakeProtocol = handshakeProtocol;
       }
 
       public override void AttachNetworkMessageProcessor(INetworkMessageProcessor messageProcessor)
@@ -40,7 +42,13 @@ namespace Network.Peer
       public void OnHandshakeCompleted()
       {
          this.IsConnected = true;
+         this.HandshakeComplete = true;
          this.eventBus.Publish(new PeerHandshaked(this));
+      }
+
+      public void OnInitMessageCompleted()
+      {
+         this.InitComplete = true;
       }
    }
 }

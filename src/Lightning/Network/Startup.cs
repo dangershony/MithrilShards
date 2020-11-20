@@ -2,22 +2,19 @@
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using MithrilShards.Core;
 using MithrilShards.Core.Forge;
 using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Client;
 using MithrilShards.Core.Network.Protocol.Processors;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Core.Network.Server.Guards;
-using MithrilShards.Example;
-using MithrilShards.Example.Network;
-using MithrilShards.Example.Network.Client;
-using MithrilShards.Example.Network.Server.Guards;
-using Network.Peer;
+using Network.Protocol;
 using Network.Settings;
 
 namespace Network
 {
-   public static class NetworkBuilderExtensions
+   public static class Startup
    {
       public static IForgeBuilder UseLightningNetwork(this IForgeBuilder forgeBuilder)
       {
@@ -27,10 +24,8 @@ namespace Network
             (hostBuildContext, services) =>
             {
                services
-                  .AddSingleton(new NodeImplementation(0, 0))
                   .AddSingleton<IDateTimeProvider, DateTimeProvider>()
                   .AddSingleton<NodeContext>()
-                  .AddPeerGuards()
                   .AddMessageSerializers()
                   .AddProtocolTypeSerializers()
                   .AddMessageProcessors()
@@ -38,16 +33,6 @@ namespace Network
             });
 
          return forgeBuilder;
-      }
-
-      private static IServiceCollection AddPeerGuards(this IServiceCollection services)
-      {
-         services
-            .AddSingleton<IServerPeerConnectionGuard, MaxConnectionThresholdGuard>()
-            .AddSingleton<IServerPeerConnectionGuard, BannedPeerGuard>()
-            ;
-
-         return services;
       }
 
       private static IServiceCollection AddMessageSerializers(this IServiceCollection services)

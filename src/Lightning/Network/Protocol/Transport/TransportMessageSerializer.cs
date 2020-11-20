@@ -6,9 +6,9 @@ using MithrilShards.Core.Network.Client;
 using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Network.Bedrock;
-using Network.Peer.Messages;
+using Network.Protocol.Messages;
 
-namespace Network.Peer.Transport
+namespace Network.Protocol.Transport
 {
    /// <summary>
    /// Class to handle the common transport protocol.
@@ -21,7 +21,7 @@ namespace Network.Peer.Transport
       private readonly NodeContext nodeContext;
 
       private NetworkPeerContext networkPeerContext;
-      private IHandshakePotocol handshakePotocol;
+      private IHandshakeProtocol handshakeProtocol;
 
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
@@ -53,15 +53,15 @@ namespace Network.Peer.Transport
             lightningEndpoint = (LightningEndpoint)res;
          }
 
-         this.handshakePotocol = new HandshakeNoisePotocol
+         this.handshakeProtocol = new HandshakeNoiseProtocol
          {
             Initiator = this.networkPeerContext.Direction == PeerConnectionDirection.Outbound,
             LocalPubKey = this.nodeContext.LocalPubKey,
             PrivateLey = this.nodeContext.PrivateLey,
-            RemotePubKey = lightningEndpoint?.NodePubkey
+            RemotePubKey = lightningEndpoint?.NodeId
          };
 
-         this.networkPeerContext.SetHandshakeProtocol(this.handshakePotocol);
+         this.networkPeerContext.SetHandshakeProtocol(this.handshakeProtocol);
       }
 
       public bool TryParseMessage(in ReadOnlySequence<byte> input, out SequencePosition consumed,
@@ -69,10 +69,10 @@ namespace Network.Peer.Transport
       {
          var reader = new SequenceReader<byte>(input);
 
-         if (this.networkPeerContext.Handshaked)
+         if (this.networkPeerContext.HandshakeComplete)
          {
             var decryptedOutput = new ArrayBufferWriter<byte>();
-            this.handshakePotocol.ReadMessage(reader.CurrentSpan, decryptedOutput);
+            this.handshakeProtocol.ReadMessage(reader.CurrentSpan, decryptedOutput);
             this.networkPeerContext.Metrics.Received(decryptedOutput.WrittenCount);
 
             // now try to read the payload
@@ -89,6 +89,11 @@ namespace Network.Peer.Transport
                this.networkPeerContext.NegotiatedProtocolVersion.Version,
                this.networkPeerContext, out message!))
             {
+               if (!this.networkPeerContext.InitComplete && !(message is InitMessage))
+               {
+                  throw new ApplicationException("Init message must be complete to receive messages");
+               }
+
                // extension: an optional TLV stream
                // TODO:
 
@@ -108,7 +113,7 @@ namespace Network.Peer.Transport
             // underline processor which will handle serialization of the message.
 
             ReadOnlySequence<byte> payload = input.Slice(reader.Position, reader.Remaining);
-            message = new NoiseMessage { Payload = payload };
+            message = new HandshakeMessage { Payload = payload };
             consumed = payload.End;
             examined = consumed;
             return true;
@@ -122,8 +127,13 @@ namespace Network.Peer.Transport
             throw new ArgumentNullException(nameof(message));
          }
 
-         if (this.networkPeerContext.Handshaked)
+         if (this.networkPeerContext.HandshakeComplete)
          {
+            if (!this.networkPeerContext.InitComplete && !(message is InitMessage))
+            {
+               throw new ApplicationException("Init message must be complete to send messages");
+            }
+
             string command = message.Command;
             using (this.logger.BeginScope("Serializing and sending '{Command}'", command))
             {
@@ -156,7 +166,7 @@ namespace Network.Peer.Transport
                   // The encrypted Lightning message
                   // 16-byte MAC of the Lightning message
                   var encryptedOutput = new ArrayBufferWriter<byte>();
-                  this.handshakePotocol.WriteMessage(payloadOutput.WrittenSpan, encryptedOutput);
+                  this.handshakeProtocol.WriteMessage(payloadOutput.WrittenSpan, encryptedOutput);
 
                   // write the lightning message to the underline buffer.
                   output.Write(encryptedOutput.WrittenSpan);
@@ -177,7 +187,7 @@ namespace Network.Peer.Transport
                // During the handshake the byte sequence is passed as is to the
                // remote peer which, the serialization was handled by the processor.
 
-               if (message is NoiseMessage noiseMessage)
+               if (message is HandshakeMessage noiseMessage)
                {
                   foreach (ReadOnlyMemory<byte> memory in noiseMessage.Payload)
                   {

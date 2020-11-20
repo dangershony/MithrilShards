@@ -8,7 +8,7 @@ namespace Network
    {
       private readonly IRandomNumberGenerator randomNumberGenerator;
       public byte[] PrivateLey { get; set; } // TODO: this can be private or even hidden behind an interface.
-      public UInt256 LocalPubKey { get; set; }
+      public string LocalPubKey { get; set; }
 
       public NodeContext(IRandomNumberGenerator randomNumberGenerator)
       {
@@ -20,7 +20,7 @@ namespace Network
 
          // random data
          this.PrivateLey = prv;
-         this.LocalPubKey = new UInt256(this.PrivateLey.AsSpan().Slice(32));
+         this.LocalPubKey = this.PrivateLey.AsSpan().Slice(32).ToString();
       }
    }
 }

@@ -5,8 +5,11 @@ using System.Text;
 using MithrilShards.Core;
 using MithrilShards.Core.Network.Protocol.Serialization;
 
-namespace Network.Peer
+namespace Network.Protocol.Serialization
 {
+   /// <summary>
+   /// Some helpful SequenceReader extensions to deserialize primitive types in our bitcoin-alike protocol.
+   /// </summary>
    public static class SequenceReaderExtensions
    {
       private const string NotEnoughBytesLeft = "Cannot read data, not enough bytes left.";

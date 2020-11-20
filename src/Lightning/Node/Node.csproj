@@ -20,6 +20,12 @@
    </ItemGroup>
 
    <ItemGroup>
+     <None Update="forge-settings-node1.json">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </None>
+     <None Update="forge-settings-node2.json">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </None>
      <None Update="forge-settings.json">
        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
      </None>

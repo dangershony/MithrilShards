@@ -2,13 +2,10 @@
 using System.Threading.Tasks;
 using MithrilShards.Core.Forge;
 using MithrilShards.Dev.Controller;
-using MithrilShards.Example;
-using MithrilShards.Example.Dev;
-using MithrilShards.Example.Protocol;
 using MithrilShards.Logging.Serilog;
 using MithrilShards.Network.Bedrock;
 using Network;
-using Network.Peer.Transport;
+using Network.Protocol.Transport;
 
 namespace Node
 {
@@ -16,13 +13,31 @@ namespace Node
    {
       private static async Task Main(string[] args)
       {
-         await new ForgeBuilder()
-            .UseForge<DefaultForge>(args)
+         //await new ForgeBuilder()
+         //   .UseForge<DefaultForge>(args)
+         //   .UseSerilog("log-settings-with-seq.json")
+         //   .UseBedrockForgeServer<TransportMessageSerializer>()
+         //   .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
+         //   .UseLightningNetwork()
+         //   .RunConsoleAsync().ConfigureAwait(false);
+
+         Task node1 = new ForgeBuilder()
+            .UseForge<DefaultForge>(args, configurationFile: "forge-settings-node1.json")
             .UseSerilog("log-settings-with-seq.json")
             .UseBedrockForgeServer<TransportMessageSerializer>()
             .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
             .UseLightningNetwork()
-            .RunConsoleAsync().ConfigureAwait(false);
+            .RunConsoleAsync();
+
+         Task node2 = new ForgeBuilder()
+            .UseForge<DefaultForge>(args, configurationFile: "forge-settings-node2.json")
+            .UseSerilog("log-settings-with-seq.json")
+            .UseBedrockForgeServer<TransportMessageSerializer>()
+            .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
+            .UseLightningNetwork()
+            .RunConsoleAsync();
+
+         await Task.WhenAll(node1, node2).ConfigureAwait(false);
       }
    }
 }
