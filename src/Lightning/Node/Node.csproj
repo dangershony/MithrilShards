@@ -20,13 +20,10 @@
    </ItemGroup>
 
    <ItemGroup>
-     <None Update="forge-settings-node1.json">
-       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-     </None>
      <None Update="forge-settings-node2.json">
        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
      </None>
-     <None Update="forge-settings.json">
+     <None Update="lightning-settings.json">
        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
      </None>
      <None Update="log-settings-with-seq.json">

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.TagHelpers.Cache;
 using MithrilShards.Core.Forge;
 using MithrilShards.Dev.Controller;
 using MithrilShards.Logging.Serilog;
@@ -13,27 +15,38 @@ namespace Node
    {
       private static async Task Main(string[] args)
       {
-         //await new ForgeBuilder()
-         //   .UseForge<DefaultForge>(args)
-         //   .UseSerilog("log-settings-with-seq.json")
-         //   .UseBedrockForgeServer<TransportMessageSerializer>()
-         //   .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
-         //   .UseLightningNetwork()
-         //   .RunConsoleAsync().ConfigureAwait(false);
+         if (args.Contains("test")) { await TestNodes(args).ConfigureAwait(false); return; }
 
-         Task node1 = new ForgeBuilder()
-            .UseForge<DefaultForge>(args, configurationFile: "forge-settings-node1.json")
+         await new ForgeBuilder()
+            .UseForge<DefaultForge>(args, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
             .UseBedrockForgeServer<TransportMessageSerializer>()
             .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
             .UseLightningNetwork()
-            .RunConsoleAsync();
+            .RunConsoleAsync().ConfigureAwait(false);
+      }
 
-         Task node2 = new ForgeBuilder()
-            .UseForge<DefaultForge>(args, configurationFile: "forge-settings-node2.json")
+      private static async Task TestNodes(string[] args)
+      {
+         Task node1 = new ForgeBuilder()
+            .UseForge<DefaultForge>(args, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
             .UseBedrockForgeServer<TransportMessageSerializer>()
-            .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
+            .UseDevController(assemblyScaffoldEnabler =>
+               assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
+            .UseLightningNetwork()
+            .RunConsoleAsync();
+
+         string[] args1 = args.Append("--ForgeConnectivity:Listeners:0:Endpoint=127.0.0.1:9736")
+                              .Append("--DevController:EndPoint=127.0.0.1:5001")
+                              .ToArray();
+
+         Task node2 = new ForgeBuilder()
+            .UseForge<DefaultForge>(args1, configurationFile: "lightning-settings.json")
+            .UseSerilog("log-settings-with-seq.json")
+            .UseBedrockForgeServer<TransportMessageSerializer>()
+            .UseDevController(assemblyScaffoldEnabler =>
+               assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
             .UseLightningNetwork()
             .RunConsoleAsync();
 

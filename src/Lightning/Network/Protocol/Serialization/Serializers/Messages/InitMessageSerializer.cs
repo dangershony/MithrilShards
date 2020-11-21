@@ -7,10 +7,10 @@ namespace Network.Protocol.Serialization.Serializers.Messages
    {
       public override void Serialize(InitMessage message, int protocolVersion, NetworkPeerContext peerContext, IBufferWriter<byte> output)
       {
-         output.WriteULong((ushort)message.GlobalFeatures.Length);
+         output.WriteUShort((ushort)message.GlobalFeatures.Length);
          output.Write(message.GlobalFeatures);
 
-         output.WriteULong((ushort)message.Features.Length);
+         output.WriteUShort((ushort)message.Features.Length);
          output.Write(message.Features);
 
          // todo: write tlv_stream

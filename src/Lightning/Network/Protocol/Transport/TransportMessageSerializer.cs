@@ -83,6 +83,10 @@ namespace Network.Protocol.Transport
             string commandName = command.ToString();
             examined = consumed = payload.End;
 
+            ushort payloadLength = reader.ReadUShort(isBigEndian: true);
+
+            payload = payload.Slice(reader.Consumed, payloadLength);
+
             if (this.networkMessageSerializerManager.TryDeserialize(
                commandName,
                ref payload,
@@ -196,8 +200,8 @@ namespace Network.Protocol.Transport
                }
                else
                {
-                  this.logger.LogError("Invalid noise message");
-                  throw new ApplicationException("Invalid noise message");
+                  this.logger.LogError("Invalid handshake message");
+                  throw new ApplicationException("Invalid handshake message");
                }
             }
          }

@@ -18,7 +18,7 @@ namespace Network.Protocol.Processors
       INetworkMessageHandler<HandshakeMessage>,
       INetworkMessageHandler<InitMessage>
    {
-      private const int HANDSHAKE_TIMEOUT_SECONDS = 5;
+      private const int HANDSHAKE_TIMEOUT_SECONDS = 500; //5;
       private readonly IDateTimeProvider dateTimeProvider;
       private readonly IRandomNumberGenerator randomNumberGenerator;
       private readonly IUserAgentBuilder userAgentBuilder;
@@ -51,17 +51,13 @@ namespace Network.Protocol.Processors
          // ensures the handshake is performed timely
          _ = this.DisconnectIfAsync(() =>
          {
-            return new ValueTask<bool>(false);// new ValueTask<bool>(this.PeerContext.HandshakeComplete == false);
+            return new ValueTask<bool>(this.PeerContext.HandshakeComplete == false);
          }, TimeSpan.FromSeconds(HANDSHAKE_TIMEOUT_SECONDS), "Handshake not performed in time");
 
          if (this.PeerContext.Direction == PeerConnectionDirection.Outbound)
          {
-            //Task.Run(() =>
-            //{
-            //   Task.Delay(30000).Wait();
-            //   return this.SendMessageAsync(this.Handshake(new ReadOnlySequence<byte>())).ConfigureAwait(false);
-            //});
-            //this.logger.LogDebug("Handshake ActOne sent.", ++this.HandshakeActNumber);
+            this.logger.LogDebug("Handshake ActOne sent.", ++this.HandshakeActNumber);
+            await this.SendMessageAsync(this.Handshake(new ReadOnlySequence<byte>())).ConfigureAwait(false);
          }
       }
 
@@ -79,7 +75,7 @@ namespace Network.Protocol.Processors
                {
                   this.logger.LogDebug("Handshake ActOne received.");
                   await this.SendMessageAsync(this.Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
-                  this.HandshakeActNumber++;
+                  this.HandshakeActNumber += 2; // jump to act3
                   this.logger.LogDebug("Handshake ActTwo sent.");
                   break;
                }
@@ -122,13 +118,13 @@ namespace Network.Protocol.Processors
 
          // validate init message
 
-         this.PeerContext.OnHandshakeCompleted();
+         this.PeerContext.OnInitMessageCompleted();
          return new ValueTask<bool>(true);
       }
 
       private InitMessage CreateInitMessage()
       {
-         return new InitMessage();
+         return new InitMessage { GlobalFeatures = new byte[] { 1, 2, 3, 4 }, Features = new byte[] { 1, 2, 3, 4, 5 } };
       }
    }
 }

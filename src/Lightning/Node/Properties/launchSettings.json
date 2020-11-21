@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Node": {
+      "commandName": "Project"
+    },
+    "Test Two Nodes": {
+      "commandName": "Project",
+      "commandLineArgs": "test"
+    }
+  }
+}

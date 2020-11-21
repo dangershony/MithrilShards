@@ -19,6 +19,7 @@
          "Default": "Debug",
          "Override": {
             "Bedrock.Framework": "Debug",
+            "MithrilShards.Network.Bedrock": "Debug",
             "Microsoft": "Warning",
             "System": "Warning"
          }

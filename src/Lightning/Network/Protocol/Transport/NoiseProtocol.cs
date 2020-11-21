@@ -40,7 +40,7 @@ namespace Network.Protocol.Transport
 
       public void Handshake(ReadOnlySpan<byte> message, IBufferWriter<byte> output)
       {
-         output.Write(message);
+         output.Write(new byte[5] { 1, 2, 3, 4, 5 });
       }
    }
 }
