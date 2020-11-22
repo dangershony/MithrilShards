@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -71,6 +72,17 @@ namespace Network.Protocol.Transport
             this.logger.LogDebug("EndPoint {RemoteEndPoint} added to the list of connections attempt.", endPoint);
             return true;
          }
+      }
+
+      /// <summary>
+      /// Tries the remove end point from the list of connection attempts.
+      /// </summary>
+      /// <param name="endPoint">The end point to remove.</param>
+      /// <returns><see langword="true"/> if the endpoint has been removed, <see langword="false"/> if the endpoint has not been found.</returns>
+      public bool TryRemoveEndPoint(IPEndPoint endPoint)
+      {
+         endPoint = endPoint.AsIPEndPoint().EnsureIPv6();
+         return this.connectionsToAttempt.RemoveAll(remoteEndPoint => remoteEndPoint.EndPoint.Equals(endPoint)) > 0;
       }
    }
 }
