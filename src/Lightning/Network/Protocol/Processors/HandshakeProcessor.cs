@@ -40,6 +40,8 @@ namespace Network.Protocol.Processors
          this.userAgentBuilder = userAgentBuilder;
       }
 
+      public override bool CanReceiveMessages { get { return true; } }
+
       protected override async ValueTask OnPeerAttachedAsync()
       {
          this.HandshakeActNumber = 1;

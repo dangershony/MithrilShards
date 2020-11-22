@@ -33,6 +33,14 @@ namespace Network.Protocol.Processors
 
       public virtual bool Enabled { get; private set; } = true;
 
+      public virtual bool CanReceiveMessages
+      {
+         get
+         {
+            return this.PeerContext.HandshakeComplete && this.PeerContext.InitComplete;
+         }
+      }
+
       /// <summary>Initializes a new instance of the <see cref="BaseProcessor"/> class.</summary>
       /// <param name="logger">The logger.</param>
       /// <param name="eventBus">The event bus.</param>

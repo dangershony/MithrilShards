@@ -84,8 +84,8 @@ namespace Network.Protocol.Transport
             examined = consumed = input.End;
 
             ushort payloadLength = reader.ReadUShort(isBigEndian: true);
-
             payload = payload.Slice(reader.Consumed, payloadLength);
+            reader.Advance(payloadLength);
 
             if (this.networkMessageSerializerManager.TryDeserialize(
                commandName,
@@ -93,11 +93,6 @@ namespace Network.Protocol.Transport
                this.networkPeerContext.NegotiatedProtocolVersion.Version,
                this.networkPeerContext, out message!))
             {
-               if (!this.networkPeerContext.InitComplete && !(message is InitMessage))
-               {
-                  throw new ApplicationException("Init message must be complete to receive messages");
-               }
-
                // extension: an optional TLV stream
                // TODO:
 
@@ -133,11 +128,6 @@ namespace Network.Protocol.Transport
 
          if (this.networkPeerContext.HandshakeComplete)
          {
-            if (!this.networkPeerContext.InitComplete && !(message is InitMessage))
-            {
-               throw new ApplicationException("Init message must be complete to send messages");
-            }
-
             string command = message.Command;
             using (this.logger.BeginScope("Serializing and sending '{Command}'", command))
             {
