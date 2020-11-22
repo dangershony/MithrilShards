@@ -13,13 +13,9 @@ namespace MithrilShards.Logging.Serilog
          forgeBuilder
             .ExtendInnerHostBuilder(builder =>
             {
+
                builder.UseSerilog((hostingContext, loggerConfiguration) =>
                {
-                  //set default logging if the log file is missing
-                  //loggerConfiguration
-                  //   .MinimumLevel.Information()
-                  //   .WriteTo.Console();
-
                   configurationFile ??= forgeBuilder.ConfigurationFileName;
 
                   string absoluteDirectoryPath = Path.GetDirectoryName(Path.GetFullPath(configurationFile))!;
@@ -29,11 +25,6 @@ namespace MithrilShards.Logging.Serilog
                   .AddJsonFile(configurationFileProvider, Path.GetFileName(configurationFile), false, true)
                   .SetFileLoadExceptionHandler(fileContext =>
                   {
-                     //set default logging if the log file is missing
-                     loggerConfiguration
-                        .MinimumLevel.Information()
-                        .WriteTo.Console();
-
                      using global::Serilog.Core.Logger logger = new LoggerConfiguration()
                         .MinimumLevel.Warning()
                         .WriteTo.Console()
@@ -46,6 +37,13 @@ namespace MithrilShards.Logging.Serilog
                   .Build();
 
                   loggerConfiguration.ReadFrom.Configuration(logConfiguration);
+                  if (!logConfiguration.GetSection("Serilog").Exists())
+                  {
+                     //set default logging if the log file is missing
+                     loggerConfiguration
+                        .MinimumLevel.Information()
+                        .WriteTo.Console();
+                  }
                });
             });
          return forgeBuilder;
