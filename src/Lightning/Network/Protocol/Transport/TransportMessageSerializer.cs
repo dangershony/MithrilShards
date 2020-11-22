@@ -81,7 +81,7 @@ namespace Network.Protocol.Transport
 
             ushort command = reader.ReadUShort(isBigEndian: true);
             string commandName = command.ToString();
-            examined = consumed = payload.End;
+            examined = consumed = input.End;
 
             ushort payloadLength = reader.ReadUShort(isBigEndian: true);
 

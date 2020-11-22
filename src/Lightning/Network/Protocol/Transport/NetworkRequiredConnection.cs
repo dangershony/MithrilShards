@@ -8,8 +8,9 @@ using MithrilShards.Core.Extensions;
 using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Client;
 using MithrilShards.Core.Threading;
+using Network.Settings;
 
-namespace Network.Settings
+namespace Network.Protocol.Transport
 {
    /// <summary>
    /// Tries to connect to peers configured to be connected.

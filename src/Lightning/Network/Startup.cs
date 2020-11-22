@@ -10,6 +10,7 @@ using MithrilShards.Core.Network.Protocol.Processors;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Core.Network.Server.Guards;
 using Network.Protocol;
+using Network.Protocol.Transport;
 using Network.Settings;
 
 namespace Network

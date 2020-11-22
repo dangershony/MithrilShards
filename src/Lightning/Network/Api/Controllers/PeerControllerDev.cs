@@ -8,6 +8,7 @@ using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network.Client;
 using MithrilShards.Core.Network.Events;
 using MithrilShards.Dev.Controller.Models.Requests;
+using Network.Protocol.Transport;
 using Network.Settings;
 
 namespace Network.Api.Controllers
