@@ -7,7 +7,7 @@ namespace Network.Protocol.Messages
 {
    public abstract class BaseMessage : INetworkMessage
    {
-      public Dictionary<ulong, TlvRecord> Extension { get; set; } = new Dictionary<ulong, TlvRecord>();
+      public TlvSequence Extension { get; set; }
       public abstract string Command { get; }
    }
 }
