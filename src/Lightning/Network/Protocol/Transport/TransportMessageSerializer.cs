@@ -93,9 +93,6 @@ namespace Network.Protocol.Transport
                this.networkPeerContext.NegotiatedProtocolVersion.Version,
                this.networkPeerContext, out message!))
             {
-               // extension: an optional TLV stream
-               // TODO:
-
                return true;
             }
             else
@@ -150,9 +147,6 @@ namespace Network.Protocol.Transport
                   // into a 2-byte unsigned int; therefore, the maximum possible size is 65535 bytes.
                   payloadOutput.WriteUShort((ushort)serializationOutput.WrittenCount, isBigEndian: true);
                   payloadOutput.Write(serializationOutput.WrittenSpan);
-
-                  // extension: an optional TLV stream
-                  // TODO:
 
                   // encrypted Lightning message:
                   // 2-byte encrypted message length

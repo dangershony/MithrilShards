@@ -5,22 +5,20 @@ namespace Network.Protocol.Serialization.Serializers.Messages
 {
    public class InitMessageSerializer : BaseMessageSerializer<InitMessage>
    {
-      public InitMessageSerializer(IRecordSerializerManager recordSerializerManager) : base(recordSerializerManager) { }
+      public InitMessageSerializer(ITlvStreamSerializer tlvStreamSerializer) : base(tlvStreamSerializer)
+      {
+      }
 
-
-      public override void Serialize(InitMessage message, int protocolVersion, NetworkPeerContext peerContext, IBufferWriter<byte> output)
+      public override void SerializeMessage(InitMessage message, int protocolVersion, NetworkPeerContext peerContext, IBufferWriter<byte> output)
       {
          output.WriteUShort((ushort)message.GlobalFeatures.Length);
          output.Write(message.GlobalFeatures);
 
          output.WriteUShort((ushort)message.Features.Length);
          output.Write(message.Features);
-
-         // write tlv_stream
-         this.SerializeStream(message, output);
       }
 
-      public override InitMessage Deserialize(ref SequenceReader<byte> reader, int protocolVersion, NetworkPeerContext peerContext)
+      public override InitMessage DeserializeMessage(ref SequenceReader<byte> reader, int protocolVersion, NetworkPeerContext peerContext)
       {
          var message = new InitMessage();
 
@@ -29,9 +27,6 @@ namespace Network.Protocol.Serialization.Serializers.Messages
 
          len = reader.ReadUShort();
          message.Features = reader.ReadBytes(len).ToArray();
-
-         // read tlv_stream
-         this.DeserializeStream(ref reader, message);
 
          return message;
       }

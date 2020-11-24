@@ -6,6 +6,6 @@ namespace Network.Protocol.Types
 {
    public class TlVStream
    {
-      public List<TlvRecord> Records { get; set; }
+      public List<TlvRecord> Records { get; set; } = new List<TlvRecord>();
    }
 }

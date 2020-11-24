@@ -8,9 +8,8 @@ namespace Network.Protocol.Messages
 {
    public abstract class BaseMessage : INetworkMessage
    {
-      //public Dictionary<ulong, TlvRecord> Extension { get; set; } = new Dictionary<ulong, TlvRecord>();
       public abstract string Command { get; }
 
-      public TlVStream Extension { get; set; }
+      public TlVStream? Extension { get; set; }
    }
 }
