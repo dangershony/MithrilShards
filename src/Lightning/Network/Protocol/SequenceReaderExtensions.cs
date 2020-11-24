@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using MithrilShards.Core;
@@ -10,6 +11,7 @@ namespace Network.Protocol
    public static class SequenceReaderExtensions
    {
       private const string NotEnoughBytesLeft = "Cannot read data, not enough bytes left.";
+      private const string DecodedBigsizeNotCanonical = "Decoded bigsize is not canonical.";
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static bool ReadBool(ref this SequenceReader<byte> reader)
@@ -202,6 +204,39 @@ namespace Network.Protocol
          else
          {
             return reader.ReadULong();
+         }
+      }
+
+      /// <summary>
+      /// For details information on BigSize see BOLT 1
+      /// https://github.com/lightningnetwork/lightning-rfc/blob/master/01-messaging.md#appendix-a-bigsize-test-vectors
+      /// </summary>
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      public static ulong ReadBigSize(ref this SequenceReader<byte> reader)
+      {
+         byte firstByte = reader.ReadByte();
+
+         if (firstByte < 0xFD)
+         {
+            return firstByte;
+         }
+         else if (firstByte == 0xFD)
+         {
+            ushort res = reader.ReadUShort(isBigEndian: true);
+            if (res < firstByte) throw new MessageSerializationException(DecodedBigsizeNotCanonical);
+            return res;
+         }
+         else if (firstByte == 0xFE)
+         {
+            uint res = reader.ReadUInt(isBigEndian: true);
+            if (res >> 16 == 0) throw new MessageSerializationException(DecodedBigsizeNotCanonical);
+            return res;
+         }
+         else // == 0xFF
+         {
+            ulong res = reader.ReadULong(isBigEndian: true);
+            if (res >> 32 == 0) throw new MessageSerializationException(DecodedBigsizeNotCanonical);
+            return res;
          }
       }
 
