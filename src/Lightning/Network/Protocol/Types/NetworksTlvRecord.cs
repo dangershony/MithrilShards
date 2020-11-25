@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Network.Protocol.Types
 {
-   public class RecordX: TlvRecord
+   public class NetworksTlvRecord : TlvRecord
    {
    }
 }

@@ -9,7 +9,7 @@ namespace Network.Protocol.Serialization
    {
       Type GetRecordType();
 
-      long RecordTlvType { get; }
+      ulong RecordTlvType { get; }
 
       void Serialize(TlvRecord message, IBufferWriter<byte> output);
 

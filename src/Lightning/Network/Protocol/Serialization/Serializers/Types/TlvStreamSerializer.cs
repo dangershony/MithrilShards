@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using Network.Protocol.Types;
 
@@ -11,15 +13,37 @@ namespace Network.Protocol.Serialization.Serializers.Types
    public class TlvStreamSerializer : ITlvStreamSerializer
    {
       private const int MAX_RECORD_SIZE = 65535; // 65KB
+      private readonly ILogger<TlvStreamSerializer> logger;
+      private readonly IEnumerable<ITlvRecordSerializer> recordSerializers;
 
-      public TlvStreamSerializer(IEnumerable<ITlvRecordSerializer> records)
+      private readonly Dictionary<ulong, ITlvRecordSerializer> tlvRecordTypeMappings;
+
+      public TlvStreamSerializer(ILogger<TlvStreamSerializer> logger, IEnumerable<ITlvRecordSerializer> recordSerializers)
       {
+         this.logger = logger;
+         this.recordSerializers = recordSerializers;
+         this.tlvRecordTypeMappings = new Dictionary<ulong, ITlvRecordSerializer>();
+
+         this.InitializeMessageSerializers();
       }
 
-      public bool TryGetType(ulong recordType, out ITlvRecordSerializer tlvRecordSerializer)
+      private void InitializeMessageSerializers()
       {
-         tlvRecordSerializer = null;
-         return false;
+         foreach (ITlvRecordSerializer tlvRecordSerializer in this.recordSerializers)
+         {
+            this.tlvRecordTypeMappings.Add(tlvRecordSerializer.RecordTlvType, tlvRecordSerializer);
+         }
+
+         this.logger.LogInformation(
+            "Using {TlvRecordSerializerCount} tlv records serializers: {TlvRecordSerializerKeys}.",
+            this.tlvRecordTypeMappings.Count,
+            this.tlvRecordTypeMappings.Keys.ToArray()
+         );
+      }
+
+      public bool TryGetType(ulong recordType, out ITlvRecordSerializer? tlvRecordSerializer)
+      {
+         return this.tlvRecordTypeMappings.TryGetValue(recordType, out tlvRecordSerializer);
       }
 
       public void SerializeTlvStream(TlVStream? message, IBufferWriter<byte> output)

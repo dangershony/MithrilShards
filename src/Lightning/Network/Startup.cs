@@ -10,7 +10,8 @@ using MithrilShards.Core.Network.Protocol.Processors;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Core.Network.Server.Guards;
 using Network.Protocol;
-using Network.Protocol.Messages.Tlv;
+using Network.Protocol.Serialization;
+using Network.Protocol.Serialization.Serializers.Types;
 using Network.Protocol.Transport;
 using Network.Settings;
 
@@ -27,15 +28,30 @@ namespace Network
             {
                services
                   .AddSingleton<IDateTimeProvider, DateTimeProvider>()
-                  .AddSingleton<ITlvHandler, TlvHandler>()
                   .AddSingleton<NodeContext>()
                   .AddMessageSerializers()
                   .AddProtocolTypeSerializers()
                   .AddMessageProcessors()
+                  .AddTlvComponents()
                   .ReplaceServices();
             });
 
          return forgeBuilder;
+      }
+
+      private static IServiceCollection AddTlvComponents(this IServiceCollection services)
+      {
+         services.AddSingleton<ITlvStreamSerializer, TlvStreamSerializer>();
+
+         // Discovers and registers all message serializer in this assembly.
+         // It is possible to add them manually to have full control of message serializers we are interested into.
+         Type serializerInterface = typeof(ITlvRecordSerializer);
+         foreach (Type messageSerializerType in typeof(LightningNode).Assembly.GetTypes().Where(t => serializerInterface.IsAssignableFrom(t) && !t.IsAbstract))
+         {
+            services.AddSingleton(typeof(ITlvRecordSerializer), messageSerializerType);
+         }
+
+         return services;
       }
 
       private static IServiceCollection AddMessageSerializers(this IServiceCollection services)

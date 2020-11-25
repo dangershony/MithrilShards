@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using MithrilShards.Core.Network.PeerBehaviorManager;
 using MithrilShards.Core.Network.Protocol.Processors;
 using Network.Protocol.Messages;
 using Network.Protocol.Transport;
+using Network.Protocol.Types;
 
 namespace Network.Protocol.Processors
 {
@@ -126,7 +128,18 @@ namespace Network.Protocol.Processors
 
       private InitMessage CreateInitMessage()
       {
-         return new InitMessage { GlobalFeatures = new byte[] { 1, 2, 3, 4 }, Features = new byte[] { 1, 2, 3, 4, 5 } };
+         return new InitMessage
+         {
+            GlobalFeatures = new byte[] { 1, 2, 3, 4 },
+            Features = new byte[] { 1, 2, 3, 4, 5 },
+            Extension = new TlVStream
+            {
+               Records = new List<TlvRecord>
+               {
+                  new NetworksTlvRecord {Type = 1},
+               }
+            }
+         };
       }
    }
 }

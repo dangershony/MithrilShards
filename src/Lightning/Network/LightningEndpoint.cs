@@ -6,8 +6,8 @@ namespace Network
 {
    public class LightningEndpoint
    {
-      public EndPoint EndPoint { get; set; }
-      public string NodeId { get; set; }
+      public EndPoint? EndPoint { get; set; }
+      public string? NodeId { get; set; }
 
       public override string ToString()
       {
