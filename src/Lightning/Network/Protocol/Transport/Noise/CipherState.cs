@@ -3,159 +3,158 @@ using System.Diagnostics;
 
 namespace Network.Protocol.Transport.Noise
 {
-	/// <summary>
-	/// A CipherState can encrypt and decrypt data based on its variables k
-	/// (a cipher key of 32 bytes) and n (an 8-byte unsigned integer nonce).
-	/// </summary>
-	internal sealed class CipherState<CipherType> : IDisposable where CipherType : Cipher, new()
-	{
-		private const ulong MaxNonce = UInt64.MaxValue;
+   /// <summary>
+   /// A CipherState can encrypt and decrypt data based on its variables k
+   /// (a cipher key of 32 bytes) and n (an 8-byte unsigned integer nonce).
+   /// </summary>
+   internal sealed class CipherState<TCipherType> : IDisposable where TCipherType : ICipher, new()
+   {
+      private const ulong MAX_NONCE = UInt64.MaxValue;
 
-		private static readonly byte[] zeroLen = new byte[0];
-		private static readonly byte[] zeros = new byte[32];
+      private static readonly byte[] _zeroLen = new byte[0];
+      private static readonly byte[] _zeros = new byte[32];
 
-		private readonly CipherType cipher = new CipherType();
-		private byte[] k;
-		private ulong n;
-		private bool disposed;
-		
-		private readonly byte[] _ck = new byte[32];
-		private readonly IHkdf _hkdf;
+      private readonly TCipherType _cipher = new TCipherType();
+      private byte[] _k;
+      private ulong _n;
+      private bool _disposed;
 
-		public CipherState()
-		{ }
-		
-		public CipherState(byte[] ck, IHkdf hkdf)
-		{
-			ck.CopyTo(this._ck.AsSpan());
-			this._hkdf = hkdf;
-		}
+      private readonly byte[] _ck = new byte[32];
+      private readonly IHkdf _hkdf;
 
-		/// <summary>
-		/// Sets k = key. Sets n = 0.
-		/// </summary>
-		public void InitializeKey(ReadOnlySpan<byte> key)
-		{
-			Debug.Assert(key.Length == Aead.KeySize);
+      public CipherState()
+      { }
 
-			this.k = this.k ?? new byte[Aead.KeySize];
-			key.CopyTo(this.k);
+      public CipherState(byte[] ck, IHkdf hkdf)
+      {
+         ck.CopyTo(_ck.AsSpan());
+         _hkdf = hkdf;
+      }
 
-			this.n = 0;
-		}
+      /// <summary>
+      /// Sets k = key. Sets n = 0.
+      /// </summary>
+      public void InitializeKey(ReadOnlySpan<byte> key)
+      {
+         Debug.Assert(key.Length == Aead.KEY_SIZE);
 
-		/// <summary>
-		/// Returns true if k is non-empty, false otherwise.
-		/// </summary>
-		public bool HasKey()
-		{
-			return this.k != null;
-		}
+         _k = _k ?? new byte[Aead.KEY_SIZE];
+         key.CopyTo(_k);
 
-		/// <summary>
-		/// Sets n = nonce. This function is used for handling out-of-order transport messages.
-		/// </summary>
-		public void SetNonce(ulong nonce)
-		{
-			this.n = nonce;
-		}
-		
-		
-		public ulong GetNonce()
-		{
-			return this.n;
-		}
+         _n = 0;
+      }
 
-		/// <summary>
-		/// If k is non-empty returns ENCRYPT(k, n++, ad, plaintext).
-		/// Otherwise copies the plaintext to the ciphertext parameter
-		/// and returns the length of the plaintext.
-		/// </summary>
-		public int EncryptWithAd(ReadOnlySpan<byte> ad, ReadOnlySpan<byte> plaintext, Span<byte> ciphertext)
-		{
-			if (this.n == MaxNonce)
-			{
-				throw new OverflowException("Nonce has reached its maximum value.");
-			}
+      /// <summary>
+      /// Returns true if k is non-empty, false otherwise.
+      /// </summary>
+      public bool HasKey()
+      {
+         return _k != null;
+      }
 
-			if (this.k == null)
-			{
-				plaintext.CopyTo(ciphertext);
-				return plaintext.Length;
-			}
-			
-			var result = this.cipher.Encrypt(this.k, this.n++, ad, plaintext, ciphertext);
+      /// <summary>
+      /// Sets n = nonce. This function is used for handling out-of-order transport messages.
+      /// </summary>
+      public void SetNonce(ulong nonce)
+      {
+         _n = nonce;
+      }
 
-			return result;
-		}
+      public ulong GetNonce()
+      {
+         return _n;
+      }
 
-		/// <summary>
-		/// If k is non-empty returns DECRYPT(k, n++, ad, ciphertext).
-		/// Otherwise copies the ciphertext to the plaintext parameter and returns
-		/// the length of the ciphertext. If an authentication failure occurs
-		/// then n is not incremented and an error is signaled to the caller.
-		/// </summary>
-		public int DecryptWithAd(ReadOnlySpan<byte> ad, ReadOnlySpan<byte> ciphertext, Span<byte> plaintext)
-		{
-			if (this.n == MaxNonce)
-			{
-				throw new OverflowException("Nonce has reached its maximum value.");
-			}
+      /// <summary>
+      /// If k is non-empty returns ENCRYPT(k, n++, ad, plaintext).
+      /// Otherwise copies the plaintext to the ciphertext parameter
+      /// and returns the length of the plaintext.
+      /// </summary>
+      public int EncryptWithAd(ReadOnlySpan<byte> ad, ReadOnlySpan<byte> plaintext, Span<byte> ciphertext)
+      {
+         if (_n == MAX_NONCE)
+         {
+            throw new OverflowException("Nonce has reached its maximum value.");
+         }
 
-			if (this.k == null)
-			{
-				ciphertext.CopyTo(plaintext);
-				return ciphertext.Length;
-			}
+         if (_k == null)
+         {
+            plaintext.CopyTo(ciphertext);
+            return plaintext.Length;
+         }
 
-			int bytesRead = this.cipher.Decrypt(this.k, this.n, ad, ciphertext, plaintext);
-			++this.n;
+         var result = _cipher.Encrypt(_k, _n++, ad, plaintext, ciphertext);
 
-			return bytesRead;
-		}
+         return result;
+      }
 
-		/// <summary>
-		/// Sets k = REKEY(k).
-		/// </summary>
-		public void Rekey()
-		{
-			Debug.Assert(this.HasKey());
-			
-			Span<byte> key = stackalloc byte[Aead.KeySize + Aead.TagSize];
-			this.cipher.Encrypt(this.k, MaxNonce, zeroLen, zeros, key);
-			
-			this.k ??= new byte[Aead.KeySize];
-			key.Slice(Aead.KeySize).CopyTo(this.k);
-		}
-		
-		/// <summary>
-		/// Sets k to a new key generated with HKDF of chaining key and current k
-		/// </summary>
-		public void KeyRecycle()
-		{
-			Debug.Assert(this.HasKey());
+      /// <summary>
+      /// If k is non-empty returns DECRYPT(k, n++, ad, ciphertext).
+      /// Otherwise copies the ciphertext to the plaintext parameter and returns
+      /// the length of the ciphertext. If an authentication failure occurs
+      /// then n is not incremented and an error is signaled to the caller.
+      /// </summary>
+      public int DecryptWithAd(ReadOnlySpan<byte> ad, ReadOnlySpan<byte> ciphertext, Span<byte> plaintext)
+      {
+         if (_n == MAX_NONCE)
+         {
+            throw new OverflowException("Nonce has reached its maximum value.");
+         }
 
-			Span<byte> keys = stackalloc byte[Aead.KeySize * 2];
-			this._hkdf.ExtractAndExpand2(this._ck, this.k, keys);
+         if (_k == null)
+         {
+            ciphertext.CopyTo(plaintext);
+            return ciphertext.Length;
+         }
 
-			// set new chaining key
-			keys.Slice(0,Aead.KeySize)
-				.CopyTo(this._ck);
-			
-			// set new key
-			keys.Slice(Aead.KeySize)
-				.CopyTo(this.k);
-			
-			this.n = 0;
-		}
+         int bytesRead = _cipher.Decrypt(_k, _n, ad, ciphertext, plaintext);
+         ++_n;
 
-		public void Dispose()
-		{
-			if (!this.disposed)
-			{
-				Utilities.ZeroMemory(this.k);
-				this.disposed = true;
-			}
-		}
-	}
+         return bytesRead;
+      }
+
+      /// <summary>
+      /// Sets k = REKEY(k).
+      /// </summary>
+      public void Rekey()
+      {
+         Debug.Assert(HasKey());
+
+         Span<byte> key = stackalloc byte[Aead.KEY_SIZE + Aead.TAG_SIZE];
+         _cipher.Encrypt(_k, MAX_NONCE, _zeroLen, _zeros, key);
+
+         _k ??= new byte[Aead.KEY_SIZE];
+         key.Slice(Aead.KEY_SIZE).CopyTo(_k);
+      }
+
+      /// <summary>
+      /// Sets k to a new key generated with HKDF of chaining key and current k
+      /// </summary>
+      public void KeyRecycle()
+      {
+         Debug.Assert(HasKey());
+
+         Span<byte> keys = stackalloc byte[Aead.KEY_SIZE * 2];
+         _hkdf.ExtractAndExpand2(_ck, _k, keys);
+
+         // set new chaining key
+         keys.Slice(0, Aead.KEY_SIZE)
+            .CopyTo(_ck);
+
+         // set new key
+         keys.Slice(Aead.KEY_SIZE)
+            .CopyTo(_k);
+
+         _n = 0;
+      }
+
+      public void Dispose()
+      {
+         if (!_disposed)
+         {
+            Utilities.ZeroMemory(_k);
+            _disposed = true;
+         }
+      }
+   }
 }

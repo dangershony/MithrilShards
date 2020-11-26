@@ -52,7 +52,7 @@ namespace Network.Test
             byte[] dataBytes = HexEncoder.ToHexBytes(tlvData.bytes);
 
             var writer = new ArrayBufferWriter<byte>();
-            IBufferWriterExtensions.WriteBigSize(writer, tlvData.value);
+            BufferWriterExtensions.WriteBigSize(writer, tlvData.value);
             Assert.Equal(dataBytes, writer.WrittenSpan.ToArray());
          }
       }

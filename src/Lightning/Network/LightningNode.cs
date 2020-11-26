@@ -10,13 +10,13 @@ namespace Network
 {
    public class LightningNode : IMithrilShard
    {
-      private readonly ILogger<LightningNode> logger;
-      private readonly LightningNodeSettings settings;
+      private readonly ILogger<LightningNode> _logger;
+      private readonly LightningNodeSettings _settings;
 
       public LightningNode(ILogger<LightningNode> logger, IOptions<LightningNodeSettings> settings)
       {
-         this.logger = logger;
-         this.settings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
+         _logger = logger;
+         _settings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
       }
 
       public ValueTask InitializeAsync(CancellationToken cancellationToken)

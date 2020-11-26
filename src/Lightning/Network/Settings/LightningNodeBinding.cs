@@ -14,7 +14,7 @@ namespace Network.Settings
       {
          endPoint = null;
 
-         if (!LightningEndpoint.TryParse(this.LightningEndPoint, out endPoint))
+         if (!LightningEndpoint.TryParse(LightningEndPoint, out endPoint))
          {
             return false;
          }

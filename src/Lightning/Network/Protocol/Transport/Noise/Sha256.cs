@@ -4,55 +4,55 @@ using System.Security.Cryptography;
 
 namespace Network.Protocol.Transport.Noise
 {
-	/// <summary>
-	/// SHA-256 from System.Security.Cryptography.
-	/// </summary>
-	internal sealed class Sha256 : Hash
-	{
-		private readonly byte[] _state = new byte[104];
-		private int _currentStateLength = 0;
-		private bool _disposed;
+   /// <summary>
+   /// SHA-256 from System.Security.Cryptography.
+   /// </summary>
+   internal sealed class Sha256 : IHash
+   {
+      private readonly byte[] _state = new byte[104];
+      private int _currentStateLength = 0;
+      private bool _disposed;
 
-		public Sha256() => this.Reset();
+      public Sha256() => Reset();
 
-		public int HashLen => 32;
-		public int BlockLen => 64;
+      public int HashLen => 32;
+      public int BlockLen => 64;
 
-		public void AppendData(ReadOnlySpan<byte> data)
-		{
-			if (data.IsEmpty) return;
+      public void AppendData(ReadOnlySpan<byte> data)
+      {
+         if (data.IsEmpty) return;
 
-			data.CopyTo(this._state.AsSpan(this._currentStateLength,data.Length));
+         data.CopyTo(_state.AsSpan(_currentStateLength, data.Length));
 
-			this._currentStateLength += data.Length;
-		}
+         _currentStateLength += data.Length;
+      }
 
-		public void GetHashAndReset(Span<byte> hash)
-		{
-			Debug.Assert(hash.Length == this.HashLen);
+      public void GetHashAndReset(Span<byte> hash)
+      {
+         Debug.Assert(hash.Length == HashLen);
 
-			using (var sha256 = SHA256.Create())
-			{
-				sha256.ComputeHash(this._state.AsSpan(0,this._currentStateLength)
-					.ToArray());
-				sha256.Hash.AsSpan()
-					.CopyTo(hash);
-			}
+         using (var sha256 = SHA256.Create())
+         {
+            sha256.ComputeHash(_state.AsSpan(0, _currentStateLength)
+               .ToArray());
+            sha256.Hash.AsSpan()
+               .CopyTo(hash);
+         }
 
-			this.Reset();
-		}
+         Reset();
+      }
 
-		private void Reset()
-		{
-			this._currentStateLength = 0;
-		}
+      private void Reset()
+      {
+         _currentStateLength = 0;
+      }
 
-		public void Dispose()
-		{
-			if (!this._disposed)
-			{
-				this._disposed = true;
-			}
-		}
-	}
+      public void Dispose()
+      {
+         if (!_disposed)
+         {
+            _disposed = true;
+         }
+      }
+   }
 }

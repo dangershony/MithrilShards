@@ -10,13 +10,13 @@ namespace Network.Protocol
 {
    public static class SequenceReaderExtensions
    {
-      private const string NotEnoughBytesLeft = "Cannot read data, not enough bytes left.";
-      private const string DecodedBigsizeNotCanonical = "Decoded bigsize is not canonical.";
+      private const string NOT_ENOUGH_BYTES_LEFT = "Cannot read data, not enough bytes left.";
+      private const string DECODED_BIGSIZE_NOT_CANONICAL = "Decoded bigsize is not canonical.";
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static bool ReadBool(ref this SequenceReader<byte> reader)
       {
-         if (!reader.TryRead(out byte value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+         if (!reader.TryRead(out byte value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
          return value > 0;
       }
@@ -24,7 +24,7 @@ namespace Network.Protocol
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static byte ReadByte(ref this SequenceReader<byte> reader)
       {
-         if (!reader.TryRead(out byte value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+         if (!reader.TryRead(out byte value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
          return value;
       }
@@ -34,13 +34,13 @@ namespace Network.Protocol
       {
          if (isBigEndian)
          {
-            if (!reader.TryReadBigEndian(out short value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadBigEndian(out short value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return value;
          }
          else
          {
-            if (!reader.TryReadLittleEndian(out short value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadLittleEndian(out short value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return value;
          }
@@ -51,13 +51,13 @@ namespace Network.Protocol
       {
          if (isBigEndian)
          {
-            if (!reader.TryReadBigEndian(out short value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadBigEndian(out short value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return (ushort)value;
          }
          else
          {
-            if (!reader.TryReadLittleEndian(out short value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadLittleEndian(out short value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return (ushort)value;
          }
@@ -68,13 +68,13 @@ namespace Network.Protocol
       {
          if (isBigEndian)
          {
-            if (!reader.TryReadBigEndian(out int value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadBigEndian(out int value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return value;
          }
          else
          {
-            if (!reader.TryReadLittleEndian(out int value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadLittleEndian(out int value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return value;
          }
@@ -85,13 +85,13 @@ namespace Network.Protocol
       {
          if (isBigEndian)
          {
-            if (!reader.TryReadBigEndian(out int value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadBigEndian(out int value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return (uint)value;
          }
          else
          {
-            if (!reader.TryReadLittleEndian(out int value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadLittleEndian(out int value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return (uint)value;
          }
@@ -102,13 +102,13 @@ namespace Network.Protocol
       {
          if (isBigEndian)
          {
-            if (!reader.TryReadBigEndian(out long value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadBigEndian(out long value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return value;
          }
          else
          {
-            if (!reader.TryReadLittleEndian(out long value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadLittleEndian(out long value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return value;
          }
@@ -119,13 +119,13 @@ namespace Network.Protocol
       {
          if (isBigEndian)
          {
-            if (!reader.TryReadBigEndian(out long value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadBigEndian(out long value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return (ulong)value;
          }
          else
          {
-            if (!reader.TryReadLittleEndian(out long value)) ThrowHelper.ThrowMessageSerializationException(NotEnoughBytesLeft);
+            if (!reader.TryReadLittleEndian(out long value)) ThrowHelper.ThrowMessageSerializationException(NOT_ENOUGH_BYTES_LEFT);
 
             return (ulong)value;
          }
@@ -223,19 +223,19 @@ namespace Network.Protocol
          else if (firstByte == 0xFD)
          {
             ushort res = reader.ReadUShort(isBigEndian: true);
-            if (res < firstByte) throw new MessageSerializationException(DecodedBigsizeNotCanonical);
+            if (res < firstByte) throw new MessageSerializationException(DECODED_BIGSIZE_NOT_CANONICAL);
             return res;
          }
          else if (firstByte == 0xFE)
          {
             uint res = reader.ReadUInt(isBigEndian: true);
-            if (res >> 16 == 0) throw new MessageSerializationException(DecodedBigsizeNotCanonical);
+            if (res >> 16 == 0) throw new MessageSerializationException(DECODED_BIGSIZE_NOT_CANONICAL);
             return res;
          }
          else // == 0xFF
          {
             ulong res = reader.ReadULong(isBigEndian: true);
-            if (res >> 32 == 0) throw new MessageSerializationException(DecodedBigsizeNotCanonical);
+            if (res >> 32 == 0) throw new MessageSerializationException(DECODED_BIGSIZE_NOT_CANONICAL);
             return res;
          }
       }

@@ -11,7 +11,7 @@ namespace Network.Protocol
    /// <summary>
    /// Some helpful IBufferWriter extensions to serialize primitive types in our bitcoin-alike protocol.
    /// </summary>
-   public static class IBufferWriterExtensions
+   public static class BufferWriterExtensions
    {
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static int WriteBool(this IBufferWriter<byte> writer, bool value)

@@ -17,15 +17,15 @@ namespace Network.Api.Controllers
    [Route("[controller]")]
    public class PeerControllerDev : ControllerBase
    {
-      private readonly ILogger<PeerControllerDev> logger;
-      private readonly IEventBus eventBus;
-      private readonly NetworkRequiredConnection? requiredConnection;
+      private readonly ILogger<PeerControllerDev> _logger;
+      private readonly IEventBus _eventBus;
+      private readonly NetworkRequiredConnection? _requiredConnection;
 
       public PeerControllerDev(ILogger<PeerControllerDev> logger, IEventBus eventBus, IEnumerable<IConnector>? connectors)
       {
-         this.logger = logger;
-         this.eventBus = eventBus;
-         this.requiredConnection = connectors?.OfType<NetworkRequiredConnection>().FirstOrDefault();
+         _logger = logger;
+         _eventBus = eventBus;
+         _requiredConnection = connectors?.OfType<NetworkRequiredConnection>().FirstOrDefault();
       }
 
       [HttpPost]
@@ -35,17 +35,17 @@ namespace Network.Api.Controllers
       [Route("Connect")]
       public ActionResult<bool> Connect(PeerManagementConnectRequest request)
       {
-         if (this.requiredConnection == null)
+         if (_requiredConnection == null)
          {
-            return this.NotFound($"Cannot produce output because {nameof(NetworkRequiredConnection)} is not available");
+            return NotFound($"Cannot produce output because {nameof(NetworkRequiredConnection)} is not available");
          }
 
          if (!LightningEndpoint.TryParse(request.EndPoint, out LightningEndpoint ipEndPoint))
          {
-            return this.BadRequest("Incorrect endpoint");
+            return BadRequest("Incorrect endpoint");
          }
 
-         return this.Ok(this.requiredConnection.TryAddLightningEndPoint(ipEndPoint));
+         return Ok(_requiredConnection.TryAddLightningEndPoint(ipEndPoint));
       }
 
       [HttpPost]
@@ -56,11 +56,11 @@ namespace Network.Api.Controllers
       {
          if (!IPEndPoint.TryParse(request.EndPoint, out IPEndPoint ipEndPoint))
          {
-            return this.BadRequest("Incorrect endpoint");
+            return BadRequest("Incorrect endpoint");
          }
 
-         this.requiredConnection.TryRemoveEndPoint(ipEndPoint);
-         this.eventBus.Publish(new PeerDisconnectionRequired(ipEndPoint, request.Reason));
+         _requiredConnection.TryRemoveEndPoint(ipEndPoint);
+         _eventBus.Publish(new PeerDisconnectionRequired(ipEndPoint, request.Reason));
 
          return true;
       }

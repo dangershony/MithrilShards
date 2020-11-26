@@ -31,7 +31,7 @@ namespace Network.Protocol
 
       public void SetHandshakeProtocol(IHandshakeProtocol handshakeProtocol)
       {
-         this.HandshakeProtocol = handshakeProtocol;
+         HandshakeProtocol = handshakeProtocol;
       }
 
       public override void AttachNetworkMessageProcessor(INetworkMessageProcessor messageProcessor)
@@ -41,14 +41,14 @@ namespace Network.Protocol
 
       public void OnHandshakeCompleted()
       {
-         this.IsConnected = true;
-         this.HandshakeComplete = true;
-         this.eventBus.Publish(new PeerHandshaked(this));
+         IsConnected = true;
+         HandshakeComplete = true;
+         eventBus.Publish(new PeerHandshaked(this));
       }
 
       public void OnInitMessageCompleted()
       {
-         this.InitComplete = true;
+         InitComplete = true;
       }
    }
 }

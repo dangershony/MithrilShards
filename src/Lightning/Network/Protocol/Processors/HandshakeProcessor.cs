@@ -21,13 +21,13 @@ namespace Network.Protocol.Processors
       INetworkMessageHandler<InitMessage>
    {
       private const int HANDSHAKE_TIMEOUT_SECONDS = 500; //5;
-      private readonly IDateTimeProvider dateTimeProvider;
-      private readonly IRandomNumberGenerator randomNumberGenerator;
-      private readonly IUserAgentBuilder userAgentBuilder;
+      private readonly IDateTimeProvider _dateTimeProvider;
+      private readonly IRandomNumberGenerator _randomNumberGenerator;
+      private readonly IUserAgentBuilder _userAgentBuilder;
 
-      private IHandshakeProtocol handshakeProtocol;
-      private int HandshakeActNumber;
-      private bool HandshakeInitiiator;
+      private IHandshakeProtocol _handshakeProtocol;
+      private int _handshakeActNumber;
+      private bool _handshakeInitiator;
 
       public HandshakeProcessor(ILogger<HandshakeProcessor> logger,
                                 IEventBus eventBus,
@@ -37,70 +37,70 @@ namespace Network.Protocol.Processors
                                 IUserAgentBuilder userAgentBuilder
                                 ) : base(logger, eventBus, peerBehaviorManager, isHandshakeAware: true)
       {
-         this.dateTimeProvider = dateTimeProvider;
-         this.randomNumberGenerator = randomNumberGenerator;
-         this.userAgentBuilder = userAgentBuilder;
+         _dateTimeProvider = dateTimeProvider;
+         _randomNumberGenerator = randomNumberGenerator;
+         _userAgentBuilder = userAgentBuilder;
       }
 
       public override bool CanReceiveMessages { get { return true; } }
 
       protected override async ValueTask OnPeerAttachedAsync()
       {
-         this.HandshakeActNumber = 1;
-         this.HandshakeInitiiator = this.PeerContext.Direction == PeerConnectionDirection.Outbound;
+         _handshakeActNumber = 1;
+         _handshakeInitiator = PeerContext.Direction == PeerConnectionDirection.Outbound;
 
          //add the status to the PeerContext, this way other processors may query the status
-         this.handshakeProtocol = this.PeerContext.HandshakeProtocol;
+         _handshakeProtocol = PeerContext.HandshakeProtocol;
 
          // ensures the handshake is performed timely
-         _ = this.DisconnectIfAsync(() =>
+         _ = DisconnectIfAsync(() =>
          {
-            return new ValueTask<bool>(this.PeerContext.HandshakeComplete == false);
+            return new ValueTask<bool>(PeerContext.HandshakeComplete == false);
          }, TimeSpan.FromSeconds(HANDSHAKE_TIMEOUT_SECONDS), "Handshake not performed in time");
 
-         if (this.PeerContext.Direction == PeerConnectionDirection.Outbound)
+         if (PeerContext.Direction == PeerConnectionDirection.Outbound)
          {
-            this.logger.LogDebug("Handshake ActOne sent.", ++this.HandshakeActNumber);
-            await this.SendMessageAsync(this.Handshake(new ReadOnlySequence<byte>())).ConfigureAwait(false);
+            logger.LogDebug("Handshake ActOne sent.", ++_handshakeActNumber);
+            await SendMessageAsync(Handshake(new ReadOnlySequence<byte>())).ConfigureAwait(false);
          }
       }
 
       public async ValueTask<bool> ProcessMessageAsync(HandshakeMessage noiseMessage, CancellationToken cancellation)
       {
-         if (this.PeerContext.HandshakeComplete)
+         if (PeerContext.HandshakeComplete)
          {
-            this.logger.LogDebug("Receiving version while already handshaked, disconnect.");
+            logger.LogDebug("Receiving version while already handshaked, disconnect.");
             throw new ProtocolViolationException("Peer already handshaked, disconnecting because of protocol violation.");
          }
 
-         switch (this.HandshakeActNumber)
+         switch (_handshakeActNumber)
          {
             case 1: // ActOne
                {
-                  this.logger.LogDebug("Handshake ActOne received.");
-                  await this.SendMessageAsync(this.Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
-                  this.HandshakeActNumber += 2; // jump to act3
-                  this.logger.LogDebug("Handshake ActTwo sent.");
+                  logger.LogDebug("Handshake ActOne received.");
+                  await SendMessageAsync(Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
+                  _handshakeActNumber += 2; // jump to act3
+                  logger.LogDebug("Handshake ActTwo sent.");
                   break;
                }
             case 2: // ActTwo
                {
-                  this.logger.LogDebug("Handshake ActTwo received.");
-                  await this.SendMessageAsync(this.Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
-                  this.PeerContext.OnHandshakeCompleted();
-                  this.HandshakeActNumber++;
-                  this.logger.LogDebug("Handshake ActThree sent.");
+                  logger.LogDebug("Handshake ActTwo received.");
+                  await SendMessageAsync(Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
+                  PeerContext.OnHandshakeCompleted();
+                  _handshakeActNumber++;
+                  logger.LogDebug("Handshake ActThree sent.");
                   break;
                }
             case 3: // ActThree
                {
-                  this.logger.LogDebug("Handshake ActThree received.");
-                  _ = this.Handshake(noiseMessage.Payload);
-                  this.HandshakeActNumber++;
-                  this.logger.LogDebug("Handshake Init sent.");
-                  this.PeerContext.OnHandshakeCompleted();
-                  await this.SendMessageAsync(this.CreateInitMessage(), cancellation).ConfigureAwait(false);
-                  this.PeerContext.OnInitMessageCompleted();
+                  logger.LogDebug("Handshake ActThree received.");
+                  _ = Handshake(noiseMessage.Payload);
+                  _handshakeActNumber++;
+                  logger.LogDebug("Handshake Init sent.");
+                  PeerContext.OnHandshakeCompleted();
+                  await SendMessageAsync(CreateInitMessage(), cancellation).ConfigureAwait(false);
+                  PeerContext.OnInitMessageCompleted();
                   break;
                }
          }
@@ -112,17 +112,17 @@ namespace Network.Protocol.Processors
       private HandshakeMessage Handshake(ReadOnlySequence<byte> input)
       {
          var output = new ArrayBufferWriter<byte>();
-         this.handshakeProtocol.Handshake(input.FirstSpan, output);
+         _handshakeProtocol.Handshake(input.FirstSpan, output);
          return new HandshakeMessage { Payload = new ReadOnlySequence<byte>(output.WrittenMemory) };
       }
 
       public ValueTask<bool> ProcessMessageAsync(InitMessage message, CancellationToken cancellation)
       {
-         this.logger.LogDebug("Handshake Init received.");
+         logger.LogDebug("Handshake Init received.");
 
          // validate init message
 
-         this.PeerContext.OnInitMessageCompleted();
+         PeerContext.OnInitMessageCompleted();
          return new ValueTask<bool>(true);
       }
 

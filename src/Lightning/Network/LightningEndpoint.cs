@@ -11,7 +11,7 @@ namespace Network
 
       public override string ToString()
       {
-         return $@"{this.NodeId}@{this.EndPoint}";
+         return $@"{NodeId}@{EndPoint}";
       }
 
       public static bool TryParse(string s, out LightningEndpoint result)

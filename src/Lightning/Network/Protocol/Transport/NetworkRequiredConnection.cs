@@ -19,7 +19,7 @@ namespace Network.Protocol.Transport
    /// <seealso cref="MithrilShards.Core.Network.Client.IConnector" />
    public class NetworkRequiredConnection : ConnectorBase
    {
-      private LightningNodeSettings settings;
+      private LightningNodeSettings _settings;
 
       public List<OutgoingConnectionEndPoint> connectionsToAttempt = new List<OutgoingConnectionEndPoint>();
 
@@ -30,19 +30,19 @@ namespace Network.Protocol.Transport
                                 IForgeConnectivity forgeConnectivity,
                                 IPeriodicWork connectionLoop) : base(logger, eventBus, serverPeerStats, forgeConnectivity, connectionLoop)
       {
-         this.settings = options.Value!;
+         _settings = options.Value!;
       }
 
       protected override async ValueTask AttemptConnectionsAsync(IConnectionManager connectionManager, CancellationToken cancellation)
       {
-         foreach (OutgoingConnectionEndPoint remoteEndPoint in this.connectionsToAttempt)
+         foreach (OutgoingConnectionEndPoint remoteEndPoint in connectionsToAttempt)
          {
             if (cancellation.IsCancellationRequested) break;
 
             if (connectionManager.CanConnectTo(remoteEndPoint.EndPoint))
             {
                // note that AttemptConnection is not blocking because it returns when the peer fails to connect or when one of the parties disconnect
-               _ = this.forgeConnectivity.AttemptConnectionAsync(remoteEndPoint, cancellation).ConfigureAwait(false);
+               _ = forgeConnectivity.AttemptConnectionAsync(remoteEndPoint, cancellation).ConfigureAwait(false);
 
                // apply a delay between attempts to prevent too many connection attempt in a row
                await Task.Delay(500, cancellation).ConfigureAwait(false);
@@ -59,17 +59,17 @@ namespace Network.Protocol.Transport
       public bool TryAddLightningEndPoint(LightningEndpoint endPoint)
       {
          endPoint.EndPoint = endPoint.EndPoint.AsIPEndPoint().EnsureIPv6();
-         if (this.connectionsToAttempt.Exists(ip => ip.Equals(endPoint)))
+         if (connectionsToAttempt.Exists(ip => ip.Equals(endPoint)))
          {
-            this.logger.LogDebug("EndPoint {RemoteEndPoint} already in the list of connections attempt.", endPoint);
+            logger.LogDebug("EndPoint {RemoteEndPoint} already in the list of connections attempt.", endPoint);
             return false;
          }
          else
          {
             var outgoingConnectionEndPoint = new OutgoingConnectionEndPoint(endPoint.EndPoint.AsIPEndPoint());
             outgoingConnectionEndPoint.Items[nameof(LightningEndpoint)] = endPoint;
-            this.connectionsToAttempt.Add(outgoingConnectionEndPoint);
-            this.logger.LogDebug("EndPoint {RemoteEndPoint} added to the list of connections attempt.", endPoint);
+            connectionsToAttempt.Add(outgoingConnectionEndPoint);
+            logger.LogDebug("EndPoint {RemoteEndPoint} added to the list of connections attempt.", endPoint);
             return true;
          }
       }
@@ -82,7 +82,7 @@ namespace Network.Protocol.Transport
       public bool TryRemoveEndPoint(IPEndPoint endPoint)
       {
          endPoint = endPoint.AsIPEndPoint().EnsureIPv6();
-         return this.connectionsToAttempt.RemoveAll(remoteEndPoint => remoteEndPoint.EndPoint.Equals(endPoint)) > 0;
+         return connectionsToAttempt.RemoveAll(remoteEndPoint => remoteEndPoint.EndPoint.Equals(endPoint)) > 0;
       }
    }
 }

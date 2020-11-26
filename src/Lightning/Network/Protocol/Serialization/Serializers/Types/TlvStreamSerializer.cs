@@ -13,37 +13,37 @@ namespace Network.Protocol.Serialization.Serializers.Types
    public class TlvStreamSerializer : ITlvStreamSerializer
    {
       private const int MAX_RECORD_SIZE = 65535; // 65KB
-      private readonly ILogger<TlvStreamSerializer> logger;
-      private readonly IEnumerable<ITlvRecordSerializer> recordSerializers;
+      private readonly ILogger<TlvStreamSerializer> _logger;
+      private readonly IEnumerable<ITlvRecordSerializer> _recordSerializers;
 
-      private readonly Dictionary<ulong, ITlvRecordSerializer> tlvRecordTypeMappings;
+      private readonly Dictionary<ulong, ITlvRecordSerializer> _tlvRecordTypeMappings;
 
       public TlvStreamSerializer(ILogger<TlvStreamSerializer> logger, IEnumerable<ITlvRecordSerializer> recordSerializers)
       {
-         this.logger = logger;
-         this.recordSerializers = recordSerializers;
-         this.tlvRecordTypeMappings = new Dictionary<ulong, ITlvRecordSerializer>();
+         _logger = logger;
+         _recordSerializers = recordSerializers;
+         _tlvRecordTypeMappings = new Dictionary<ulong, ITlvRecordSerializer>();
 
-         this.InitializeMessageSerializers();
+         InitializeMessageSerializers();
       }
 
       private void InitializeMessageSerializers()
       {
-         foreach (ITlvRecordSerializer tlvRecordSerializer in this.recordSerializers)
+         foreach (ITlvRecordSerializer tlvRecordSerializer in _recordSerializers)
          {
-            this.tlvRecordTypeMappings.Add(tlvRecordSerializer.RecordTlvType, tlvRecordSerializer);
+            _tlvRecordTypeMappings.Add(tlvRecordSerializer.RecordTlvType, tlvRecordSerializer);
          }
 
-         this.logger.LogInformation(
+         _logger.LogInformation(
             "Using {TlvRecordSerializerCount} tlv records serializers: {TlvRecordSerializerKeys}.",
-            this.tlvRecordTypeMappings.Count,
-            this.tlvRecordTypeMappings.Keys.ToArray()
+            _tlvRecordTypeMappings.Count,
+            _tlvRecordTypeMappings.Keys.ToArray()
          );
       }
 
       public bool TryGetType(ulong recordType, out ITlvRecordSerializer? tlvRecordSerializer)
       {
-         return this.tlvRecordTypeMappings.TryGetValue(recordType, out tlvRecordSerializer);
+         return _tlvRecordTypeMappings.TryGetValue(recordType, out tlvRecordSerializer);
       }
 
       public void SerializeTlvStream(TlVStream? message, IBufferWriter<byte> output)
@@ -54,7 +54,7 @@ namespace Network.Protocol.Serialization.Serializers.Types
 
          foreach (TlvRecord record in message.Records)
          {
-            if (this.TryGetType(record.Type, out ITlvRecordSerializer? recordSerializer))
+            if (TryGetType(record.Type, out ITlvRecordSerializer? recordSerializer))
             {
                output.WriteBigSize(record.Type);
 
@@ -111,7 +111,7 @@ namespace Network.Protocol.Serialization.Serializers.Types
             }
 
             // check if known type
-            if (this.TryGetType(recordType, out ITlvRecordSerializer? recordSerializer))
+            if (TryGetType(recordType, out ITlvRecordSerializer? recordSerializer))
             {
                // type known
 

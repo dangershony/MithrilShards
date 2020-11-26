@@ -16,28 +16,28 @@ namespace Network.Protocol.Transport
    /// </summary>
    public class TransportMessageSerializer : INetworkProtocolMessageSerializer
    {
-      private readonly ILogger<TransportMessageSerializer> logger;
-      private readonly INetworkMessageSerializerManager networkMessageSerializerManager;
-      private readonly NodeContext nodeContext;
+      private readonly ILogger<TransportMessageSerializer> _logger;
+      private readonly INetworkMessageSerializerManager _networkMessageSerializerManager;
+      private readonly NodeContext _nodeContext;
 
-      private NetworkPeerContext networkPeerContext;
-      private IHandshakeProtocol handshakeProtocol;
+      private NetworkPeerContext _networkPeerContext;
+      private IHandshakeProtocol _handshakeProtocol;
 
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
          NodeContext nodeContext)
       {
-         this.logger = logger;
-         this.networkMessageSerializerManager = networkMessageSerializerManager;
-         this.nodeContext = nodeContext;
+         _logger = logger;
+         _networkMessageSerializerManager = networkMessageSerializerManager;
+         _nodeContext = nodeContext;
 
-         this.networkPeerContext = null!; //initialized by SetPeerContext
+         _networkPeerContext = null!; //initialized by SetPeerContext
       }
 
       public void SetPeerContext(IPeerContext peerContext)
       {
-         this.networkPeerContext = peerContext as NetworkPeerContext ?? throw new ArgumentException("Expected NetworkPeerContext", nameof(peerContext)); ;
+         _networkPeerContext = peerContext as NetworkPeerContext ?? throw new ArgumentException("Expected NetworkPeerContext", nameof(peerContext)); ;
 
          LightningEndpoint lightningEndpoint = null;
          if (peerContext.Direction == PeerConnectionDirection.Outbound)
@@ -46,34 +46,33 @@ namespace Network.Protocol.Transport
 
             if (endpoint == null || !endpoint.Items.TryGetValue(nameof(LightningEndpoint), out object res))
             {
-               this.logger.LogError("Remote connection was not found ");
+               _logger.LogError("Remote connection was not found ");
                throw new ApplicationException("Initiator connection must have a public key of the remote node");
             }
 
             lightningEndpoint = (LightningEndpoint)res;
          }
 
-         this.handshakeProtocol = new HandshakeNoiseProtocol
+         _handshakeProtocol = new HandshakeNoiseProtocol
          {
-            Initiator = this.networkPeerContext.Direction == PeerConnectionDirection.Outbound,
-            LocalPubKey = this.nodeContext.LocalPubKey,
-            PrivateLey = this.nodeContext.PrivateLey,
+            Initiator = _networkPeerContext.Direction == PeerConnectionDirection.Outbound,
+            LocalPubKey = _nodeContext.LocalPubKey,
+            PrivateLey = _nodeContext.PrivateLey,
             RemotePubKey = lightningEndpoint?.NodeId
          };
 
-         this.networkPeerContext.SetHandshakeProtocol(this.handshakeProtocol);
+         _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
       }
 
-      public bool TryParseMessage(in ReadOnlySequence<byte> input, out SequencePosition consumed,
-         out SequencePosition examined, /*[MaybeNullWhen(false)]*/ out INetworkMessage message)
+      public bool TryParseMessage(in ReadOnlySequence<byte> input, ref SequencePosition consumed, ref SequencePosition examined, /*[MaybeNullWhen(false)]*/  out INetworkMessage message)
       {
          var reader = new SequenceReader<byte>(input);
 
-         if (this.networkPeerContext.HandshakeComplete)
+         if (_networkPeerContext.HandshakeComplete)
          {
             var decryptedOutput = new ArrayBufferWriter<byte>();
-            this.handshakeProtocol.ReadMessage(reader.CurrentSpan, decryptedOutput);
-            this.networkPeerContext.Metrics.Received(decryptedOutput.WrittenCount);
+            _handshakeProtocol.ReadMessage(reader.CurrentSpan, decryptedOutput);
+            _networkPeerContext.Metrics.Received(decryptedOutput.WrittenCount);
 
             // now try to read the payload
             var payload = new ReadOnlySequence<byte>(decryptedOutput.WrittenMemory);
@@ -87,19 +86,19 @@ namespace Network.Protocol.Transport
             payload = payload.Slice(reader.Consumed, payloadLength);
             reader.Advance(payloadLength);
 
-            if (this.networkMessageSerializerManager.TryDeserialize(
+            if (_networkMessageSerializerManager.TryDeserialize(
                commandName,
                ref payload,
-               this.networkPeerContext.NegotiatedProtocolVersion.Version,
-               this.networkPeerContext, out message!))
+               _networkPeerContext.NegotiatedProtocolVersion.Version,
+               _networkPeerContext, out message!))
             {
                return true;
             }
             else
             {
-               this.logger.LogWarning("Serializer for message '{Command}' not found.", commandName);
+               _logger.LogWarning("Serializer for message '{Command}' not found.", commandName);
                message = new UnknownMessage(commandName, payload.ToArray());
-               this.networkPeerContext.Metrics.Wasted(decryptedOutput.WrittenCount);
+               _networkPeerContext.Metrics.Wasted(decryptedOutput.WrittenCount);
                return true;
             }
          }
@@ -123,10 +122,10 @@ namespace Network.Protocol.Transport
             throw new ArgumentNullException(nameof(message));
          }
 
-         if (this.networkPeerContext.HandshakeComplete)
+         if (_networkPeerContext.HandshakeComplete)
          {
             string command = message.Command;
-            using (this.logger.BeginScope("Serializing and sending '{Command}'", command))
+            using (_logger.BeginScope("Serializing and sending '{Command}'", command))
             {
                var payloadOutput = new ArrayBufferWriter<byte>();
 
@@ -135,10 +134,10 @@ namespace Network.Protocol.Transport
 
                var serializationOutput = new ArrayBufferWriter<byte>();
 
-               if (this.networkMessageSerializerManager.TrySerialize(
+               if (_networkMessageSerializerManager.TrySerialize(
                   message,
-                  this.networkPeerContext.NegotiatedProtocolVersion.Version,
-                  this.networkPeerContext,
+                  _networkPeerContext.NegotiatedProtocolVersion.Version,
+                  _networkPeerContext,
                   serializationOutput))
                {
                   // payload: a variable-length payload that comprises the remainder
@@ -154,23 +153,23 @@ namespace Network.Protocol.Transport
                   // The encrypted Lightning message
                   // 16-byte MAC of the Lightning message
                   var encryptedOutput = new ArrayBufferWriter<byte>();
-                  this.handshakeProtocol.WriteMessage(payloadOutput.WrittenSpan, encryptedOutput);
+                  _handshakeProtocol.WriteMessage(payloadOutput.WrittenSpan, encryptedOutput);
 
                   // write the lightning message to the underline buffer.
                   output.Write(encryptedOutput.WrittenSpan);
 
-                  this.networkPeerContext.Metrics.Sent(payloadOutput.WrittenCount);
-                  this.logger.LogDebug("Sent message '{Command}' with payload size {PayloadSize}.", command, payloadOutput.WrittenCount);
+                  _networkPeerContext.Metrics.Sent(payloadOutput.WrittenCount);
+                  _logger.LogDebug("Sent message '{Command}' with payload size {PayloadSize}.", command, payloadOutput.WrittenCount);
                }
                else
                {
-                  this.logger.LogError("Serialize for message '{Command}' not found.", command);
+                  _logger.LogError("Serialize for message '{Command}' not found.", command);
                }
             }
          }
          else
          {
-            using (this.logger.BeginScope("Noise handshake"))
+            using (_logger.BeginScope("Noise handshake"))
             {
                // During the handshake the byte sequence is passed as is to the
                // remote peer which, the serialization was handled by the processor.
@@ -184,7 +183,7 @@ namespace Network.Protocol.Transport
                }
                else
                {
-                  this.logger.LogError("Invalid handshake message");
+                  _logger.LogError("Invalid handshake message");
                   throw new ApplicationException("Invalid handshake message");
                }
             }
