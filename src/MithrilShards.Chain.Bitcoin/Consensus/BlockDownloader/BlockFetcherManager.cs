@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using MithrilShards.Chain.Bitcoin.Consensus.Validation;
 using MithrilShards.Chain.Events;
 using MithrilShards.Core.DataTypes;
+using MithrilShards.Core.DevTools;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Threading;
 
@@ -19,15 +20,15 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
    /// <summary>
    /// Manage the download blocking
    /// </summary>
-   public class BlockFetcherManager : IBlockFetcherManager, IPeriodicWorkExceptionHandler, IHostedService
+   public class BlockFetcherManager : IBlockFetcherManager, IPeriodicWorkExceptionHandler, IHostedService, IDebugInsight
    {
       /// <summary>
-      /// The <see cref="checkStaleBlockFetchersLoop"/> interval, in seconds.
+      /// The <see cref="_checkStaleBlockFetchersLoop"/> interval, in seconds.
       /// </summary>
       private const int CHECK_STALE_BLOCK_FETCHERS_LOOP_INTERVAL = 60;
 
       /// <summary>
-      /// The <see cref="checkFetchersScoreLoop"/> interval, in seconds.
+      /// The <see cref="_checkFetchersScoreLoop"/> interval, in seconds.
       /// </summary>
       private const int CHECK_FETCHERS_SCORE_LOOP_INTERVAL = 60;
 
@@ -36,55 +37,55 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
       /// </summary>
       private const int MAX_PARALLEL_DOWNLOADED_BLOCKS = 200;
 
-      private static object channelLock = new object();
-      private ReaderWriterLockSlim fetcherSlimLock = new ReaderWriterLockSlim();
+      private static readonly object _channelLock = new object();
+      private readonly ReaderWriterLockSlim _fetcherSlimLock = new ReaderWriterLockSlim();
 
-      readonly ILogger<BlockFetcherManager> logger;
-      readonly IEventBus eventBus;
-      readonly IDateTimeProvider dateTimeProvider;
-      readonly IChainState chainState;
-      readonly IPeriodicWork blockFetchAssignmentLoop;
-      readonly IPeriodicWork checkStaleBlockFetchersLoop;
-      readonly IPeriodicWork checkFetchersScoreLoop;
+      readonly ILogger<BlockFetcherManager> _logger;
+      readonly IEventBus _eventBus;
+      readonly IDateTimeProvider _dateTimeProvider;
+      readonly IChainState _chainState;
+      readonly IPeriodicWork _blockFetchAssignmentLoop;
+      readonly IPeriodicWork _checkStaleBlockFetchersLoop;
+      readonly IPeriodicWork _checkFetchersScoreLoop;
 
       /// <summary>
       /// The list of registered fetchers
       /// </summary>
-      private readonly List<IBlockFetcher> fetchers = new List<IBlockFetcher>();
+      private readonly List<IBlockFetcher> _fetchers = new List<IBlockFetcher>();
 
       /// <summary>
       /// Contains the hashes of blocks we need to download because we have already their validated headers.
       /// </summary>
-      private readonly ConcurrentQueue<HeaderNode> blocksToDownload = new ConcurrentQueue<HeaderNode>();
+      private readonly ConcurrentQueue<HeaderNode> _blocksToDownload = new ConcurrentQueue<HeaderNode>();
 
       /// <summary>
       /// Contains the hashes of blocks we failed to fetch.
-      /// This list is more important than <see cref="blocksToDownload"/> because may refers to blocks
+      /// This list is more important than <see cref="_blocksToDownload"/> because may refers to blocks
       /// closest to the tip
       /// </summary>
-      private readonly ConcurrentDictionary<UInt256, HeaderNode> failedBlockFetch = new ConcurrentDictionary<UInt256, HeaderNode>();
+      private readonly ConcurrentDictionary<UInt256, HeaderNode> _failedBlockFetch = new ConcurrentDictionary<UInt256, HeaderNode>();
 
       /// <summary>
       /// The blocks we are actually downloading
       /// </summary>
-      private readonly ConcurrentDictionary<IBlockFetcher, List<PendingDownload>> blocksInDownload = new ConcurrentDictionary<IBlockFetcher, List<PendingDownload>>();
+      private readonly ConcurrentDictionary<IBlockFetcher, ConcurrentDictionary<UInt256, PendingDownload>> _blocksInDownload = new ConcurrentDictionary<IBlockFetcher, ConcurrentDictionary<UInt256, PendingDownload>>();
 
       /// <summary>
       /// Channel used to get data to send to fetchers.
       /// </summary>
-      private readonly Channel<HeaderNode> requiredBlocks;
+      private readonly Channel<HeaderNode> _requiredBlocks;
 
-      Dictionary<UInt256, (IBlockFetcher fetcher, List<QueuedBlock> queuedBlocks)> mapBlocksInFlight = new Dictionary<UInt256, (IBlockFetcher, List<QueuedBlock>)>();
+      private readonly Dictionary<UInt256, (IBlockFetcher fetcher, List<QueuedBlock> queuedBlocks)> _mapBlocksInFlight = new Dictionary<UInt256, (IBlockFetcher, List<QueuedBlock>)>();
 
       /// <summary>
       /// Holds registration of subscribed <see cref="IEventBus"/> event handlers.
       /// </summary>
-      private readonly EventSubscriptionManager eventSubscriptionManager = new EventSubscriptionManager();
+      private readonly EventSubscriptionManager _eventSubscriptionManager = new EventSubscriptionManager();
 
       /// <summary>
-      /// The fetchers score values computed regularly by <see cref="checkFetchersScoreLoop"/>
+      /// The fetchers score values computed regularly by <see cref="_checkFetchersScoreLoop"/>
       /// </summary>
-      private (uint min, uint max, uint average) fetchersScore;
+      private (uint min, uint max, uint average) _fetchersScore;
 
       public BlockFetcherManager(ILogger<BlockFetcherManager> logger,
                                  IEventBus eventBus,
@@ -94,50 +95,50 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
                                  IPeriodicWork checkStaleBlockDownload,
                                  IPeriodicWork checkFetcherScore)
       {
-         this.logger = logger;
-         this.eventBus = eventBus;
-         this.dateTimeProvider = dateTimeProvider;
-         this.chainState = chainState;
-         this.blockFetchAssignmentLoop = downloadAssignmentLoop;
-         this.checkStaleBlockFetchersLoop = checkStaleBlockDownload;
-         this.checkFetchersScoreLoop = checkFetcherScore;
-         this.requiredBlocks = Channel.CreateUnbounded<HeaderNode>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+         _logger = logger;
+         _eventBus = eventBus;
+         _dateTimeProvider = dateTimeProvider;
+         _chainState = chainState;
+         _blockFetchAssignmentLoop = downloadAssignmentLoop;
+         _checkStaleBlockFetchersLoop = checkStaleBlockDownload;
+         _checkFetchersScoreLoop = checkFetcherScore;
+         _requiredBlocks = Channel.CreateUnbounded<HeaderNode>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
 
-         this.blockFetchAssignmentLoop.Configure(stopOnException: false, exceptionHandler: this);
-         this.checkStaleBlockFetchersLoop.Configure(stopOnException: false, exceptionHandler: this);
-         this.checkFetchersScoreLoop.Configure(stopOnException: false, exceptionHandler: this);
+         _blockFetchAssignmentLoop.Configure(stopOnException: false, exceptionHandler: this);
+         _checkStaleBlockFetchersLoop.Configure(stopOnException: false, exceptionHandler: this);
+         _checkFetchersScoreLoop.Configure(stopOnException: false, exceptionHandler: this);
       }
 
       public Task StartAsync(CancellationToken cancellationToken)
       {
          // starts the loop that distribute block downloads requests.
-         this.blockFetchAssignmentLoop.StartAsync(
-            label: nameof(blockFetchAssignmentLoop),
-            work: BlockFetchAssignmentWork,
+         _blockFetchAssignmentLoop.StartAsync(
+            label: nameof(_blockFetchAssignmentLoop),
+            work: BlockFetchAssignmentWorkAsync,
             interval: TimeSpan.Zero,
             cancellationToken
             );
 
          // starts the loop that check for stale block fetchers.
-         this.checkStaleBlockFetchersLoop.StartAsync(
-            label: nameof(checkStaleBlockFetchersLoop),
-            work: CheckStaleBlockFetchersWork,
+         _checkStaleBlockFetchersLoop.StartAsync(
+            label: nameof(_checkStaleBlockFetchersLoop),
+            work: CheckStaleBlockFetchersWorkAsync,
             interval: TimeSpan.FromSeconds(CHECK_STALE_BLOCK_FETCHERS_LOOP_INTERVAL),
             cancellationToken
             );
 
          // starts the consumer loop that distribute block downloads requests.
-         this.checkFetchersScoreLoop.StartAsync(
-            label: nameof(checkFetchersScoreLoop),
-            work: CheckFetchersScoreWork,
+         _checkFetchersScoreLoop.StartAsync(
+            label: nameof(_checkFetchersScoreLoop),
+            work: CheckFetchersScoreWorkAsync,
             interval: TimeSpan.FromSeconds(CHECK_FETCHERS_SCORE_LOOP_INTERVAL),
             cancellationToken
             );
 
          // subscribe to events we are interested into
-         eventSubscriptionManager
-            .RegisterSubscriptions(this.eventBus.Subscribe<BlockHeaderValidationSucceeded>(async (args) => await this.OnBlockHeaderValidationSucceeded(args).ConfigureAwait(false)))
-            .RegisterSubscriptions(this.eventBus.Subscribe<BlockReceived>(this.OnBlockReceived));
+         _eventSubscriptionManager
+            .RegisterSubscriptions(_eventBus.Subscribe<BlockHeaderValidationSucceeded>(async (args) => await OnBlockHeaderValidationSucceededAsync(args).ConfigureAwait(false)))
+            .RegisterSubscriptions(_eventBus.Subscribe<BlockReceived>(OnBlockReceived));
 
          return Task.CompletedTask;
       }
@@ -149,7 +150,7 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
 
       public void OnPeriodicWorkException(IPeriodicWork failedWork, Exception ex, ref IPeriodicWorkExceptionHandler.Feedback feedback)
       {
-         this.logger.LogCritical("An unhandled exception has been raised in the {0} work.", failedWork.Label);
+         _logger.LogCritical("An unhandled exception has been raised in the {0} work.", failedWork.Label);
          feedback.ContinueExecution = false;
          feedback.IsCritical = true;
          feedback.Message = "Node may be unstable, restart the node to fix the problem";
@@ -157,7 +158,7 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
 
       public bool TryGetFetcher(UInt256 hash, [MaybeNullWhen(false)] out IBlockFetcher? fetcher)
       {
-         bool result = this.mapBlocksInFlight.TryGetValue(hash, out (IBlockFetcher fetcher, List<QueuedBlock> queuedBlocks) items);
+         bool result = _mapBlocksInFlight.TryGetValue(hash, out (IBlockFetcher fetcher, List<QueuedBlock> queuedBlocks) items);
          fetcher = items.fetcher;
 
          return result;
@@ -171,23 +172,20 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
          if (arg.Fetcher != null)
          {
             //check if the block was requested and remove it from the queued blocks
-            if (!this.blocksInDownload.TryGetValue(arg.Fetcher, out List<PendingDownload>? pendingDownloads))
+            if (!_blocksInDownload.TryGetValue(arg.Fetcher, out ConcurrentDictionary<UInt256, PendingDownload>? pendingDownloads))
             {
-               this.logger.LogDebug("Received block {UnrequestedBlock} from an unexpected source, do nothing.", blockHash);
+               _logger.LogDebug("Received block {UnrequestedBlock} from an unexpected source, do nothing.", blockHash);
                return;
             }
 
-            //TODO: pendingDownloads can change during enumeration, so the ToList is used here to prevent that, could be better?
-            var currentPending = pendingDownloads.ToList().FirstOrDefault(d => d.BlockInDownload.Hash == blockHash);
-
-            if (currentPending != null)
+            if (pendingDownloads.TryRemove(blockHash, out PendingDownload? currentPending))
             {
-               pendingDownloads.Remove(currentPending);
-
                // TODO: check the time it took to download and update the score?
-               long elapsedUsec = dateTimeProvider.GetTimeMicros() - currentPending.StartingTime;
+               long elapsedUsec = _dateTimeProvider.GetTimeMicros() - currentPending.StartingTime;
             }
          }
+
+         DownloadBlocksIfPossible();
       }
 
       /// <summary>
@@ -200,7 +198,7 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
       /// have already, we ensure that the header node validity doesn't have the flag <see cref="HeaderDataAvailability.HasBlockData"/> set.
       /// </remarks>
       /// <param name="obj"></param>
-      private async Task OnBlockHeaderValidationSucceeded(BlockHeaderValidationSucceeded args)
+      private async Task OnBlockHeaderValidationSucceededAsync(BlockHeaderValidationSucceeded args)
       {
          HeaderNode currentNode = args.LastValidatedHeaderNode;
 
@@ -208,7 +206,7 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
          {
             //check if the header is relative to current "best header"
             //this.chainState.
-            var bestNodeHeader = this.chainState.BestHeader;
+            HeaderNode? bestNodeHeader = _chainState.BestHeader;
             if (args.LastValidatedHeaderNode.LastCommonAncestor(bestNodeHeader) != bestNodeHeader)
             {
                /// these validated headers refers to a chain that's not currently the best chain so I don't require blocks yet.
@@ -217,11 +215,11 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
                ///TODO: ensure we are not stuck in case our best known header refers to something not validated fully
                ///(e.g. headers validate but blocks are never sent to us)
                ///Technically this branch may be left without blocks and so should be removed and rolled back to be moved then to a better fork
-               this.logger.LogDebug("Ignoring validated headers because they are on a lower fork at this time");
+               _logger.LogDebug("Ignoring validated headers because they are on a lower fork at this time");
                return;
             }
 
-            List<HeaderNode> newNodesToFetch = new List<HeaderNode>();
+            var newNodesToFetch = new List<HeaderNode>();
 
             for (int i = 0; i < args.NewHeadersFoundCount; i++)
             {
@@ -234,9 +232,9 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
             }
             newNodesToFetch.Reverse();
 
-            foreach (var header in newNodesToFetch)
+            foreach (HeaderNode? header in newNodesToFetch)
             {
-               this.blocksToDownload.Enqueue(header);
+               _blocksToDownload.Enqueue(header);
             }
          }
 
@@ -247,9 +245,20 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
 
       public void RegisterFetcher(IBlockFetcher blockFetcher)
       {
-         using (new WriteLock(fetcherSlimLock))
+         using (new WriteLock(_fetcherSlimLock))
          {
-            this.fetchers.Add(blockFetcher);
+            _fetchers.Add(blockFetcher);
+         }
+      }
+
+      public void UnregisterFetcher(IBlockFetcher blockFetcher)
+      {
+         using (new WriteLock(_fetcherSlimLock))
+         {
+            if (_fetchers.Remove(blockFetcher))
+            {
+               _logger.LogDebug("fetcher removed");
+            }
          }
       }
 
@@ -259,27 +268,27 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
       /// <returns></returns>
       private void DownloadBlocksIfPossible()
       {
-         lock (channelLock)
+         lock (_channelLock)
          {
-            if (this.blocksToDownload.Count == 0)
+            if (_blocksToDownload.Count == 0)
             {
-               this.logger.LogDebug("No blocks to download");
+               _logger.LogTrace("No blocks to download");
                // no more blocks to download
                return;
             }
 
-            int availableSlots = MAX_PARALLEL_DOWNLOADED_BLOCKS - this.blocksInDownload.Count;
+            int availableSlots = MAX_PARALLEL_DOWNLOADED_BLOCKS - _blocksInDownload.Count;
 
             for (int i = 0; i < availableSlots; i++)
             {
-               if (!this.blocksToDownload.TryDequeue(out HeaderNode? blockToDownload))
+               if (!_blocksToDownload.TryDequeue(out HeaderNode? blockToDownload))
                {
-                  this.logger.LogTrace("No blocks to download");
+                  _logger.LogTrace("No blocks to download");
                   // no more blocks to download
                   return;
                }
 
-               this.requiredBlocks.Writer.TryWrite(blockToDownload);
+               _requiredBlocks.Writer.TryWrite(blockToDownload);
             }
          }
       }
@@ -288,44 +297,61 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
       /// The consumer that perform validation.
       /// </summary>
       /// <param name="cancellation">The cancellation.</param>
-      private async Task BlockFetchAssignmentWork(CancellationToken cancellation)
+      private async Task BlockFetchAssignmentWorkAsync(CancellationToken cancellation)
       {
-         await foreach (HeaderNode blockToDownload in this.requiredBlocks.Reader.ReadAllAsync(cancellation))
+         await foreach (HeaderNode blockToDownload in _requiredBlocks.Reader.ReadAllAsync(cancellation))
          {
-            // get first 3 fetchers with score
-            //this.fetchers
-            //   .Where(f => f.GetFetchBlockScore(blockToDownload.Hash) > this.fetchersScore.average)
-            //   .Take(3)
-            //   .DefaultIfEmpty(this.fetchers.)
-
             //try to see if performance wise has too much impact
-            var selectedFetcher = (
-               from fetcher in this.fetchers
+            IEnumerable<IBlockFetcher> fetchersByScore = (
+               from fetcher in _fetchers.ToList() //get a copy
                let score = fetcher.GetFetchBlockScore(blockToDownload)
                orderby score descending
                where score > 0 // only peers that can fetch the block
                select fetcher
-               )
-               .FirstOrDefault((fetcher) => fetcher.TryFetchAsync(blockToDownload, 0).ConfigureAwait(false).GetAwaiter().GetResult()); //TODO use async
+               );
+
+            IBlockFetcher? selectedFetcher = null;
+            foreach (IBlockFetcher? fetcher in fetchersByScore)
+            {
+               try
+               {
+                  if (await fetcher.TryFetchAsync(blockToDownload, 0).ConfigureAwait(false))
+                  {
+                     selectedFetcher = fetcher;
+
+                     if (!_blocksInDownload.TryGetValue(selectedFetcher, out ConcurrentDictionary<UInt256, PendingDownload>? selectedFetcherPendingDownloads))
+                     {
+                        selectedFetcherPendingDownloads = new ConcurrentDictionary<UInt256, PendingDownload>();
+                        _blocksInDownload.TryAdd(selectedFetcher, selectedFetcherPendingDownloads);
+                     }
+
+                     if (!selectedFetcherPendingDownloads.TryAdd(blockToDownload.Hash, new PendingDownload(blockToDownload, selectedFetcher, _dateTimeProvider.GetTimeMicros())))
+                     {
+                        _logger.LogDebug("Failed to add block to current fetcher, try with next");
+                        continue;
+                     }
+
+                     break;
+                  }
+
+               }
+               catch (Exception ex)
+               {
+                  _logger.LogDebug("Failed to fetch block because of: {ErrorMessage}", ex.Message);
+                  continue;
+               }
+            }
 
             if (selectedFetcher == null)
             {
-               this.logger.LogDebug("None of the block fetcher is able to get block {BlockHash}, mark this block as failed", blockToDownload.Hash);
-               this.failedBlockFetch.TryAdd(blockToDownload.Hash, blockToDownload);
+               _logger.LogDebug("None of the block fetcher is able to get block {BlockHash}, mark this block as failed", blockToDownload.Hash);
+               _failedBlockFetch.TryAdd(blockToDownload.Hash, blockToDownload);
                return;
             }
-
-            if (!this.blocksInDownload.TryGetValue(selectedFetcher, out List<PendingDownload>? selectedFetcherPendingDownloads))
-            {
-               selectedFetcherPendingDownloads = new List<PendingDownload>();
-               this.blocksInDownload.TryAdd(selectedFetcher, selectedFetcherPendingDownloads);
-            }
-
-            selectedFetcherPendingDownloads.Add(new PendingDownload(blockToDownload, selectedFetcher, this.dateTimeProvider.GetTimeMicros()));
          }
       }
 
-      private Task CheckStaleBlockFetchersWork(CancellationToken cancellation)
+      private Task CheckStaleBlockFetchersWorkAsync(CancellationToken cancellation)
       {
          //TODO L4240
          //if (state.nStallingSince && state.nStallingSince < nNow - 1000000 * BLOCK_STALLING_TIMEOUT)
@@ -358,25 +384,25 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
       }
 
       /// <summary>
-      /// Checks the fetchers score work, updating the <see cref="fetchersScore"/>.
+      /// Checks the fetchers score work, updating the <see cref="_fetchersScore"/>.
       /// </summary>
       /// <param name="cancellation">The cancellation.</param>
       /// <returns></returns>
-      private Task CheckFetchersScoreWork(CancellationToken cancellation)
+      private Task CheckFetchersScoreWorkAsync(CancellationToken cancellation)
       {
-         using var writeFetcherLock = new WriteLock(this.fetcherSlimLock);
+         using var writeFetcherLock = new WriteLock(_fetcherSlimLock);
 
          uint min = 0, max = 0, sum = 0;
-         foreach (var fetcher in this.fetchers)
+         foreach (IBlockFetcher? fetcher in _fetchers)
          {
-            var score = fetcher.GetScore();
+            uint score = fetcher.GetScore();
 
             min = score < min ? score : min;
             max = score > max ? score : max;
             sum += score;
          }
 
-         this.fetchersScore = (min, max, fetchers.Count == 0 ? 0 : (uint)(sum / fetchers.Count));
+         _fetchersScore = (min, max, _fetchers.Count == 0 ? 0 : (uint)(sum / _fetchers.Count));
 
          return Task.CompletedTask;
       }
@@ -384,6 +410,18 @@ namespace MithrilShards.Chain.Bitcoin.Consensus.BlockDownloader
       public void RequireAssignment(IBlockFetcher fetcher, HeaderNode requestedBlock)
       {
          throw new NotImplementedException();
+      }
+
+      object IDebugInsight.GetInsight()
+      {
+         return new
+         {
+            BlocksInDownloadCount = _blocksInDownload.Count,
+            BlocksInDownloadFetchersDetail = _blocksInDownload.Select((kv, index) => new { Index = index, BlocksCount = kv.Value.Count }),
+            BlocksToDownload = _blocksToDownload.Count,
+            FetchersCount = _fetchers.Count,
+            FetchersScore = _fetchersScore,
+         };
       }
    }
 }

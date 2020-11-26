@@ -14,7 +14,7 @@
       "MaxTimeAdjustment": 4200,
       "Connections": [
          {
-            "Endpoint": "127.0.0.1:45051",
+            "Endpoint": "127.0.0.1:45071",
             "AdditionalInformation": "I'm cool too!"
          }
       ]
@@ -24,7 +24,7 @@
       "ContinuousConsoleDisplayRate": 5
    },
    "DevController": {
-      "Enabled": true,
+      "Enabled": false,
       "EndPoint": "127.0.0.1:45013"
    }
 }

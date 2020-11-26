@@ -15,13 +15,13 @@ namespace MithrilShards.Diagnostic.StatisticsCollector
       /// <value>
       /// The table builder.
       /// </value>
-      private readonly TableBuilder tableBuilder;
+      private readonly TableBuilder _tableBuilder;
 
 
       /// <summary>
       /// The string builder that will hold human readable output;
       /// </summary>
-      private readonly StringBuilder stringBuilder = new StringBuilder();
+      private readonly StringBuilder _stringBuilder = new StringBuilder();
 
       /// <summary>
       /// Gets the source of the feed.
@@ -58,13 +58,18 @@ namespace MithrilShards.Diagnostic.StatisticsCollector
       /// </value>
       public DateTimeOffset LastResultsDate { get; internal set; }
 
+      /// <summary>
+      /// The feed has a result.
+      /// </summary>
+      private bool _hasResult = false;
+
       public ScheduledStatisticFeed(IStatisticFeedsProvider source, StatisticFeedDefinition statisticFeedDefinition)
       {
-         this.Source = source ?? throw new ArgumentNullException(nameof(source));
-         this.StatisticFeedDefinition = statisticFeedDefinition ?? throw new ArgumentNullException(nameof(statisticFeedDefinition));
-         this.NextPlannedExecution = DateTime.Now + statisticFeedDefinition.FrequencyTarget;
+         Source = source ?? throw new ArgumentNullException(nameof(source));
+         StatisticFeedDefinition = statisticFeedDefinition ?? throw new ArgumentNullException(nameof(statisticFeedDefinition));
+         NextPlannedExecution = DateTime.Now + statisticFeedDefinition.FrequencyTarget;
 
-         this.tableBuilder = this.CreateTableBuilder();
+         _tableBuilder = CreateTableBuilder();
       }
 
       /// <summary>
@@ -74,9 +79,9 @@ namespace MithrilShards.Diagnostic.StatisticsCollector
       /// <returns></returns>
       private TableBuilder CreateTableBuilder()
       {
-         var tableBuilder = new TableBuilder(this.stringBuilder);
+         var tableBuilder = new TableBuilder(_stringBuilder);
 
-         foreach (FieldDefinition field in this.StatisticFeedDefinition.FieldsDefinition)
+         foreach (FieldDefinition field in StatisticFeedDefinition.FieldsDefinition)
          {
             tableBuilder.AddColumn(new ColumnDefinition { Label = field.Label, Width = field.WidthHint, Alignment = ColumnAlignment.Left });
          }
@@ -94,18 +99,19 @@ namespace MithrilShards.Diagnostic.StatisticsCollector
       {
          return System.Text.Json.JsonSerializer.Serialize(new
          {
-            Title = this.StatisticFeedDefinition.Title,
-            Time = this.LastResultsDate,
-            Labels = from fieldDefinition in this.StatisticFeedDefinition.FieldsDefinition select fieldDefinition.Label,
-            Values = this.lastResults
+            Title = StatisticFeedDefinition.Title,
+            Time = LastResultsDate,
+            Labels = from fieldDefinition in StatisticFeedDefinition.FieldsDefinition select fieldDefinition.Label,
+            Values = lastResults
          });
       }
 
       public void SetLastResults(IEnumerable<string?[]> results)
       {
-         this.lastResults.Clear();
-         this.lastResults.AddRange(results);
-         this.LastResultsDate = DateTime.Now;
+         lastResults.Clear();
+         lastResults.AddRange(results);
+         LastResultsDate = DateTime.Now;
+         _hasResult = true;
       }
 
 
@@ -115,11 +121,22 @@ namespace MithrilShards.Diagnostic.StatisticsCollector
       /// <returns></returns>
       public string GetTabularFeed()
       {
-         this.stringBuilder.Clear();
-         this.tableBuilder.Start($"{this.LastResultsDate.LocalDateTime} - {this.StatisticFeedDefinition.Title}");
-         this.lastResults.ForEach(row => this.tableBuilder.DrawRow(row));
-         this.tableBuilder.End();
-         return this.stringBuilder.ToString();
+         _stringBuilder.Clear();
+
+         _tableBuilder.Start($"{LastResultsDate.LocalDateTime} - {StatisticFeedDefinition.Title}");
+         if (_hasResult)
+         {
+            lastResults.ForEach(row => _tableBuilder.DrawRow(row));
+         }
+         else
+         {
+            _stringBuilder.AppendLine("No statistics available yet.");
+         }
+
+         _tableBuilder.End();
+
+
+         return _stringBuilder.ToString();
       }
    }
 }

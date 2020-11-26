@@ -11,13 +11,10 @@ namespace MithrilShards.Core.DataTypes
 
       public static UInt256 Zero { get; } = new UInt256("0".PadRight(EXPECTED_SIZE * 2, '0'));
 
-#pragma warning disable IDE0044 // Add readonly modifier
       protected ulong part1;
       protected ulong part2;
       protected ulong part3;
       protected ulong part4;
-
-#pragma warning restore IDE0044 // Add readonly modifier
 
       /// <summary>
       /// Initializes a new instance of the <see cref="UInt256"/> class.
@@ -36,7 +33,7 @@ namespace MithrilShards.Core.DataTypes
             ThrowHelper.ThrowFormatException("the byte array should be 32 bytes long");
          }
 
-         Span<byte> dst = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref this.part1), EXPECTED_SIZE);
+         Span<byte> dst = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref part1), EXPECTED_SIZE);
          input.CopyTo(dst);
       }
 
@@ -65,7 +62,7 @@ namespace MithrilShards.Core.DataTypes
             ThrowHelper.ThrowFormatException($"the hex string should be {EXPECTED_SIZE * 2} chars long or {(EXPECTED_SIZE * 2) + 4} if prefixed with 0x.");
          }
 
-         Span<byte> dst = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref this.part1, EXPECTED_SIZE / sizeof(ulong)));
+         Span<byte> dst = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref part1, EXPECTED_SIZE / sizeof(ulong)));
 
          int i = hexAsSpan.Length - 1;
          int j = 0;
@@ -175,12 +172,12 @@ namespace MithrilShards.Core.DataTypes
 
       public ReadOnlySpan<byte> GetBytes()
       {
-         return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref this.part1), EXPECTED_SIZE);
+         return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref part1), EXPECTED_SIZE);
       }
 
       public override int GetHashCode()
       {
-         return (int)this.part1;
+         return (int)part1;
       }
    }
 }

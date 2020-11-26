@@ -1,7 +1,6 @@
 ﻿using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -62,7 +61,7 @@ namespace ConnectionTest
                                     .UseBitcoinChain(networkName: network, minimumSupportedVersion: Math.Min(KnownVersion.V70012, protocolVersion), currentVersion: protocolVersion)
                                     .UseSerilog(logSettings)
                                     .UseBedrockForgeServer<BitcoinNetworkProtocolMessageSerializer>()
-                                    .UseStatisticsCollector()
+                                    .UseStatisticsCollector(options => options.DumpOnConsoleOnKeyPress = true)
                                     .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<BitcoinDev>())
                                     .RunConsoleAsync()
                                     .ConfigureAwait(false);

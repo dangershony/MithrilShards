@@ -1,0 +1,30 @@
+﻿{
+   "ForgeConnectivity": {
+      "ForceShutdownAfter": 300,
+      "MaxInboundConnections": 25,
+      "AllowLoopbackConnection": false,
+      "Listeners": [
+         {
+            "IsWhitelistingEndpoint": true,
+            "Endpoint": "0.0.0.0:45071"
+         }
+      ]
+   },
+   "Example": {
+      "MaxTimeAdjustment": 4200,
+      "Connections": [
+         {
+            "Endpoint": "127.0.0.1:45051",
+            "AdditionalInformation": "I'm cool too!"
+         }
+      ]
+   },
+   "StatisticsCollector": {
+      "ContinuousConsoleDisplay": true,
+      "ContinuousConsoleDisplayRate": 5
+   },
+   "DevController": {
+      "Enabled": false,
+      "EndPoint": "127.0.0.1:45013"
+   }
+}

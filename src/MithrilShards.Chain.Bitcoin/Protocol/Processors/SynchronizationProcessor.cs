@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -24,32 +23,28 @@ using MithrilShards.Core.Threading;
 namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
 {
    /// <summary>
-   /// Manage the exchange of block and headers between peers.
+   /// Its job is to synchronize current peer with connected peers, requiring needed data and parsing them.
    /// </summary>
    /// <seealso cref="BaseProcessor" />
-   public partial class BlockHeaderProcessor : BaseProcessor, IPeriodicWorkExceptionHandler,
-      INetworkMessageHandler<GetHeadersMessage>,
-      INetworkMessageHandler<SendHeadersMessage>,
+   public partial class SynchronizationProcessor : BaseProcessor, IPeriodicWorkExceptionHandler, IDisposable,
       INetworkMessageHandler<HeadersMessage>,
-      INetworkMessageHandler<SendCmpctMessage>,
       INetworkMessageHandler<BlockMessage>
    {
-      readonly IDateTimeProvider dateTimeProvider;
-      private readonly IConsensusParameters consensusParameters;
-      private readonly IInitialBlockDownloadTracker ibdState;
-      private readonly IBlockHeaderHashCalculator blockHeaderHashCalculator;
-      readonly ITransactionHashCalculator transactionHashCalculator;
-      readonly IBlockFetcherManager blockFetcherManager;
-      readonly ILocalServiceProvider localServiceProvider;
-      readonly IChainState chainState;
-      readonly IHeaderValidator headerValidator;
-      readonly IBlockValidator blockValidator;
-      readonly IPeriodicWork headerSyncLoop;
-      readonly IPeriodicWork blockRequestLoop;
-      readonly BitcoinSettings options;
-      private Target minimumChainWork;
+      readonly IDateTimeProvider _dateTimeProvider;
+      private readonly IConsensusParameters _consensusParameters;
+      private readonly IInitialBlockDownloadTracker _ibdState;
+      private readonly IBlockHeaderHashCalculator _blockHeaderHashCalculator;
+      readonly ITransactionHashCalculator _transactionHashCalculator;
+      readonly IBlockFetcherManager _blockFetcherManager;
+      readonly ILocalServiceProvider _localServiceProvider;
+      readonly IChainState _chainState;
+      readonly IHeaderValidator _headerValidator;
+      readonly IBlockValidator _blockValidator;
+      readonly IPeriodicWork _headerSyncLoop;
+      readonly BitcoinSettings _options;
+      private readonly Target _minimumChainWork;
 
-      public BlockHeaderProcessor(ILogger<BlockHeaderProcessor> logger,
+      public SynchronizationProcessor(ILogger<SynchronizationProcessor> logger,
                                   IEventBus eventBus,
                                   IDateTimeProvider dateTimeProvider,
                                   IPeerBehaviorManager peerBehaviorManager,
@@ -63,58 +58,54 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
                                   IHeaderValidator headerValidator,
                                   IBlockValidator blockValidator,
                                   IPeriodicWork headerSyncLoop,
-                                  IPeriodicWork blockRequestLoop,
                                   IOptions<BitcoinSettings> options)
          : base(logger, eventBus, peerBehaviorManager, isHandshakeAware: true, receiveMessagesOnlyIfHandshaked: true)
       {
-         this.dateTimeProvider = dateTimeProvider;
-         this.consensusParameters = consensusParameters;
-         this.ibdState = ibdState;
-         this.blockHeaderHashCalculator = blockHeaderHashCalculator;
-         this.transactionHashCalculator = transactionHashCalculator;
-         this.blockFetcherManager = blockFetcherManager;
-         this.localServiceProvider = localServiceProvider;
-         this.chainState = chainState;
-         this.headerValidator = headerValidator;
-         this.blockValidator = blockValidator;
-         this.headerSyncLoop = headerSyncLoop;
-         this.blockRequestLoop = blockRequestLoop;
-         this.options = options.Value;
+         _dateTimeProvider = dateTimeProvider;
+         _consensusParameters = consensusParameters;
+         _ibdState = ibdState;
+         _blockHeaderHashCalculator = blockHeaderHashCalculator;
+         _transactionHashCalculator = transactionHashCalculator;
+         _blockFetcherManager = blockFetcherManager;
+         _localServiceProvider = localServiceProvider;
+         _chainState = chainState;
+         _headerValidator = headerValidator;
+         _blockValidator = blockValidator;
+         _headerSyncLoop = headerSyncLoop;
+         _options = options.Value;
 
 
-         minimumChainWork = this.options.MinimumChainWork ?? this.consensusParameters.MinimumChainWork;
-         if (minimumChainWork < this.consensusParameters.MinimumChainWork)
+         _minimumChainWork = _options.MinimumChainWork ?? _consensusParameters.MinimumChainWork;
+         if (_minimumChainWork < _consensusParameters.MinimumChainWork)
          {
-            this.logger.LogWarning($"{nameof(minimumChainWork)} set below default value of {this.consensusParameters.MinimumChainWork}");
+            this.logger.LogWarning($"{nameof(_minimumChainWork)} set below default value of {_consensusParameters.MinimumChainWork}");
          }
 
          headerSyncLoop.Configure(stopOnException: false, this);
-         blockRequestLoop.Configure(stopOnException: false, this);
       }
 
       public void OnPeriodicWorkException(IPeriodicWork failedWork, Exception ex, ref IPeriodicWorkExceptionHandler.Feedback feedback)
       {
          string? disconnectionReason = failedWork switch
          {
-            IPeriodicWork work when work == headerSyncLoop => "Peer header syncing loop had failures.",
-            IPeriodicWork work when work == blockRequestLoop => "Peer block request loop had failures.",
+            IPeriodicWork work when work == _headerSyncLoop => "Peer header syncing loop had failures.",
             _ => null
          };
 
          if (disconnectionReason != null)
          {
             feedback.ContinueExecution = false;
-            this.PeerContext.Disconnect(disconnectionReason);
+            PeerContext.Disconnect(disconnectionReason);
          }
       }
 
       protected override ValueTask OnPeerAttachedAsync()
       {
-         this.RegisterLifeTimeEventHandler<BlockHeaderValidationSucceeded>(this.OnBlockHeaderValidationSucceededAsync, arg => arg.PeerContext == PeerContext);
-         this.RegisterLifeTimeEventHandler<BlockHeaderValidationFailed>(this.OnBlockHeaderValidationFailedAsync, arg => arg.PeerContext == PeerContext);
+         RegisterLifeTimeEventHandler<BlockHeaderValidationSucceeded>(OnBlockHeaderValidationSucceededAsync, arg => arg.PeerContext == PeerContext);
+         RegisterLifeTimeEventHandler<BlockHeaderValidationFailed>(OnBlockHeaderValidationFailedAsync, arg => arg.PeerContext == PeerContext);
 
-         this.RegisterLifeTimeEventHandler<BlockValidationSucceeded>(this.OnBlockValidationSucceededAsync, arg => arg.PeerContext == PeerContext);
-         this.RegisterLifeTimeEventHandler<BlockValidationFailed>(this.OnBlockValidationFailedAsync, arg => arg.PeerContext == PeerContext);
+         RegisterLifeTimeEventHandler<BlockValidationSucceeded>(OnBlockValidationSucceededAsync, arg => arg.PeerContext == PeerContext);
+         RegisterLifeTimeEventHandler<BlockValidationFailed>(OnBlockValidationFailedAsync, arg => arg.PeerContext == PeerContext);
 
          return base.OnPeerAttachedAsync();
       }
@@ -127,72 +118,65 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       /// <returns></returns>
       protected override async ValueTask OnPeerHandshakedAsync()
       {
-         HandshakeProcessor.HandshakeProcessorStatus handshakeStatus = this.PeerContext.Features.Get<HandshakeProcessor.HandshakeProcessorStatus>();
+         HandshakeProcessor.HandshakeProcessorStatus handshakeStatus = PeerContext.Features.Get<HandshakeProcessor.HandshakeProcessorStatus>();
 
          VersionMessage peerVersion = handshakeStatus.PeerVersion!;
 
-         this.status.IsLimitedNode = this.PeerContext.IsLimitedNode;
-         this.status.IsClient = this.PeerContext.IsClient;
+         _status.IsLimitedNode = PeerContext.IsLimitedNode;
+         _status.IsClient = PeerContext.IsClient;
 
-         this.status.PeerStartingHeight = peerVersion.StartHeight;
-         this.status.CanServeWitness = this.PeerContext.CanServeWitness;
+         _status.PeerStartingHeight = peerVersion.StartHeight;
+         _status.CanServeWitness = PeerContext.CanServeWitness;
 
-         await this.SendMessageAsync(minVersion: KnownVersion.V70012, new SendHeadersMessage()).ConfigureAwait(false);
+         await SendMessageAsync(minVersion: KnownVersion.V70012, new SendHeadersMessage()).ConfigureAwait(false);
 
-         if (this.IsSupported(KnownVersion.V70014))
+         if (IsSupported(KnownVersion.V70014))
          {
             // Tell our peer we are willing to provide version 1 or 2 cmpctblocks.
             // However, we do not request new block announcements using cmpctblock messages.
             // We send this to non-NODE NETWORK peers as well, because they may wish to request compact blocks from us.
-            if (this.localServiceProvider.HasServices(NodeServices.Witness))
+            if (_localServiceProvider.HasServices(NodeServices.Witness))
             {
-               await this.SendMessageAsync(new SendCmpctMessage { AnnounceUsingCompactBlock = false, Version = 2 }).ConfigureAwait(false);
+               await SendMessageAsync(new SendCmpctMessage { AnnounceUsingCompactBlock = false, Version = 2 }).ConfigureAwait(false);
             }
 
-            await this.SendMessageAsync(new SendCmpctMessage { AnnounceUsingCompactBlock = false, Version = 1 }).ConfigureAwait(false);
+            await SendMessageAsync(new SendCmpctMessage { AnnounceUsingCompactBlock = false, Version = 1 }).ConfigureAwait(false);
          }
 
 
          // if this peer is able to serve blocks, register it
-         if (!status.IsClient)
+         if (!_status.IsClient)
          {
-            this.blockFetcherManager.RegisterFetcher(this);
+            _blockFetcherManager.RegisterFetcher(this);
          }
 
          // starts the header sync loop
-         _ = this.headerSyncLoop.StartAsync(
-               label: $"{nameof(headerSyncLoop)}-{PeerContext.PeerId}",
+         _ = _headerSyncLoop.StartAsync(
+               label: $"{nameof(_headerSyncLoop)}-{PeerContext.PeerId}",
                work: SyncLoopAsync,
                interval: TimeSpan.FromMilliseconds(SYNC_LOOP_INTERVAL),
                cancellation: PeerContext.ConnectionCancellationTokenSource.Token
-            );
-
-         _ = this.blockRequestLoop.StartAsync(
-            label: $"{nameof(blockRequestLoop)}-{PeerContext.PeerId}",
-            work: BlockRequestLoop,
-            interval: TimeSpan.FromMilliseconds(BLOCK_REQUEST_INTERVAL),
-            cancellation: PeerContext.ConnectionCancellationTokenSource.Token
             );
       }
 
       private async Task SyncLoopAsync(CancellationToken cancellationToken)
       {
-         using var readLock = GlobalLocks.ReadOnMainAsync().GetAwaiter().GetResult();
+         using Microsoft.VisualStudio.Threading.AsyncReaderWriterLock.Releaser readLock = GlobalLocks.ReadOnMainAsync().GetAwaiter().GetResult();
 
-         var bestHeaderNode = this.chainState.BestHeader;
-         if (!this.chainState.TryGetBlockHeader(bestHeaderNode, out BlockHeader? bestBlockHeader))
+         HeaderNode? bestHeaderNode = _chainState.BestHeader;
+         if (!_chainState.TryGetBlockHeader(bestHeaderNode, out BlockHeader? bestBlockHeader))
          {
             ThrowHelper.ThrowNotSupportedException("BestHeader should always be available, this should never happen");
          }
 
-         if (!this.status.IsSynchronizingHeaders)
+         if (!_status.IsSynchronizingHeaders)
          {
-            status.IsSynchronizingHeaders = true;
-            status.HeadersSyncTimeout =
-               this.dateTimeProvider.GetTimeMicros()
+            _status.IsSynchronizingHeaders = true;
+            _status.HeadersSyncTimeout =
+               _dateTimeProvider.GetTimeMicros()
                + HEADERS_DOWNLOAD_TIMEOUT_BASE
                + HEADERS_DOWNLOAD_TIMEOUT_PER_HEADER * (
-                  (this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - bestBlockHeader.TimeStamp) / this.consensusParameters.PowTargetSpacing
+                  (_dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - bestBlockHeader.TimeStamp) / _consensusParameters.PowTargetSpacing
                   );
 
             /* If possible, start at the block preceding the currently
@@ -202,64 +186,64 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
                the peer's known best block.  This wouldn't be possible
                if we requested starting at pindexBestHeader and
                got back an empty response.  */
-            var pindexStart = bestHeaderNode.Previous ?? bestHeaderNode;
+            HeaderNode? pindexStart = bestHeaderNode.Previous ?? bestHeaderNode;
 
-            this.logger.LogDebug("Starting syncing headers from height {LocatorHeight} (peer startheight: {startheight})", pindexStart.Height, this.status.PeerStartingHeight);
+            logger.LogDebug("Starting syncing headers from height {LocatorHeight} (peer starting height: {StartingHeight})", pindexStart.Height, _status.PeerStartingHeight);
 
             var newGetHeaderRequest = new GetHeadersMessage
             {
-               Version = (uint)this.PeerContext.NegotiatedProtocolVersion.Version,
-               BlockLocator = this.chainState.GetLocator(pindexStart),
+               Version = (uint)PeerContext.NegotiatedProtocolVersion.Version,
+               BlockLocator = _chainState.GetLocator(pindexStart),
                HashStop = UInt256.Zero
             };
 
-            await this.SendMessageAsync(newGetHeaderRequest).ConfigureAwait(false);
+            await SendMessageAsync(newGetHeaderRequest).ConfigureAwait(false);
          }
 
-         this.CheckSyncStallingLocked(bestBlockHeader);
+         CheckSyncStallingLocked(bestBlockHeader);
 
-         this.ConsiderEviction(this.dateTimeProvider.GetTime());
+         ConsiderEviction(_dateTimeProvider.GetTime());
       }
 
       private void CheckSyncStallingLocked(BlockHeader bestHeader)
       {
          // Check for headers sync timeouts
-         if (status.IsSynchronizingHeaders && status.HeadersSyncTimeout < long.MaxValue)
+         if (_status.IsSynchronizingHeaders && _status.HeadersSyncTimeout < long.MaxValue)
          {
-            var now = this.dateTimeProvider.GetTimeMicros();
+            long now = _dateTimeProvider.GetTimeMicros();
             // Detect whether this is a stalling initial-headers-sync peer
-            if (bestHeader.TimeStamp <= this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - 24 * 60 * 60)
+            if (bestHeader.TimeStamp <= _dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - 24 * 60 * 60)
             {
                bool isTheOnlyPeerSynching = true; //nSyncStarted == 1 && (nPreferredDownload - state.fPreferredDownload >= 1)
-               if (now > status.HeadersSyncTimeout && isTheOnlyPeerSynching)
+               if (now > _status.HeadersSyncTimeout && isTheOnlyPeerSynching)
                {
                   // Disconnect a (non-whitelisted) peer if it is our only sync peer,
                   // and we have others we could be using instead.
                   // Note: If all our peers are inbound, then we won't
                   // disconnect our sync peer for stalling; we have bigger
                   // problems if we can't get any outbound peers.
-                  if (!this.PeerContext.Permissions.Has(BitcoinPeerPermissions.NOBAN))
+                  if (!PeerContext.Permissions.Has(BitcoinPeerPermissions.NOBAN))
                   {
-                     this.PeerContext.Disconnect("Timeout downloading headers, disconnecting");
+                     PeerContext.Disconnect("Timeout downloading headers, disconnecting");
                      return;
                   }
                   else
                   {
-                     this.logger.LogDebug("Timeout downloading headers from whitelisted peer {PeerId}, not disconnecting.", this.PeerContext.PeerId);
+                     logger.LogDebug("Timeout downloading headers from whitelisted peer {PeerId}, not disconnecting.", PeerContext.PeerId);
                      // Reset the headers sync state so that we have a
                      // chance to try downloading from a different peer.
                      // Note: this will also result in at least one more
                      // getheaders message to be sent to
                      // this peer (eventually).
-                     status.IsSynchronizingHeaders = false;
-                     status.HeadersSyncTimeout = 0;
+                     _status.IsSynchronizingHeaders = false;
+                     _status.HeadersSyncTimeout = 0;
                   }
                }
             }
             else
             {
                // After we've caught up once, reset the timeout so we can't trigger disconnect later.
-               status.HeadersSyncTimeout = long.MaxValue;
+               _status.HeadersSyncTimeout = long.MaxValue;
             }
          }
       }
@@ -350,124 +334,9 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       }
 
       /// <summary>
-      /// The other peer prefer to be announced about new block using headers
-      /// </summary>
-      public ValueTask<bool> ProcessMessageAsync(SendHeadersMessage message, CancellationToken cancellation)
-      {
-         this.status.AnnounceNewBlockUsingSendHeaders = true;
-         return new ValueTask<bool>(true);
-      }
-
-      /// <summary>
-      /// The other peer prefer to receive blocks using cmpct messages.
-      /// </summary>
-      public ValueTask<bool> ProcessMessageAsync(SendCmpctMessage message, CancellationToken cancellation)
-      {
-         if (message.Version == 1 || (this.localServiceProvider.HasServices(NodeServices.Witness) && message.Version == 2))
-         {
-            if (!this.status.ProvidesHeaderAndIDs)
-            {
-               this.status.ProvidesHeaderAndIDs = true;
-               this.status.WantsCompactWitness = message.Version == 2;
-            }
-
-            // ignore later version announces
-            if (this.status.WantsCompactWitness = (message.Version == 2))
-            {
-               this.status.AnnounceUsingCompactBlock = message.AnnounceUsingCompactBlock;
-            }
-
-            if (!this.status.SupportsDesiredCompactVersion)
-            {
-               if (this.localServiceProvider.HasServices(NodeServices.Witness))
-               {
-                  this.status.SupportsDesiredCompactVersion = (message.Version == 2);
-               }
-               else
-               {
-                  this.status.SupportsDesiredCompactVersion = (message.Version == 1);
-               }
-            }
-         }
-         else
-         {
-            this.logger.LogDebug("Ignoring sendcmpct message because its version is unknown.");
-         }
-
-         return new ValueTask<bool>(true);
-      }
-
-      /// <summary>
-      /// The peer wants some headers from us
-      /// </summary>
-      public async ValueTask<bool> ProcessMessageAsync(GetHeadersMessage message, CancellationToken cancellation)
-      {
-         if (message is null) ThrowHelper.ThrowArgumentException(nameof(message));
-
-         if (message.BlockLocator!.BlockLocatorHashes.Length > MAX_LOCATOR_SIZE)
-         {
-            this.logger.LogDebug("Exceeded maximum block locator size for getheaders message.");
-            this.Misbehave(10, "Exceeded maximum getheaders block locator size", true);
-            return true;
-         }
-
-         if (this.ibdState.IsDownloadingBlocks())
-         {
-            this.logger.LogDebug("Ignoring getheaders from {PeerId} because node is in initial block download state.", this.PeerContext.PeerId);
-            return true;
-         }
-
-         HeaderNode? startingNode;
-         // If block locator is null, return the hashStop block
-         if ((message.BlockLocator.BlockLocatorHashes?.Length ?? 0) == 0)
-         {
-            if (!this.chainState.TryGetBestChainHeaderNode(message.HashStop!, out startingNode!))
-            {
-               this.logger.LogDebug("Empty block locator and HashStop not found");
-               return true;
-            }
-
-            //TODO (ref net_processing.cpp 2479 tag 0.20)
-            //if (!BlockRequestAllowed(pindex, chainparams.GetConsensus()))
-            //{
-            //   LogPrint(BCLog::NET, "%s: ignoring request from peer=%i for old block header that isn't in the main chain\n", __func__, pfrom->GetId());
-            //   return true;
-            //}
-         }
-         else
-         {
-            // Find the last block the caller has in the main chain
-            startingNode = this.chainState.FindForkInGlobalIndex(message.BlockLocator);
-            this.chainState.TryGetNext(startingNode, out startingNode);
-         }
-
-         this.logger.LogDebug("Serving headers from {StartingNodeHeight}:{StartingNodeHash}", startingNode?.Height, startingNode?.Hash);
-
-         List<BlockHeader> headersToSend = new List<BlockHeader>();
-         HeaderNode? headerToSend = startingNode;
-         while (headerToSend != null)
-         {
-            if (!this.chainState.TryGetBlockHeader(headerToSend, out BlockHeader? blockHeader))
-            {
-               //fatal error, should never happen
-               ThrowHelper.ThrowNotSupportedException("Block Header not found");
-               return true;
-            }
-            headersToSend.Add(blockHeader);
-         }
-
-         await this.SendMessageAsync(new HeadersMessage
-         {
-            Headers = headersToSend.ToArray()
-         }).ConfigureAwait(false);
-
-         return true;
-      }
-
-      /// <summary>
       /// The peer sent us headers.
       /// </summary>
-      public async ValueTask<bool> ProcessMessageAsync(HeadersMessage headersMessage, CancellationToken cancellation)
+      async ValueTask<bool> INetworkMessageHandler<HeadersMessage>.ProcessMessageAsync(HeadersMessage headersMessage, CancellationToken cancellation)
       {
          BlockHeader[]? headers = headersMessage.Headers;
          int headersCount = headers!.Length;
@@ -476,7 +345,7 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
          /// bitcoin does this before deserialize the message but I don't think would be a big problem, we could ban the peer in case we find this being a vector attack.
          if (headersCount > MAX_HEADERS)
          {
-            this.Misbehave(20, "Too many headers received.");
+            Misbehave(20, "Too many headers received.");
             return false;
          }
 
@@ -487,7 +356,7 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
          //   return false;
          //}
 
-         return await this.ProcessHeaders(headers).ConfigureAwait(false);
+         return await ProcessHeadersAsync(headers).ConfigureAwait(false);
       }
 
       /// <summary>
@@ -496,20 +365,20 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       /// </summary>
       /// <param name="headers">The headers.</param>
       /// <returns></returns>
-      private async Task<bool> ProcessHeaders(BlockHeader[] headers)
+      private async Task<bool> ProcessHeadersAsync(BlockHeader[] headers)
       {
-         int protocolVersion = this.PeerContext.NegotiatedProtocolVersion.Version;
+         int protocolVersion = PeerContext.NegotiatedProtocolVersion.Version;
          int headersCount = headers.Length;
 
          if (headersCount == 0)
          {
-            this.logger.LogDebug("Peer didn't returned any headers, let's assume we reached its tip.");
+            logger.LogDebug("Peer didn't returned any headers, let's assume we reached its tip.");
             return true;
          }
 
          using (GlobalLocks.ReadOnMainAsync().GetAwaiter().GetResult())
          {
-            if (await this.HandleAsNotConnectingAnnouncement(headers).ConfigureAwait(false))
+            if (await HandleAsNotConnectingAnnouncementAsync(headers).ConfigureAwait(false))
             {
                // fully handled as non connecting announcement
                return true;
@@ -518,7 +387,7 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
             // compute hashes in parallel to speed up the operation and check sent headers are sequential.
             Parallel.ForEach(headers, header =>
             {
-               header.Hash = this.blockHeaderHashCalculator.ComputeHash(header, protocolVersion);
+               header.Hash = _blockHeaderHashCalculator.ComputeHash(header, protocolVersion);
             });
          }
 
@@ -527,13 +396,13 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
          {
             if (headers[i].PreviousBlockHash != headers[i - 1].Hash)
             {
-               this.Misbehave(20, "Non continuous headers sequence.");
+               Misbehave(20, "Non continuous headers sequence.");
                return false;
             }
          }
 
          //enqueue headers for validation
-         await this.headerValidator.RequestValidationAsync(new HeadersToValidate(headers, PeerContext)).ConfigureAwait(false);
+         await _headerValidator.RequestValidationAsync(new HeadersToValidate(headers, PeerContext)).ConfigureAwait(false);
 
          return true;
       }
@@ -541,24 +410,24 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       /// <summary>
       /// The node received a block.
       /// </summary>
-      public async ValueTask<bool> ProcessMessageAsync(BlockMessage message, CancellationToken cancellation)
+      async ValueTask<bool> INetworkMessageHandler<BlockMessage>.ProcessMessageAsync(BlockMessage message, CancellationToken cancellation)
       {
-         var protocolVersion = this.PeerContext.NegotiatedProtocolVersion.Version;
+         int protocolVersion = PeerContext.NegotiatedProtocolVersion.Version;
 
          BlockHeader header = message.Block!.Header!;
-         header.Hash = this.blockHeaderHashCalculator.ComputeHash(header, protocolVersion);
+         header.Hash = _blockHeaderHashCalculator.ComputeHash(header, protocolVersion);
 
          // compute transaction hashes in parallel to speed up the operation and check sent headers are sequential.
          Parallel.ForEach(message.Block.Transactions, transaction =>
          {
-            transaction.Hash = this.transactionHashCalculator.ComputeHash(transaction, protocolVersion);
-            transaction.WitnessHash = this.transactionHashCalculator.ComputeWitnessHash(transaction, protocolVersion);
+            transaction.Hash = _transactionHashCalculator.ComputeHash(transaction, protocolVersion);
+            transaction.WitnessHash = _transactionHashCalculator.ComputeWitnessHash(transaction, protocolVersion);
          });
 
-         this.eventBus.Publish(new BlockReceived(message.Block!, this.PeerContext, this));
+         eventBus.Publish(new BlockReceived(message.Block!, PeerContext, this));
 
          //enqueue headers for validation
-         await this.blockValidator.RequestValidationAsync(new BlockToValidate(message.Block!, PeerContext)).ConfigureAwait(false);
+         await _blockValidator.RequestValidationAsync(new BlockToValidate(message.Block!, PeerContext)).ConfigureAwait(false);
 
          return true;
       }
@@ -570,7 +439,7 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       /// <returns></returns>
       private ValueTask OnBlockHeaderValidationFailedAsync(BlockHeaderValidationFailed arg)
       {
-         this.logger.LogDebug("Header Validation failed");
+         logger.LogDebug("Header Validation failed");
          //this.MisbehaveDuringHeaderValidation(arg.ValidationState, "invalid header received");
 
          return default;
@@ -583,23 +452,23 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       /// <returns></returns>
       private async ValueTask OnBlockHeaderValidationSucceededAsync(BlockHeaderValidationSucceeded arg)
       {
-         this.logger.LogDebug("Header Validation succeeded");
-         var lastValidatedHeaderNode = arg.LastValidatedHeaderNode;
+         logger.LogTrace("Header Validation succeeded");
+         HeaderNode? lastValidatedHeaderNode = arg.LastValidatedHeaderNode;
 
          using (GlobalLocks.ReadOnMainAsync().GetAwaiter().GetResult())
          {
-            if (this.status.UnconnectingHeaderReceived > 0)
+            if (_status.UnconnectingHeaderReceived > 0)
             {
-               this.logger.LogDebug("Resetting UnconnectingHeaderReceived, was {UnconnectingHeaderReceived}.", this.status.UnconnectingHeaderReceived);
-               this.status.UnconnectingHeaderReceived = 0;
+               logger.LogTrace("Resetting UnconnectingHeaderReceived, was {UnconnectingHeaderReceived}.", _status.UnconnectingHeaderReceived);
+               _status.UnconnectingHeaderReceived = 0;
             }
 
-            this.UpdateBlockAvailability(lastValidatedHeaderNode!.Hash);
+            UpdateBlockAvailability(lastValidatedHeaderNode!.Hash);
 
-            if (arg.NewHeadersFoundCount > 0 && lastValidatedHeaderNode.ChainWork > this.chainState.GetTip().ChainWork)
+            if (arg.NewHeadersFoundCount > 0 && lastValidatedHeaderNode.ChainWork > _chainState.GetTip().ChainWork)
             {
                // we received the new tip of the chain
-               this.status.LastBlockAnnouncement = this.dateTimeProvider.GetTime();
+               _status.LastBlockAnnouncement = _dateTimeProvider.GetTime();
             }
 
             if (arg.ValidatedHeadersCount == MAX_HEADERS)
@@ -607,46 +476,43 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
                // We received the maximum number of headers per protocol definition, the peer may have more headers.
                // TODO: optimize: if pindexLast is an ancestor of ::ChainActive().Tip or pindexBestHeader, continue
                // from there instead.
-               this.logger.LogDebug("Request another getheaders from height {BlockLocatorStart} (startingHeight: {StartingHeight}).", lastValidatedHeaderNode.Height, this.status.PeerStartingHeight);
+               logger.LogTrace("Request another getheaders from height {BlockLocatorStart} (startingHeight: {StartingHeight}).", lastValidatedHeaderNode.Height, _status.PeerStartingHeight);
                var newGetHeaderRequest = new GetHeadersMessage
                {
-                  Version = (uint)this.PeerContext.NegotiatedProtocolVersion.Version,
-                  BlockLocator = this.chainState.GetLocator(lastValidatedHeaderNode),
+                  Version = (uint)PeerContext.NegotiatedProtocolVersion.Version,
+                  BlockLocator = _chainState.GetLocator(lastValidatedHeaderNode),
                   HashStop = UInt256.Zero
                };
-               await this.SendMessageAsync(newGetHeaderRequest).ConfigureAwait(false);
+               await SendMessageAsync(newGetHeaderRequest).ConfigureAwait(false);
             }
 
-            this.DisconnectPeerIfNotUseful(arg.ValidatedHeadersCount);
+            DisconnectPeerIfNotUseful(arg.ValidatedHeadersCount);
          }
       }
 
       private ValueTask OnBlockValidationFailedAsync(BlockValidationFailed arg)
       {
-         this.logger.LogDebug("Header Validation failed");
-         this.Misbehave(20, $"Invalid block received: {arg.ValidationState}", true);
+         logger.LogDebug("Header Validation failed");
+         Misbehave(20, $"Invalid block received: {arg.ValidationState}", true);
 
          return default;
       }
 
       private ValueTask OnBlockValidationSucceededAsync(BlockValidationSucceeded arg)
       {
-         this.logger.LogDebug("Block Validation succeeded");
+         logger.LogTrace("Block {BlockId} Validation succeeded", arg.ValidatedBlock!.Header!.Hash);
 
          if (arg.IsNewBlock)
          {
-            this.logger.LogTrace("Block Validation succeeded");
-            this.status.LastBlockTime = dateTimeProvider.GetTime();
+            logger.LogTrace("Block Validation succeeded");
+            _status.LastBlockTime = _dateTimeProvider.GetTime();
+         }
+         else
+         {
+            logger.LogTrace("Block {BlockId} already known.", arg.ValidatedBlock!.Header!.Hash);
          }
 
          return default;
-      }
-
-      private bool ShouldRequestCompactBlock(HeaderNode lastHeader)
-      {
-         return this.status.SupportsDesiredCompactVersion
-            //TODO fix     && this.blockFetcherManager.BlocksInDownload == 0
-            && lastHeader.Previous?.IsValid(HeaderValidityStatuses.ValidChain) == true;
       }
 
       /// <summary>
@@ -658,19 +524,19 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       {
          /// If we're in IBD, we want outbound peers that will serve us a useful chain.
          /// Disconnect peers that are on chains with insufficient work.
-         if (this.ibdState.IsDownloadingBlocks() && headersCount != MAX_HEADERS)
+         if (_ibdState.IsDownloadingBlocks() && headersCount != MAX_HEADERS)
          {
             // When nCount < MAX_HEADERS_RESULTS, we know we have no more headers to fetch from this peer.
-            if (this.status.BestKnownHeader != null && this.status.BestKnownHeader.ChainWork < minimumChainWork)
+            if (_status.BestKnownHeader != null && _status.BestKnownHeader.ChainWork < _minimumChainWork)
             {
                /// This peer has too little work on their headers chain to help us sync so disconnect if it's using an outbound
                /// slot, unless the peer is whitelisted or addnode.
                /// Note: We compare their tip to nMinimumChainWork (rather than current chain tip) because we won't start block
                /// download until we have a headers chain that has at least nMinimumChainWork, even if a peer has a chain past
                /// our tip, as an anti-DoS measure.
-               if (this.IsOutboundDisconnectionCandidate())
+               if (IsOutboundDisconnectionCandidate())
                {
-                  this.PeerContext.Disconnect("Outbound peer headers chain has insufficient work.");
+                  PeerContext.Disconnect("Outbound peer headers chain has insufficient work.");
                   return true;
                }
             }
@@ -683,7 +549,7 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       {
          // return !(node->fInbound || node->m_manual_connection || node->fFeeler || node->fOneShot);
          //TODO improve, this is wrong because only check if it's outbound actually, see proper check above
-         return this.PeerContext.Direction == PeerConnectionDirection.Outbound;
+         return PeerContext.Direction == PeerConnectionDirection.Outbound;
       }
 
       /// <summary>
@@ -695,30 +561,30 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       /// see https://github.com/bitcoin/bitcoin/blob/ceb789cf3a9075729efa07f5114ce0369d8606c3/src/net_processing.cpp#L1658-L1683
       /// </summary>
       /// <returns><see langword="true"/> if it has been fully handled like a block announcement.</returns>
-      private async Task<bool> HandleAsNotConnectingAnnouncement(BlockHeader[] headers)
+      private async Task<bool> HandleAsNotConnectingAnnouncementAsync(BlockHeader[] headers)
       {
-         if (!this.chainState.TryGetKnownHeaderNode(headers[0].PreviousBlockHash, out _) && headers.Length < MAX_BLOCKS_TO_ANNOUNCE)
+         if (!_chainState.TryGetKnownHeaderNode(headers[0].PreviousBlockHash, out _) && headers.Length < MAX_BLOCKS_TO_ANNOUNCE)
          {
-            this.status.UnconnectingHeaderReceived++;
-            if (this.status.UnconnectingHeaderReceived % MAX_UNCONNECTING_HEADERS == 0)
+            _status.UnconnectingHeaderReceived++;
+            if (_status.UnconnectingHeaderReceived % MAX_UNCONNECTING_HEADERS == 0)
             {
-               this.Misbehave(20, "Exceeded maximum number of received unconnecting headers.");
+               Misbehave(20, "Exceeded maximum number of received unconnecting headers.");
             }
 
             // ask again for headers starting from current tip
             var newGetHeaderRequest = new GetHeadersMessage
             {
-               Version = (uint)this.PeerContext.NegotiatedProtocolVersion.Version,
-               BlockLocator = this.chainState.GetTipLocator(),
+               Version = (uint)PeerContext.NegotiatedProtocolVersion.Version,
+               BlockLocator = _chainState.GetTipLocator(),
                HashStop = UInt256.Zero
             };
-            await this.SendMessageAsync(newGetHeaderRequest).ConfigureAwait(false);
+            await SendMessageAsync(newGetHeaderRequest).ConfigureAwait(false);
 
-            this.logger.LogDebug("received an unconnecting header, missing {PrevBlock}. Request again headers from {BlockLocator}",
+            logger.LogTrace("received an unconnecting header, missing {PrevBlock}. Request again headers from {BlockLocator}",
                                  headers[0].PreviousBlockHash,
                                  newGetHeaderRequest.BlockLocator.BlockLocatorHashes[0]);
 
-            this.UpdateBlockAvailability(headers[^1].Hash);
+            UpdateBlockAvailability(headers[^1].Hash);
             return true;
          }
 
@@ -732,7 +598,7 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       private uint GetFetchFlags()
       {
          uint nFetchFlags = 0;
-         if (this.localServiceProvider.HasServices(NodeServices.Witness) && this.status.CanServeWitness)
+         if (_localServiceProvider.HasServices(NodeServices.Witness) && _status.CanServeWitness)
          {
             nFetchFlags |= InventoryType.MSG_WITNESS_FLAG;
          }
@@ -742,7 +608,7 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
 
       private bool CanDirectFetch()
       {
-         return this.chainState.GetTipHeader().TimeStamp > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - this.consensusParameters.PowTargetSpacing * 20;
+         return _chainState.GetTipHeader().TimeStamp > _dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - _consensusParameters.PowTargetSpacing * 20;
       }
 
       /// <summary>
@@ -755,20 +621,20 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       {
          if (headerHash == null) ThrowHelper.ThrowArgumentNullException(nameof(headerHash));
 
-         this.ProcessBlockAvailability();
+         ProcessBlockAvailability();
 
-         if (this.chainState.TryGetKnownHeaderNode(headerHash, out HeaderNode? headerNode) && headerNode.ChainWork > Target.Zero)
+         if (_chainState.TryGetKnownHeaderNode(headerHash, out HeaderNode? headerNode) && headerNode.ChainWork > Target.Zero)
          {
             // A better block header was announced.
-            if (this.status.BestKnownHeader == null || headerNode.ChainWork >= this.status.BestKnownHeader.ChainWork)
+            if (_status.BestKnownHeader == null || headerNode.ChainWork >= _status.BestKnownHeader.ChainWork)
             {
-               this.status.BestKnownHeader = headerNode;
+               _status.BestKnownHeader = headerNode;
             }
          }
          else
          {
             // An unknown block header was announced, assuming it's the best one.
-            this.status.LastUnknownBlockHash = headerHash;
+            _status.LastUnknownBlockHash = headerHash;
          }
       }
 
@@ -781,22 +647,33 @@ namespace MithrilShards.Chain.Bitcoin.Protocol.Processors
       /// </remarks>
       private void ProcessBlockAvailability()
       {
-         if (this.status.LastUnknownBlockHash != null)
+         if (_status.LastUnknownBlockHash != null)
          {
-            if (this.chainState.TryGetKnownHeaderNode(this.status.LastUnknownBlockHash, out HeaderNode? headerNode) && headerNode.ChainWork > Target.Zero)
+            if (_chainState.TryGetKnownHeaderNode(_status.LastUnknownBlockHash, out HeaderNode? headerNode) && headerNode.ChainWork > Target.Zero)
             {
-               if (this.status.BestKnownHeader == null || headerNode.ChainWork >= this.status.BestKnownHeader.ChainWork)
+               if (_status.BestKnownHeader == null || headerNode.ChainWork >= _status.BestKnownHeader.ChainWork)
                {
-                  this.status.BestKnownHeader = headerNode;
+                  _status.BestKnownHeader = headerNode;
                }
-               this.status.LastUnknownBlockHash = null;
+               _status.LastUnknownBlockHash = null;
             }
          }
       }
 
       private bool IsWitnessEnabled(HeaderNode? headerNode)
       {
-         return (headerNode?.Height ?? 0) + 1 >= this.consensusParameters.SegwitHeight;
+         return (headerNode?.Height ?? 0) + 1 >= _consensusParameters.SegwitHeight;
+      }
+
+      public override void Dispose()
+      {
+         // if this peer is able to serve blocks, register it
+         if (!_status.IsClient)
+         {
+            _blockFetcherManager.UnregisterFetcher(this);
+         }
+
+         base.Dispose();
       }
    }
 }
