@@ -67,6 +67,13 @@ namespace Network.Protocol.Transport
       public bool TryParseMessage(in ReadOnlySequence<byte> input, ref SequencePosition consumed, ref SequencePosition examined, /*[MaybeNullWhen(false)]*/  out INetworkMessage message)
       {
          var reader = new SequenceReader<byte>(input);
+         if (reader.Length == 0)
+         {
+            consumed = reader.Position;
+            examined = input.End;
+            message = default!;
+            return false;
+         }
 
          if (_networkPeerContext.HandshakeComplete)
          {
@@ -109,8 +116,7 @@ namespace Network.Protocol.Transport
 
             ReadOnlySequence<byte> payload = input.Slice(reader.Position, reader.Remaining);
             message = new HandshakeMessage { Payload = payload };
-            consumed = payload.End;
-            examined = consumed;
+            examined = consumed = input.End;
             return true;
          }
       }
