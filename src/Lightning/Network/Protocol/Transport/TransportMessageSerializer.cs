@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Runtime.Serialization;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Client;
@@ -20,8 +21,9 @@ namespace Network.Protocol.Transport
       private readonly INetworkMessageSerializerManager _networkMessageSerializerManager;
       private readonly NodeContext _nodeContext;
 
-      private NetworkPeerContext _networkPeerContext;
+      private NetworkPeerContext? _networkPeerContext;
       private IHandshakeProtocol _handshakeProtocol;
+      private HandshakeState? _handshakeState;
 
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
@@ -31,13 +33,14 @@ namespace Network.Protocol.Transport
          _logger = logger;
          _networkMessageSerializerManager = networkMessageSerializerManager;
          _nodeContext = nodeContext;
-
+         _handshakeState = null;
          _networkPeerContext = null!; //initialized by SetPeerContext
       }
 
       public void SetPeerContext(IPeerContext peerContext)
       {
          _networkPeerContext = peerContext as NetworkPeerContext ?? throw new ArgumentException("Expected NetworkPeerContext", nameof(peerContext)); ;
+         _handshakeState = new HandshakeState(_networkPeerContext.Direction == PeerConnectionDirection.Outbound);
 
          LightningEndpoint lightningEndpoint = null;
          if (peerContext.Direction == PeerConnectionDirection.Outbound)
@@ -67,31 +70,48 @@ namespace Network.Protocol.Transport
       public bool TryParseMessage(in ReadOnlySequence<byte> input, ref SequencePosition consumed, ref SequencePosition examined, /*[MaybeNullWhen(false)]*/  out INetworkMessage message)
       {
          var reader = new SequenceReader<byte>(input);
-         if (reader.Length == 0)
-         {
-            consumed = reader.Position;
-            examined = input.End;
-            message = default!;
-            return false;
-         }
 
          if (_networkPeerContext.HandshakeComplete)
          {
+            const int headerLength = 18;
+            if (reader.Remaining < headerLength)
+            {
+               // the payload header is 18 bytes (2 byte payload length and 16 byte MAC)
+               // if the buffer does not have that amount of bytes we wait for more
+               // bytes to arrive in the stream before parsing the header
+               message = default;
+               return false;
+            }
+
+            ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position, headerLength);
+
+            // decrypt the message length
+            long encryptedMessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
+
+            if (reader.Remaining < headerLength + encryptedMessageLength)
+            {
+               // if the reader does not have the entire length of the header
+               // and message we wait for more data from the stream
+               message = default;
+               return false;
+            }
+
             var decryptedOutput = new ArrayBufferWriter<byte>();
-            _handshakeProtocol.ReadMessage(reader.CurrentSpan, decryptedOutput);
-            _networkPeerContext.Metrics.Received(decryptedOutput.WrittenCount);
+            _handshakeProtocol.ReadMessage(reader.CurrentSpan.Slice(0, headerLength + (int)encryptedMessageLength), decryptedOutput);
+            _networkPeerContext.Metrics.Received(headerLength + (int)encryptedMessageLength);
+            reader.Advance(headerLength + encryptedMessageLength);
+            examined = consumed = reader.Position;
 
             // now try to read the payload
             var payload = new ReadOnlySequence<byte>(decryptedOutput.WrittenMemory);
-            reader = new SequenceReader<byte>(payload);
+            var payloadReader = new SequenceReader<byte>(payload);
 
-            ushort command = reader.ReadUShort(isBigEndian: true);
+            ushort command = payloadReader.ReadUShort(isBigEndian: true);
             string commandName = command.ToString();
-            examined = consumed = input.End;
 
-            ushort payloadLength = reader.ReadUShort(isBigEndian: true);
-            payload = payload.Slice(reader.Consumed, payloadLength);
-            reader.Advance(payloadLength);
+            ushort payloadLength = payloadReader.ReadUShort(isBigEndian: true);
+            payload = payload.Slice(payloadReader.Consumed, payloadLength);
+            payloadReader.Advance(payloadLength);
 
             if (_networkMessageSerializerManager.TryDeserialize(
                commandName,
@@ -114,10 +134,18 @@ namespace Network.Protocol.Transport
             // During the handshake the byte sequence is passed as is to the
             // underline processor which will handle serialization of the message.
 
-            ReadOnlySequence<byte> payload = input.Slice(reader.Position, reader.Remaining);
-            message = new HandshakeMessage { Payload = payload };
-            examined = consumed = input.End;
-            return true;
+            long nextLength = _handshakeState.NextLength();
+            if (reader.Remaining >= nextLength)
+            {
+               message = new HandshakeMessage { Payload = input.Slice(reader.Position, nextLength) };
+               reader.Advance(nextLength);
+               examined = consumed = reader.Position;
+               _handshakeState.Advance();
+               return true;
+            }
+
+            message = default;
+            return false;
          }
       }
 
@@ -193,6 +221,50 @@ namespace Network.Protocol.Transport
                   throw new ApplicationException("Invalid handshake message");
                }
             }
+         }
+      }
+
+      internal class HandshakeState
+      {
+         public HandshakeState(bool initiator)
+         {
+            _initiator = initiator;
+            _position = 1;
+         }
+
+         private readonly bool _initiator;
+         private byte _position;
+
+         public long NextLength()
+         {
+            if (_initiator)
+            {
+               if (_position == 1)
+               {
+                  return 50; // act two
+               }
+
+               throw new SerializationException("Invalid handshake state");
+            }
+            else
+            {
+               if (_position == 1)
+               {
+                  return 50; // act two
+               }
+
+               if (_position == 2)
+               {
+                  return 66; // act two
+               }
+
+               throw new SerializationException("Invalid handshake state");
+            }
+         }
+
+         public void Advance()
+         {
+            _position++;
          }
       }
    }

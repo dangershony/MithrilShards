@@ -16,6 +16,8 @@ namespace Network.Protocol.Transport
 
       public void ReadMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output);
 
+      public long ReadMessageLength(ReadOnlySequence<byte> encryptedHeader);
+
       public void Handshake(ReadOnlySpan<byte> message, IBufferWriter<byte> output);
    }
 
@@ -36,6 +38,11 @@ namespace Network.Protocol.Transport
       public void ReadMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output)
       {
          output.Write(message);
+      }
+
+      public long ReadMessageLength(ReadOnlySequence<byte> encryptedHeader)
+      {
+         return 5;
       }
 
       public void Handshake(ReadOnlySpan<byte> message, IBufferWriter<byte> output)
