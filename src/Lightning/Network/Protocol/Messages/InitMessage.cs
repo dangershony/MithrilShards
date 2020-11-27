@@ -1,5 +1,4 @@
-﻿using MithrilShards.Core.Network.Protocol;
-using MithrilShards.Core.Network.Protocol.Serialization;
+﻿using MithrilShards.Core.Network.Protocol.Serialization;
 
 namespace Network.Protocol.Messages
 {
