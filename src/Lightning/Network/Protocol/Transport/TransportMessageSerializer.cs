@@ -20,7 +20,7 @@ namespace Network.Protocol.Transport
    {
       private readonly ILogger<TransportMessageSerializer> _logger;
       private readonly INetworkMessageSerializerManager _networkMessageSerializerManager;
-      readonly IHandshakeStateFactory _handshakeStateFactory;
+      private readonly IHandshakeStateFactory _handshakeStateFactory;
       private readonly NodeContext _nodeContext;
 
       private NetworkPeerContext _networkPeerContext;
@@ -68,8 +68,7 @@ namespace Network.Protocol.Transport
             lightningEndpoint = (LightningEndpoint)res;
          }
 
-         _handshakeProtocol = new HandshakeNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey,
-            _handshakeStateFactory);
+         _handshakeProtocol = new HandshakeNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey, _handshakeStateFactory);
          _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
       }
 
@@ -79,10 +78,9 @@ namespace Network.Protocol.Transport
 
          if (_networkPeerContext.HandshakeComplete)
          {
-            const int headerLength = 18;
             if (!_deserializationContext.EncryptedMessageLengthRead)
             {
-               if (reader.Remaining < headerLength)
+               if (reader.Remaining < _handshakeProtocol.HeaderLength)
                {
                   // the payload header is 18 bytes (2 byte payload length and 16 byte MAC)
                   // if the buffer does not have that amount of bytes we wait for more
@@ -91,15 +89,15 @@ namespace Network.Protocol.Transport
                   return false;
                }
 
-               ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position, headerLength);
+               ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position, _handshakeProtocol.HeaderLength);
 
                // decrypt the message length
-               _deserializationContext.EncryptedMessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
+               _deserializationContext.MessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
 
-               reader.Advance(headerLength);
+               reader.Advance(_handshakeProtocol.HeaderLength);
             }
 
-            if (reader.Remaining < _deserializationContext.EncryptedMessageLength)
+            if (reader.Remaining < _deserializationContext.MessageLength)
             {
                // if the reader does not have the entire length of the header
                // and message we wait for more data from the stream
@@ -108,13 +106,14 @@ namespace Network.Protocol.Transport
             }
 
             var decryptedOutput = new ArrayBufferWriter<byte>();
-            _handshakeProtocol.ReadMessage(reader.CurrentSpan.Slice(0, (int)_deserializationContext.EncryptedMessageLength), decryptedOutput);
-            _networkPeerContext.Metrics.Received((int)_deserializationContext.EncryptedMessageLength);
+            ReadOnlySpan<byte> encryptedMessage = reader.UnreadSpan.Slice(0, (int)_deserializationContext.MessageLength);
+            _handshakeProtocol.ReadMessage(encryptedMessage, decryptedOutput);
+            _networkPeerContext.Metrics.Received((int)_deserializationContext.MessageLength);
 
             // reset the reader and message flags
-            reader.Advance(_deserializationContext.EncryptedMessageLength);
+            reader.Advance(_deserializationContext.MessageLength);
             examined = consumed = reader.Position;
-            _deserializationContext.EncryptedMessageLength = 0;
+            _deserializationContext.MessageLength = 0;
 
             // now try to read the payload
             var payload = new ReadOnlySequence<byte>(decryptedOutput.WrittenMemory);
@@ -122,14 +121,11 @@ namespace Network.Protocol.Transport
 
             ushort command = payloadReader.ReadUShort(isBigEndian: true);
             string commandName = command.ToString();
-
-            ushort payloadLength = payloadReader.ReadUShort(isBigEndian: true);
-            payload = payload.Slice(payloadReader.Consumed, payloadLength);
-            payloadReader.Advance(payloadLength);
+            ReadOnlySequence<byte> innerPayload = payload.Slice(2);
 
             if (_networkMessageSerializerManager.TryDeserialize(
                commandName,
-               ref payload,
+               ref innerPayload,
                _networkPeerContext.NegotiatedProtocolVersion.Version,
                _networkPeerContext, out message!))
             {
@@ -138,7 +134,7 @@ namespace Network.Protocol.Transport
             else
             {
                _logger.LogWarning("Serializer for message '{Command}' not found.", commandName);
-               message = new UnknownMessage(commandName, payload.ToArray());
+               message = new UnknownMessage(commandName, innerPayload.ToArray());
                _networkPeerContext.Metrics.Wasted(decryptedOutput.WrittenCount);
                return true;
             }
@@ -180,21 +176,12 @@ namespace Network.Protocol.Transport
                // type: write command type, a 2-byte big-endian field indicating the type of message
                payloadOutput.WriteUShort(ushort.Parse(command), isBigEndian: true);
 
-               var serializationOutput = new ArrayBufferWriter<byte>();
-
                if (_networkMessageSerializerManager.TrySerialize(
                   message,
                   _networkPeerContext.NegotiatedProtocolVersion.Version,
                   _networkPeerContext,
-                  serializationOutput))
+                  payloadOutput))
                {
-                  // payload: a variable-length payload that comprises the remainder
-                  // of the message and that conforms to a format matching the type
-                  // The size of the message is required by the transport layer to fit
-                  // into a 2-byte unsigned int; therefore, the maximum possible size is 65535 bytes.
-                  payloadOutput.WriteUShort((ushort)serializationOutput.WrittenCount, isBigEndian: true);
-                  payloadOutput.Write(serializationOutput.WrittenSpan);
-
                   // encrypted Lightning message:
                   // 2-byte encrypted message length
                   // 16-byte MAC of the encrypted message length
@@ -247,7 +234,7 @@ namespace Network.Protocol.Transport
 
          private bool _initiator;
          private byte _handshakeStep;
-         public long EncryptedMessageLength { get; set; }
+         public long MessageLength { get; set; }
 
          /// <summary>
          /// The lightning payload contains a 2 byte header and a 16 byte mac.
@@ -257,7 +244,7 @@ namespace Network.Protocol.Transport
          {
             get
             {
-               return EncryptedMessageLength > 0;
+               return MessageLength > 0;
             }
          }
 

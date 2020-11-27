@@ -11,10 +11,10 @@ namespace Network.Protocol.Serialization.Serializers.Messages
 
       public override void SerializeMessage(InitMessage message, int protocolVersion, NetworkPeerContext peerContext, IBufferWriter<byte> output)
       {
-         output.WriteUShort((ushort)message.GlobalFeatures.Length);
+         output.WriteUShort((ushort)message.GlobalFeatures.Length, true);
          output.Write(message.GlobalFeatures);
 
-         output.WriteUShort((ushort)message.Features.Length);
+         output.WriteUShort((ushort)message.Features.Length, true);
          output.Write(message.Features);
       }
 
@@ -22,10 +22,10 @@ namespace Network.Protocol.Serialization.Serializers.Messages
       {
          var message = new InitMessage();
 
-         ushort len = reader.ReadUShort();
+         ushort len = reader.ReadUShort(true);
          message.GlobalFeatures = reader.ReadBytes(len).ToArray();
 
-         len = reader.ReadUShort();
+         len = reader.ReadUShort(true);
          message.Features = reader.ReadBytes(len).ToArray();
 
          return message;

@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Runtime.Serialization;
 using Network.Protocol.Transport.Noise;
 
 namespace Network.Protocol.Transport
 {
    public class HandshakeNoiseProtocol : IHandshakeProtocol
    {
+      private const int HEADER_LENGTH = 18;
+
       public byte[]? RemotePubKey { get; set; }
       public string LocalPubKey { get; set; }
 
@@ -15,12 +18,12 @@ namespace Network.Protocol.Transport
       public byte[] PrivateKey { get; set; } // TODO: this can be private or even hidden behind an interface.
 
       private readonly IHandshakeState _handshakeState;
-      
+
       private ITransport? _transport;
 
-      private byte[] _messageHeader = new byte[2];
-      
-      public HandshakeNoiseProtocol(NodeContext nodeContext, byte[]? remotePubKey, 
+      private readonly byte[] _messageHeaderCache = new byte[2];
+
+      public HandshakeNoiseProtocol(NodeContext nodeContext, byte[]? remotePubKey,
          IHandshakeStateFactory handshakeFactory)
       {
          PrivateKey = nodeContext.PrivateKey;
@@ -28,27 +31,29 @@ namespace Network.Protocol.Transport
          if (remotePubKey != null)
          {
             RemotePubKey = remotePubKey;
-            Initiator = true;   
+            Initiator = true;
          }
-         
-         _handshakeState = handshakeFactory.CreateLightningNetworkHandshakeState(PrivateKey,RemotePubKey!);
+
+         _handshakeState = handshakeFactory.CreateLightningNetworkHandshakeState(PrivateKey, RemotePubKey!);
       }
-      
+
+      public int HeaderLength { get { return HEADER_LENGTH; } }
+
       public void WriteMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output) //TODO David add tests
       {
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
-         
-         BinaryPrimitives.WriteUInt16BigEndian(_messageHeader,Convert.ToUInt16(message.Length));
-         
-         int headerLength = _transport.WriteMessage(_messageHeader, output.GetSpan() );
+
+         BinaryPrimitives.WriteUInt16BigEndian(_messageHeaderCache, Convert.ToUInt16(message.Length));
+
+         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan());
 
          output.Advance(headerLength);
-         
+
          int messageLength = _transport.WriteMessage(message, output.GetSpan());
 
          output.Advance(messageLength);
-         
+
          HandleKeyRecycle();
       }
 
@@ -57,37 +62,37 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         _transport.ReadMessage(message.Slice(0, 18), _messageHeader);
+         int bytesRead = _transport.ReadMessage(message, output.GetSpan()); // TODO check what if buffer is very big
 
-         short bodyLength = BinaryPrimitives.ReadInt16BigEndian(_messageHeader);
-
-         _transport.ReadMessage(message.Slice(18), output.GetSpan(bodyLength));
-
-         output.Advance(bodyLength);
+         output.Advance(bytesRead);
 
          HandleKeyRecycle();
       }
 
-      void HandleKeyRecycle() //TODO David add tests
+      private void HandleKeyRecycle() //TODO David add tests
       {
          if (_transport == null)
             return;
-         
+
          if (_transport.GetNumberOfInitiatorMessages() == LightningNetworkConfig.NumberOfNonceBeforeKeyRecycle)
             _transport.KeyRecycleInitiatorToResponder();
-         
+
          if (_transport.GetNumberOfResponderMessages() == LightningNetworkConfig.NumberOfNonceBeforeKeyRecycle)
             _transport.KeyRecycleResponderToInitiator();
       }
 
-      public ushort ReadMessageLength(ReadOnlySequence<byte> encryptedHeader) //TODO David add tests
+      public int ReadMessageLength(ReadOnlySequence<byte> encryptedHeader) //TODO David add tests
       {
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         _transport.ReadMessage(encryptedHeader.FirstSpan, _messageHeader);
+         _transport.ReadMessage(encryptedHeader.FirstSpan, _messageHeaderCache);
 
-         return BinaryPrimitives.ReadUInt16BigEndian(_messageHeader);
+         ushort messageLengthDecrypted = (ushort)BinaryPrimitives.ReadUInt16BigEndian(_messageHeaderCache); // TODO Dan test header size bigger then 2 bytes
+
+         // Return the message length plus the 16 byte mac data
+         // the caller does not need to know the message has mac data
+         return messageLengthDecrypted + Aead.TAG_SIZE;
       }
 
       public void Handshake(ReadOnlySpan<byte> message, IBufferWriter<byte> output)
@@ -99,16 +104,18 @@ namespace Network.Protocol.Transport
                (int bytesWritten, _, ITransport? transport) = _handshakeState.WriteMessage(null, output.GetSpan());
 
                output.Advance(bytesWritten);
-               
-               if (transport == null)
-                  return;
-
-               _transport = transport;
-               _handshakeState.Dispose();
             }
             else
             {
                _handshakeState.ReadMessage(message, output.GetSpan());
+
+               (int bytesWritten, _, ITransport? transport) = _handshakeState.WriteMessage(null, output.GetSpan());
+
+               output.Advance(bytesWritten);
+
+               _transport = transport ?? throw new InvalidOperationException(nameof(transport));
+
+               _handshakeState.Dispose();
             }
          }
          else
@@ -117,8 +124,8 @@ namespace Network.Protocol.Transport
 
             if (transport == null)
             {
-               (int bytesWritten, _, _) =  _handshakeState.WriteMessage(null, output.GetSpan());
-               
+               (int bytesWritten, _, _) = _handshakeState.WriteMessage(null, output.GetSpan());
+
                output.Advance(bytesWritten);
             }
             else

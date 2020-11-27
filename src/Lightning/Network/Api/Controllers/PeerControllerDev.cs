@@ -33,7 +33,7 @@ namespace Network.Api.Controllers
       [ProducesResponseType(StatusCodes.Status404NotFound)]
       [ProducesResponseType(StatusCodes.Status400BadRequest)]
       [Route("Connect")]
-      public ActionResult<bool> Connect(PeerManagementConnectRequest request)
+      public ActionResult<bool> Connect(PeerConnectRequest request)
       {
          if (_requiredConnection == null)
          {
@@ -52,7 +52,7 @@ namespace Network.Api.Controllers
       [ProducesResponseType(StatusCodes.Status200OK)]
       [ProducesResponseType(StatusCodes.Status400BadRequest)]
       [Route("Disconnect")]
-      public ActionResult<bool> Disconnect(PeerManagementDisconnectRequest request)
+      public ActionResult<bool> Disconnect(PeerDisconnectRequest request)
       {
          if (!IPEndPoint.TryParse(request.EndPoint, out IPEndPoint ipEndPoint))
          {

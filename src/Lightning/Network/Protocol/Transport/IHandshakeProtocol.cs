@@ -12,11 +12,13 @@ namespace Network.Protocol.Transport
 
       public byte[]? PrivateKey { get; set; }
 
+      public int HeaderLength { get; }
+
       public void WriteMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output);
 
       public void ReadMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output);
-      
-      public ushort ReadMessageLength(ReadOnlySequence<byte> encryptedHeader);
+
+      public int ReadMessageLength(ReadOnlySequence<byte> encryptedHeader);
 
       public void Handshake(ReadOnlySpan<byte> message, IBufferWriter<byte> output);
    }
