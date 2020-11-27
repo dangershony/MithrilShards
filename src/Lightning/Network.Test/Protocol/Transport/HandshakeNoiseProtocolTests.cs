@@ -55,6 +55,8 @@ namespace Network.Test.Protocol.Transport
          buffer.WrittenSpan.CopyTo(input.AsSpan());
          buffer.Clear();
          responder.ReadMessage(input.AsSpan(0,39),buffer);
+         
+         Assert.Equal(buffer.WrittenSpan.ToArray(),message.ToByteArray());
       }
    }
 }
