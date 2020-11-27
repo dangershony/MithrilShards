@@ -20,11 +20,11 @@ namespace Network
 
          _randomNumberGenerator.GetBytes(prv.AsSpan());
 
-         var k = new NBitcoin.Key(prv);
+         var k = new NBitcoin.Key(prv); //TODO Dan
 
          // random data
          PrivateKey = k.ToBytes();
-         LocalPubKey = PrivateKey.AsSpan().Slice(32).ToString();
+         LocalPubKey = k.PubKey.ToHex();
       }
    }
 }
