@@ -35,23 +35,7 @@ namespace Network.Protocol.Transport.Noise
       /// Allow first bytes of message in buffer as a version (to fit lightning protocol)
       /// </summary>
       public byte[] VersionPrefix { get; set; }
-
-      /// <summary>
-      /// Initializes a new instance of the <see cref="Protocol"/>
-      /// class using ChaChaPoly, 25519, and SHA256 functions.
-      /// </summary>
-      /// <param name="handshakePattern">The handshake pattern (e.q. NX or IK).</param>
-      /// <param name="modifiers">The combination of pattern modifiers (e.q. empty, psk0, or psk1+psk2).</param>
-      /// <exception cref="ArgumentNullException">
-      /// Thrown if the <paramref name="handshakePattern"/> is null.
-      /// </exception>
-      /// <exception cref="ArgumentException">
-      /// Thrown if <paramref name="modifiers"/> does not represent a valid combination of pattern modifiers.
-      /// </exception>
-      public Protocol(HandshakePattern handshakePattern, PatternModifiers modifiers = PatternModifiers.None)
-         : this(handshakePattern, CipherFunction.ChaChaPoly, HashFunction.Sha256, modifiers)
-      {
-      }
+      
 
       /// <summary>
       /// Initializes a new instance of the <see cref="Protocol"/> class.
@@ -175,7 +159,7 @@ namespace Network.Protocol.Transport.Noise
       /// <para>- Number of pre-shared keys does not match the number of PSK modifiers.</para>
       /// <para>- Fallback modifier is present (fallback can only be applied by calling
       /// the <see cref="IHandshakeState.Fallback"/> method on existing handshake state).</para>
-      /// </exception>
+      /// </exception>   
       public IHandshakeState Create(
          bool initiator,
          ReadOnlySpan<byte> prologue = default,

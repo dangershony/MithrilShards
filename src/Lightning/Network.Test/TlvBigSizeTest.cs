@@ -1,9 +1,6 @@
-using System;
 using System.Buffers;
 using System.IO;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using MithrilShards.Core.Encoding;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using Network.Protocol;
@@ -52,7 +49,7 @@ namespace Network.Test
             byte[] dataBytes = HexEncoder.ToHexBytes(tlvData.bytes);
 
             var writer = new ArrayBufferWriter<byte>();
-            BufferWriterExtensions.WriteBigSize(writer, tlvData.value);
+            writer.WriteBigSize(tlvData.value);
             Assert.Equal(dataBytes, writer.WrittenSpan.ToArray());
          }
       }

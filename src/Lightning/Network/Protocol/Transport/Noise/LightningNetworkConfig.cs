@@ -20,5 +20,9 @@ namespace Network.Protocol.Transport.Noise
          Encoding.ASCII.GetBytes(PROLUGE, 0, PROLUGE.Length, byteArray, 0);
          return byteArray;
       }
+
+      public static readonly byte[] NoiseProtocolVersionPrefix = {0x00};
+
+      public static readonly ulong NumberOfNonceBeforeKeyRecycle = 1000;
    }
 }

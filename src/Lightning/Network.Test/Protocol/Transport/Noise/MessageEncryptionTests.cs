@@ -15,23 +15,23 @@ namespace Network.Test.Protocol.Transport.Noise
 
       public MessageEncryptionTests(ITestOutputHelper testOutputHelper)
       {
-         this._testOutputHelper = testOutputHelper;
+         _testOutputHelper = testOutputHelper;
       }
 
       private void WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys()
       {
-         this._initiatorHandshakeState = this.InitiateHandShake(true, Bolt8TestVectorParameters.Initiator.PrivateKey
+         _initiatorHandshakeState = InitiateHandShake(true, Bolt8TestVectorParameters.Initiator.PrivateKey
              , Bolt8TestVectorParameters.Receiver.PublicKey);
 
-         this._initiatorHandshakeState.SetDh(
+         _initiatorHandshakeState.SetDh(
              new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.InitiatorEphemeralKeyPair));
       }
 
       private void WithResponderHandshakeInitiatedToKnownLocalKeys()
       {
-         this._responderHandshakeState = this.InitiateHandShake(false, Bolt8TestVectorParameters.Receiver.PrivateKey);
+         _responderHandshakeState = InitiateHandShake(false, Bolt8TestVectorParameters.Receiver.PrivateKey);
 
-         this._responderHandshakeState.SetDh(
+         _responderHandshakeState.SetDh(
              new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ReceiverEphemeralKeyPair));
       }
 
@@ -48,7 +48,7 @@ namespace Network.Test.Protocol.Transport.Noise
       [InlineData("0xcf2b30ddf0cf3f80e7c35a6e6730b59fe802473180f396d88a8fb0db8cbcf25d2f214cf9ea1d95")]
       public void TestMessageEncryptionIterationZero(string expectedOutputHex)
       {
-         var (initiatorTransport, _) = this.WithTheHandshakeCompletedSuccessfully();
+         var (initiatorTransport, _) = WithTheHandshakeCompletedSuccessfully();
 
          const string message = "0x68656c6c6f";
 
@@ -61,7 +61,7 @@ namespace Network.Test.Protocol.Transport.Noise
       [InlineData("0x72887022101f0b6753e0c7de21657d35a4cb2a1f5cde2650528bbc8f837d0f0d7ad833b1a256a1")]
       public void TestMessageEncryptionIterationOne(string expectedOutputHex)
       {
-         var (initiatorTransport, responderTransport) = this.WithTheHandshakeCompletedSuccessfully();
+         var (initiatorTransport, responderTransport) = WithTheHandshakeCompletedSuccessfully();
 
          const string message = "0x68656c6c6f";
 
@@ -82,7 +82,7 @@ namespace Network.Test.Protocol.Transport.Noise
       [InlineData(1001, "0x2ecd8c8a5629d0d02ab457a0fdd0f7b90a192cd46be5ecb6ca570bfc5e268338b1a16cf4ef2d36")]
       public void TestMessageEncryptionIterationN(int iterationTarget, string expectedOutputHex)
       {
-         var (initiatorTransport, responderTransport) = this.WithTheHandshakeCompletedSuccessfully();
+         var (initiatorTransport, responderTransport) = WithTheHandshakeCompletedSuccessfully();
 
          const string message = "0x68656c6c6f";
 
@@ -95,8 +95,6 @@ namespace Network.Test.Protocol.Transport.Noise
 
             decryptedMessage = DecryptAndValidateMessage(encryptedMessage.ToArray(), responderTransport);
          }
-
-         this._testOutputHelper.WriteLine(Utilities.GetHexStringFromByteArray(encryptedMessage.ToArray()));
 
          Assert.Equal(decryptedMessage.ToArray(), message.ToByteArray());
          Assert.Equal(encryptedMessage.ToArray(), expectedOutputHex.ToByteArray());
@@ -150,20 +148,20 @@ namespace Network.Test.Protocol.Transport.Noise
 
       private (ITransport, ITransport) WithTheHandshakeCompletedSuccessfully()
       {
-         this.WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
-         this.WithResponderHandshakeInitiatedToKnownLocalKeys();
+         WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
+         WithResponderHandshakeInitiatedToKnownLocalKeys();
 
          var actOneBuffer = new byte[50];
-         this._initiatorHandshakeState.WriteMessage(null, actOneBuffer);
-         this._responderHandshakeState.ReadMessage(actOneBuffer, new byte[50]);
+         _initiatorHandshakeState.WriteMessage(null, actOneBuffer);
+         _responderHandshakeState.ReadMessage(actOneBuffer, new byte[50]);
 
          var actTwoBuffer = new byte[50];
-         this._responderHandshakeState.WriteMessage(null, actTwoBuffer);
-         this._initiatorHandshakeState.ReadMessage(actTwoBuffer, new byte[50]);
+         _responderHandshakeState.WriteMessage(null, actTwoBuffer);
+         _initiatorHandshakeState.ReadMessage(actTwoBuffer, new byte[50]);
 
          var actThreeBuffer = new byte[66];
-         var (_, _, initiatorTransport) = this._initiatorHandshakeState.WriteMessage(null, actThreeBuffer);
-         var (_, _, responderTransport) = this._responderHandshakeState.ReadMessage(actThreeBuffer, new byte[66]);
+         var (_, _, initiatorTransport) = _initiatorHandshakeState.WriteMessage(null, actThreeBuffer);
+         var (_, _, responderTransport) = _responderHandshakeState.ReadMessage(actThreeBuffer, new byte[66]);
 
          return (initiatorTransport, responderTransport);
       }

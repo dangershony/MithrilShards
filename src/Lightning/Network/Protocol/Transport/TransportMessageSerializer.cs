@@ -56,13 +56,7 @@ namespace Network.Protocol.Transport
             lightningEndpoint = (LightningEndpoint)res;
          }
 
-         _handshakeProtocol = new HandshakeNoiseProtocol
-         {
-            Initiator = _networkPeerContext.Direction == PeerConnectionDirection.Outbound,
-            LocalPubKey = _nodeContext.LocalPubKey,
-            PrivateLey = _nodeContext.PrivateLey,
-            RemotePubKey = lightningEndpoint?.NodeId
-         };
+         _handshakeProtocol = new HandshakeNoiseProtocol(_nodeContext,lightningEndpoint?.NodePubKey);
 
          _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
       }

@@ -243,7 +243,8 @@ namespace Network.Protocol.Transport.Noise
          }
       }
 
-      public (int, byte[], ITransport) WriteMessage(ReadOnlySpan<byte> payload, Span<byte> messageBuffer)
+      public (int BytesWritten, byte[] HandshakeHash, ITransport? Transport) WriteMessage(ReadOnlySpan<byte> payload,
+         Span<byte> messageBuffer)
       {
          ThrowIfDisposed();
 
@@ -345,7 +346,7 @@ namespace Network.Protocol.Transport.Noise
          return buffer.Slice(bytesWritten);
       }
 
-      public (int, byte[], ITransport) ReadMessage(ReadOnlySpan<byte> message, Span<byte> payloadBuffer)
+      public (int, byte[], ITransport?) ReadMessage(ReadOnlySpan<byte> message, Span<byte> payloadBuffer)
       {
          ThrowIfDisposed();
 
@@ -378,7 +379,6 @@ namespace Network.Protocol.Transport.Noise
          }
 
          var next = _messagePatterns.Dequeue();
-         var messageLength = message.Length;
 
          message = ReadVersionPrefix(message);
 

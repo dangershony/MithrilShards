@@ -69,7 +69,7 @@ namespace Network.Protocol.Transport.Noise
       /// Thrown if the output was greater than <see cref="Protocol.MAX_MESSAGE_LENGTH"/>
       /// bytes in length, or if the output buffer did not have enough space to hold the ciphertext.
       /// </exception>
-      (int BytesWritten, byte[] HandshakeHash, ITransport Transport) WriteMessage(
+      (int BytesWritten, byte[] HandshakeHash, ITransport? Transport) WriteMessage(
           ReadOnlySpan<byte> payload,
           Span<byte> messageBuffer
       );
@@ -104,7 +104,7 @@ namespace Network.Protocol.Transport.Noise
       /// <exception cref="System.Security.Cryptography.CryptographicException">
       /// Thrown if the decryption of the message has failed.
       /// </exception>
-      (int BytesRead, byte[] HandshakeHash, ITransport Transport) ReadMessage(
+      (int BytesRead, byte[] HandshakeHash, ITransport? Transport) ReadMessage(
           ReadOnlySpan<byte> message,
           Span<byte> payloadBuffer
       );

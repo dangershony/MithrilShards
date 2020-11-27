@@ -75,7 +75,7 @@ namespace Network.Protocol.Processors
 
          switch (_handshakeActNumber)
          {
-            case 1: // ActOne
+            case 1: // ActOne responder
                {
                   logger.LogDebug("Handshake ActOne received.");
                   await SendMessageAsync(Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
@@ -83,7 +83,7 @@ namespace Network.Protocol.Processors
                   logger.LogDebug("Handshake ActTwo sent.");
                   break;
                }
-            case 2: // ActTwo
+            case 2: // ActTwo both
                {
                   logger.LogDebug("Handshake ActTwo received.");
                   await SendMessageAsync(Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
@@ -92,7 +92,7 @@ namespace Network.Protocol.Processors
                   logger.LogDebug("Handshake ActThree sent.");
                   break;
                }
-            case 3: // ActThree
+            case 3: // ActThree Responder
                {
                   logger.LogDebug("Handshake ActThree received.");
                   _ = Handshake(noiseMessage.Payload);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using MithrilShards.Core;
 using MithrilShards.Core.DataTypes;
 
@@ -6,8 +7,8 @@ namespace Network
 {
    public class NodeContext
    {
-      private readonly IRandomNumberGenerator _randomNumberGenerator;
-      public byte[] PrivateLey { get; set; } // TODO: this can be private or even hidden behind an interface.
+      private readonly IRandomNumberGenerator? _randomNumberGenerator;
+      public byte[] PrivateKey { get; set; } // TODO: this can be private or even hidden behind an interface.
       public string LocalPubKey { get; set; }
 
       public NodeContext(IRandomNumberGenerator randomNumberGenerator)
@@ -19,8 +20,8 @@ namespace Network
          _randomNumberGenerator.GetBytes(prv.AsSpan());
 
          // random data
-         PrivateLey = prv;
-         LocalPubKey = PrivateLey.AsSpan().Slice(32).ToString();
+         PrivateKey = prv;
+         LocalPubKey = PrivateKey.AsSpan().Slice(32).ToString();
       }
    }
 }
