@@ -10,25 +10,25 @@ namespace Network.Test.Protocol.Transport.Noise
 
       public DhWrapperWithDefinedEphemeralKey(KeyPair pair)
       {
-         this._pair = pair;
-         this._curveSecp256K1 = new CurveSecp256K1();
+         _pair = pair;
+         _curveSecp256K1 = new CurveSecp256K1();
       }
 
-      public int DhLen => this._curveSecp256K1.DhLen;
+      public int DhLen => _curveSecp256K1.DhLen;
 
       public KeyPair GenerateKeyPair()
       {
-         return this._pair;
+         return _pair;
       }
 
       public KeyPair GenerateKeyPair(ReadOnlySpan<byte> privateKey)
       {
-         return this._curveSecp256K1.GenerateKeyPair(privateKey);
+         return _curveSecp256K1.GenerateKeyPair(privateKey);
       }
 
       public void Dh(KeyPair keyPair, ReadOnlySpan<byte> publicKey, Span<byte> sharedKey)
       {
-         this._curveSecp256K1.Dh(keyPair, publicKey, sharedKey);
+         _curveSecp256K1.Dh(keyPair, publicKey, sharedKey);
       }
    }
 }

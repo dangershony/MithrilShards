@@ -10,33 +10,33 @@ namespace Network.Test.Protocol.Transport.Noise
       [Fact]
       public void ParsingTheLightningStringCipherToChaChaPoly()
       {
-         this._protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
+         _protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
 
-         Assert.Equal(CipherFunction.ChaChaPoly, this._protocol.Cipher);
+         Assert.Equal(CipherFunction.ChaChaPoly, _protocol.Cipher);
       }
 
       [Fact]
       public void ParsingTheLightningStringDhToCurveSecp256K1()
       {
-         this._protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
+         _protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
 
-         Assert.Equal(DhFunction.CurveSecp256K1, this._protocol.Dh);
+         Assert.Equal(DhFunction.CurveSecp256K1, _protocol.Dh);
       }
 
       [Fact]
       public void ParsingTheLightningStringHashToSha256()
       {
-         this._protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
+         _protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
 
-         Assert.Equal(HashFunction.Sha256, this._protocol.Hash);
+         Assert.Equal(HashFunction.Sha256, _protocol.Hash);
       }
 
       [Fact]
       public void ParsingTheLightningStringHandshakePatternToXk()
       {
-         this._protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
+         _protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
 
-         Assert.Equal(HandshakePattern.XK, this._protocol.HandshakePattern);
+         Assert.Equal(HandshakePattern.XK, _protocol.HandshakePattern);
       }
    }
 }

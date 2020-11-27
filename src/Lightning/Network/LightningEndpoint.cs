@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using MithrilShards.Core.DataTypes;
 
@@ -8,6 +9,8 @@ namespace Network
    {
       public EndPoint? EndPoint { get; set; }
       public string? NodeId { get; set; }
+
+      public byte[] NodePubKey { get; set; }
 
       public override string ToString()
       {
@@ -46,11 +49,29 @@ namespace Network
 
       public static LightningEndpoint Parse(ReadOnlySpan<char> span)
       {
+         string nodeId = span.Slice(0, span.IndexOf("@"))
+            .ToString(); 
+         
          return new LightningEndpoint
          {
-            NodeId = span.Slice(0, span.IndexOf("@")).ToString(), // todo: do validation on this
+            NodeId = nodeId, // todo: do validation on this
+            NodePubKey = ParseNodeId(nodeId), 
             EndPoint = IPEndPoint.Parse(span.Slice(span.IndexOf("@") + 1))
          };
+      }
+      
+      //TODO David move logic to utilities
+      private static byte[] ParseNodeId(string nodeId)
+      {
+         if (string.IsNullOrEmpty(nodeId)) 
+            throw new ArgumentException(nameof(nodeId));
+			
+         int startIndex = nodeId.ToLower().StartsWith("0x") ? 2 : 0;
+			
+         return Enumerable.Range(startIndex, nodeId.Length - startIndex)
+            .Where(x => x % 2 == 0)
+            .Select(x => Convert.ToByte(nodeId.Substring(x, 2), 16))
+            .ToArray();
       }
    }
 }

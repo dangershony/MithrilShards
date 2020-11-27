@@ -5,6 +5,7 @@ namespace Network.Test.Protocol.Transport.Noise
 {
     public static class StringUtilities
     {
+       //TODO David move logic to utilities
         public static byte[] ToByteArray(this string hex)
         {
             if (string.IsNullOrEmpty(hex)) return null;

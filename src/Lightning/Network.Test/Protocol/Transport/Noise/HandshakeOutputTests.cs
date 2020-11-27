@@ -10,18 +10,18 @@ namespace Network.Test.Protocol.Transport.Noise
 
       private void WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys()
       {
-         this._handshakeState = this.InitiateHandShake(true, Bolt8TestVectorParameters.Initiator.PrivateKey
+         _handshakeState = InitiateHandShake(true, Bolt8TestVectorParameters.Initiator.PrivateKey
              , Bolt8TestVectorParameters.Receiver.PublicKey);
 
-         this._handshakeState.SetDh(
+         _handshakeState.SetDh(
              new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.InitiatorEphemeralKeyPair));
       }
 
       private void WithResponderHandshakeInitiatedToKnownLocalKeys()
       {
-         this._handshakeState = this.InitiateHandShake(false, Bolt8TestVectorParameters.Receiver.PrivateKey);
+         _handshakeState = InitiateHandShake(false, Bolt8TestVectorParameters.Receiver.PrivateKey);
 
-         this._handshakeState.SetDh(
+         _handshakeState.SetDh(
              new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ReceiverEphemeralKeyPair));
       }
 
@@ -31,14 +31,14 @@ namespace Network.Test.Protocol.Transport.Noise
          return new HandshakeState<ChaCha20Poly1305, CurveSecp256K1, Sha256>(
              Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME), isInitiator,
              LightningNetworkConfig.ProlugeByteArray(), s, rs, new List<byte[]>(),
-             new byte[] { 0x00 });
+             LightningNetworkConfig.NoiseProtocolVersionPrefix);
       }
 
       private byte[] WithInitiatorActOneCompletedSuccessfully()
       {
          var buffer = new byte[50];
 
-         this._handshakeState.WriteMessage(null, buffer);
+         _handshakeState.WriteMessage(null, buffer);
 
          return buffer;
       }
@@ -47,7 +47,7 @@ namespace Network.Test.Protocol.Transport.Noise
       {
          var buffer = new byte[50];
 
-         this._handshakeState.ReadMessage(input, buffer);
+         _handshakeState.ReadMessage(input, buffer);
          return buffer;
       }
 
@@ -55,7 +55,7 @@ namespace Network.Test.Protocol.Transport.Noise
       {
          var buffer = new byte[50];
 
-         this._handshakeState.ReadMessage(input, buffer);
+         _handshakeState.ReadMessage(input, buffer);
 
          return buffer;
       }
@@ -64,11 +64,11 @@ namespace Network.Test.Protocol.Transport.Noise
       [InlineData(Bolt8TestVectorParameters.ActOne.EndStateHash, Bolt8TestVectorParameters.ActOne.InitiatorOutput)]
       public void ActOneOutputFitsLightningNetworkBolt8testVector(string expectedHashHex, string expectedOutputHex)
       {
-         this.WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
+         WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
 
          var buffer = new byte[50];
 
-         var (ciphertextSize, handshakeHash, transport) = this._handshakeState.WriteMessage(null, buffer);
+         var (ciphertextSize, handshakeHash, transport) = _handshakeState.WriteMessage(null, buffer);
 
          var expectedOutput = expectedOutputHex.ToByteArray();
 
@@ -82,12 +82,12 @@ namespace Network.Test.Protocol.Transport.Noise
       [InlineData(Bolt8TestVectorParameters.ActOne.InitiatorOutput, Bolt8TestVectorParameters.ActOne.EndStateHash)]
       public void ActOneResponder(string validInputHex, string expectedHashHex)
       {
-         this.WithResponderHandshakeInitiatedToKnownLocalKeys();
+         WithResponderHandshakeInitiatedToKnownLocalKeys();
 
          var buffer = new byte[50];
 
          var (ciphertextSize, handshakeHash, transport) =
-             this._handshakeState.ReadMessage(validInputHex.ToByteArray(), buffer);
+             _handshakeState.ReadMessage(validInputHex.ToByteArray(), buffer);
 
          Assert.Equal(ciphertextSize, 0);
          Assert.Equal(expectedHashHex.ToByteArray(), handshakeHash);
@@ -101,13 +101,13 @@ namespace Network.Test.Protocol.Transport.Noise
           Bolt8TestVectorParameters.ActTwo.ResponderOutput)]
       public void ActTwoResponderSide(string actOneValidInput, string expectedHashHex, string expectedOutputHex)
       {
-         this.WithResponderHandshakeInitiatedToKnownLocalKeys();
+         WithResponderHandshakeInitiatedToKnownLocalKeys();
 
-         this.WithResponderActOneCompletedSuccessfully(actOneValidInput.ToByteArray());
+         WithResponderActOneCompletedSuccessfully(actOneValidInput.ToByteArray());
 
          var buffer = new byte[50];
 
-         var (ciphertextSize, handshakeHash, transport) = this._handshakeState.WriteMessage(null, buffer);
+         var (ciphertextSize, handshakeHash, transport) = _handshakeState.WriteMessage(null, buffer);
 
          var expectedOutput = expectedOutputHex.ToByteArray();
 
@@ -121,14 +121,14 @@ namespace Network.Test.Protocol.Transport.Noise
       [InlineData(Bolt8TestVectorParameters.ActTwo.ResponderOutput, Bolt8TestVectorParameters.ActTwo.EndStateHash)]
       public void ActTwoInitiatorSide(string validInputHex, string expectedHashHex)
       {
-         this.WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
+         WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
 
-         this.WithInitiatorActOneCompletedSuccessfully();
+         WithInitiatorActOneCompletedSuccessfully();
 
          var buffer = new byte[50];
 
          var (ciphertextSize, handshakeHash, transport) =
-             this._handshakeState.ReadMessage(validInputHex.ToByteArray(), buffer);
+             _handshakeState.ReadMessage(validInputHex.ToByteArray(), buffer);
 
          Assert.Equal(ciphertextSize, 0);
          Assert.Equal(handshakeHash, expectedHashHex.ToByteArray());
@@ -142,15 +142,15 @@ namespace Network.Test.Protocol.Transport.Noise
           Bolt8TestVectorParameters.ActThree.InitiatorOutput)]
       public void ActThreeInitiatorSide(string validInputHex, string expectedHashHex, string expectedOutputHex)
       {
-         this.WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
+         WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
 
-         this.WithInitiatorActOneCompletedSuccessfully();
+         WithInitiatorActOneCompletedSuccessfully();
 
-         this.WithInitiatorActTwoCompletesSuccessfully(validInputHex.ToByteArray());
+         WithInitiatorActTwoCompletesSuccessfully(validInputHex.ToByteArray());
 
          var buffer = new byte[66];
 
-         var (ciphertextSize, _, t) = this._handshakeState.WriteMessage(null, buffer);
+         var (ciphertextSize, _, t) = _handshakeState.WriteMessage(null, buffer);
 
          var expectedOutput = expectedOutputHex.ToByteArray();
 
