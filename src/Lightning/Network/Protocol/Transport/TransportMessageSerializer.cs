@@ -30,7 +30,8 @@ namespace Network.Protocol.Transport
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
-         NodeContext nodeContext, IHandshakeStateFactory handshakeStateFactory)
+         NodeContext nodeContext, 
+         IHandshakeStateFactory handshakeStateFactory)
       {
          _logger = logger;
          _networkMessageSerializerManager = networkMessageSerializerManager;
