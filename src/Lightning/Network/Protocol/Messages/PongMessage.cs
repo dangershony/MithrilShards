@@ -3,13 +3,10 @@ using MithrilShards.Core.Network.Protocol.Serialization;
 namespace Network.Protocol.Messages
 {
    [NetworkMessage(COMMAND)]
-   public class PingMessage : BaseMessage
+   public class PongMessage : BaseMessage
    {
-      private const string COMMAND = "18";
-      
+      private const string COMMAND = "19";
       public override string Command => COMMAND;
-
-      public ushort NumPongBytes { get; set; }
 
       public ushort BytesLen { get; set; }
 
