@@ -8,6 +8,7 @@ using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Network.Bedrock;
 using Network.Protocol.Messages;
+using Network.Protocol.Transport.Noise;
 
 namespace Network.Protocol.Transport
 {
@@ -19,6 +20,7 @@ namespace Network.Protocol.Transport
    {
       private readonly ILogger<TransportMessageSerializer> _logger;
       private readonly INetworkMessageSerializerManager _networkMessageSerializerManager;
+      readonly IHandshakeStateFactory _handshakeStateFactory;
       private readonly NodeContext _nodeContext;
 
       private NetworkPeerContext _networkPeerContext;
@@ -28,11 +30,12 @@ namespace Network.Protocol.Transport
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
-         NodeContext nodeContext)
+         NodeContext nodeContext, IHandshakeStateFactory handshakeStateFactory)
       {
          _logger = logger;
          _networkMessageSerializerManager = networkMessageSerializerManager;
          _nodeContext = nodeContext;
+         _handshakeStateFactory = handshakeStateFactory;
          _deserializationContext = new DeserializationContext();
 
          //initialized by SetPeerContext
@@ -65,7 +68,8 @@ namespace Network.Protocol.Transport
             lightningEndpoint = (LightningEndpoint)res;
          }
 
-         _handshakeProtocol = new HandshakeNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey);
+         _handshakeProtocol = new HandshakeNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey,
+            _handshakeStateFactory);
          _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
       }
 
