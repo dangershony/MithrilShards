@@ -2,6 +2,7 @@
 using System.Buffers;
 using MithrilShards.Core;
 using MithrilShards.Core.DataTypes;
+using NBitcoin;
 
 namespace Network
 {
@@ -19,8 +20,10 @@ namespace Network
 
          _randomNumberGenerator.GetBytes(prv.AsSpan());
 
+         var k = new NBitcoin.Key(prv);
+
          // random data
-         PrivateKey = prv;
+         PrivateKey = k.ToBytes();
          LocalPubKey = PrivateKey.AsSpan().Slice(32).ToString();
       }
    }

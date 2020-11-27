@@ -45,15 +45,7 @@ namespace Network.Protocol.Transport
          _networkPeerContext = peerContext as NetworkPeerContext ?? throw new ArgumentException("Expected NetworkPeerContext", nameof(peerContext)); ;
          _deserializationContext.SetInitiator(_networkPeerContext.Direction == PeerConnectionDirection.Outbound);
 
-         _handshakeProtocol = new HandshakeNoiseProtocol
-         {
-            Initiator = _networkPeerContext.Direction == PeerConnectionDirection.Outbound,
-            LocalPubKey = _nodeContext.LocalPubKey,
-            PrivateLey = _nodeContext.PrivateLey,
-         };
-
-         _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
-
+         LightningEndpoint? lightningEndpoint = null;
          if (peerContext.Direction == PeerConnectionDirection.Outbound)
          {
             OutgoingConnectionEndPoint endpoint = peerContext.Features.Get<OutgoingConnectionEndPoint>();
@@ -64,14 +56,17 @@ namespace Network.Protocol.Transport
                throw new ApplicationException("Initiator connection must have a public key of the remote node");
             }
 
-            if (res == null || !(res is LightningEndpoint lightningEndpoint))
+            if (res == null)
             {
                _logger.LogError("Remote connection type is invalid");
                throw new ApplicationException("Remote connection type is invalid");
             }
 
-            _handshakeProtocol.RemotePubKey = lightningEndpoint.NodeId;
+            lightningEndpoint = (LightningEndpoint)res;
          }
+
+         _handshakeProtocol = new HandshakeNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey);
+         _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
       }
 
       public bool TryParseMessage(in ReadOnlySequence<byte> input, ref SequencePosition consumed, ref SequencePosition examined, /*[MaybeNullWhen(false)]*/  out INetworkMessage message)
