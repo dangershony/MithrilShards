@@ -5,7 +5,7 @@ namespace Network.Protocol.Transport
 {
    public interface IHandshakeProtocol
    {
-      public string RemotePubKey { get; set; }
+      public string? RemotePubKey { get; set; }
       public string LocalPubKey { get; set; }
 
       public bool Initiator { get; set; }

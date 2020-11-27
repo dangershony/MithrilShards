@@ -21,9 +21,9 @@ namespace Network.Protocol.Transport
       private readonly INetworkMessageSerializerManager _networkMessageSerializerManager;
       private readonly NodeContext _nodeContext;
 
-      private NetworkPeerContext? _networkPeerContext;
+      private NetworkPeerContext _networkPeerContext;
       private IHandshakeProtocol _handshakeProtocol;
-      private HandshakeState? _handshakeState;
+      private readonly DeserializationContext _deserializationContext;
 
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
@@ -33,38 +33,45 @@ namespace Network.Protocol.Transport
          _logger = logger;
          _networkMessageSerializerManager = networkMessageSerializerManager;
          _nodeContext = nodeContext;
-         _handshakeState = null;
-         _networkPeerContext = null!; //initialized by SetPeerContext
+         _deserializationContext = new DeserializationContext();
+
+         //initialized by SetPeerContext
+         _networkPeerContext = null!;
+         _handshakeProtocol = null!;
       }
 
       public void SetPeerContext(IPeerContext peerContext)
       {
          _networkPeerContext = peerContext as NetworkPeerContext ?? throw new ArgumentException("Expected NetworkPeerContext", nameof(peerContext)); ;
-         _handshakeState = new HandshakeState(_networkPeerContext.Direction == PeerConnectionDirection.Outbound);
-
-         LightningEndpoint lightningEndpoint = null;
-         if (peerContext.Direction == PeerConnectionDirection.Outbound)
-         {
-            OutgoingConnectionEndPoint endpoint = peerContext.Features.Get<OutgoingConnectionEndPoint>();
-
-            if (endpoint == null || !endpoint.Items.TryGetValue(nameof(LightningEndpoint), out object res))
-            {
-               _logger.LogError("Remote connection was not found ");
-               throw new ApplicationException("Initiator connection must have a public key of the remote node");
-            }
-
-            lightningEndpoint = (LightningEndpoint)res;
-         }
+         _deserializationContext.SetInitiator(_networkPeerContext.Direction == PeerConnectionDirection.Outbound);
 
          _handshakeProtocol = new HandshakeNoiseProtocol
          {
             Initiator = _networkPeerContext.Direction == PeerConnectionDirection.Outbound,
             LocalPubKey = _nodeContext.LocalPubKey,
             PrivateLey = _nodeContext.PrivateLey,
-            RemotePubKey = lightningEndpoint?.NodeId
          };
 
          _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
+
+         if (peerContext.Direction == PeerConnectionDirection.Outbound)
+         {
+            OutgoingConnectionEndPoint endpoint = peerContext.Features.Get<OutgoingConnectionEndPoint>();
+
+            if (endpoint == null || !endpoint.Items.TryGetValue(nameof(LightningEndpoint), out object? res))
+            {
+               _logger.LogError("Remote connection was not found ");
+               throw new ApplicationException("Initiator connection must have a public key of the remote node");
+            }
+
+            if (res == null || !(res is LightningEndpoint lightningEndpoint))
+            {
+               _logger.LogError("Remote connection type is invalid");
+               throw new ApplicationException("Remote connection type is invalid");
+            }
+
+            _handshakeProtocol.RemotePubKey = lightningEndpoint.NodeId;
+         }
       }
 
       public bool TryParseMessage(in ReadOnlySequence<byte> input, ref SequencePosition consumed, ref SequencePosition examined, /*[MaybeNullWhen(false)]*/  out INetworkMessage message)
@@ -74,21 +81,26 @@ namespace Network.Protocol.Transport
          if (_networkPeerContext.HandshakeComplete)
          {
             const int headerLength = 18;
-            if (reader.Remaining < headerLength)
+            if (!_deserializationContext.EncryptedMessageLengthRead)
             {
-               // the payload header is 18 bytes (2 byte payload length and 16 byte MAC)
-               // if the buffer does not have that amount of bytes we wait for more
-               // bytes to arrive in the stream before parsing the header
-               message = default;
-               return false;
+               if (reader.Remaining < headerLength)
+               {
+                  // the payload header is 18 bytes (2 byte payload length and 16 byte MAC)
+                  // if the buffer does not have that amount of bytes we wait for more
+                  // bytes to arrive in the stream before parsing the header
+                  message = default;
+                  return false;
+               }
+
+               ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position, headerLength);
+
+               // decrypt the message length
+               _deserializationContext.EncryptedMessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
+
+               reader.Advance(headerLength);
             }
 
-            ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position, headerLength);
-
-            // decrypt the message length
-            long encryptedMessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
-
-            if (reader.Remaining < headerLength + encryptedMessageLength)
+            if (reader.Remaining < _deserializationContext.EncryptedMessageLength)
             {
                // if the reader does not have the entire length of the header
                // and message we wait for more data from the stream
@@ -97,10 +109,13 @@ namespace Network.Protocol.Transport
             }
 
             var decryptedOutput = new ArrayBufferWriter<byte>();
-            _handshakeProtocol.ReadMessage(reader.CurrentSpan.Slice(0, headerLength + (int)encryptedMessageLength), decryptedOutput);
-            _networkPeerContext.Metrics.Received(headerLength + (int)encryptedMessageLength);
-            reader.Advance(headerLength + encryptedMessageLength);
+            _handshakeProtocol.ReadMessage(reader.CurrentSpan.Slice(0, (int)_deserializationContext.EncryptedMessageLength), decryptedOutput);
+            _networkPeerContext.Metrics.Received((int)_deserializationContext.EncryptedMessageLength);
+
+            // reset the reader and message flags
+            reader.Advance(_deserializationContext.EncryptedMessageLength);
             examined = consumed = reader.Position;
+            _deserializationContext.EncryptedMessageLength = 0;
 
             // now try to read the payload
             var payload = new ReadOnlySequence<byte>(decryptedOutput.WrittenMemory);
@@ -134,13 +149,13 @@ namespace Network.Protocol.Transport
             // During the handshake the byte sequence is passed as is to the
             // underline processor which will handle serialization of the message.
 
-            long nextLength = _handshakeState.NextLength();
+            long nextLength = _deserializationContext.NextLength();
             if (reader.Remaining >= nextLength)
             {
                message = new HandshakeMessage { Payload = input.Slice(reader.Position, nextLength) };
                reader.Advance(nextLength);
                examined = consumed = reader.Position;
-               _handshakeState.Advance();
+               _deserializationContext.AdvanceStep();
                return true;
             }
 
@@ -224,22 +239,39 @@ namespace Network.Protocol.Transport
          }
       }
 
-      internal class HandshakeState
+      internal class DeserializationContext
       {
-         public HandshakeState(bool initiator)
+         public DeserializationContext()
          {
-            _initiator = initiator;
-            _position = 1;
+            _handshakeStep = 1;
          }
 
-         private readonly bool _initiator;
-         private byte _position;
+         private bool _initiator;
+         private byte _handshakeStep;
+         public long EncryptedMessageLength { get; set; }
+
+         /// <summary>
+         /// The lightning payload contains a 2 byte header and a 16 byte mac.
+         /// If the header is already found then skip directly to reading the message.
+         /// </summary>
+         public bool EncryptedMessageLengthRead
+         {
+            get
+            {
+               return EncryptedMessageLength > 0;
+            }
+         }
+
+         public void SetInitiator(bool initiator)
+         {
+            _initiator = initiator;
+         }
 
          public long NextLength()
          {
             if (_initiator)
             {
-               if (_position == 1)
+               if (_handshakeStep == 1)
                {
                   return 50; // act two
                }
@@ -248,12 +280,12 @@ namespace Network.Protocol.Transport
             }
             else
             {
-               if (_position == 1)
+               if (_handshakeStep == 1)
                {
                   return 50; // act two
                }
 
-               if (_position == 2)
+               if (_handshakeStep == 2)
                {
                   return 66; // act two
                }
@@ -262,9 +294,9 @@ namespace Network.Protocol.Transport
             }
          }
 
-         public void Advance()
+         public void AdvanceStep()
          {
-            _position++;
+            _handshakeStep++;
          }
       }
    }
