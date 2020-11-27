@@ -11,7 +11,7 @@ namespace Network.Test.Protocol.Transport.Noise
       private void WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys()
       {
          _handshakeState = InitiateHandShake(true, Bolt8TestVectorParameters.Initiator.PrivateKey
-             , Bolt8TestVectorParameters.Receiver.PublicKey);
+             , Bolt8TestVectorParameters.Responder.PublicKey);
 
          _handshakeState.SetDh(
              new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.InitiatorEphemeralKeyPair));
@@ -19,10 +19,10 @@ namespace Network.Test.Protocol.Transport.Noise
 
       private void WithResponderHandshakeInitiatedToKnownLocalKeys()
       {
-         _handshakeState = InitiateHandShake(false, Bolt8TestVectorParameters.Receiver.PrivateKey);
+         _handshakeState = InitiateHandShake(false, Bolt8TestVectorParameters.Responder.PrivateKey);
 
          _handshakeState.SetDh(
-             new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ReceiverEphemeralKeyPair));
+             new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ResponderEphemeralKeyPair));
       }
 
       private HandshakeState<ChaCha20Poly1305, CurveSecp256K1, Sha256> InitiateHandShake(bool isInitiator,
@@ -61,7 +61,7 @@ namespace Network.Test.Protocol.Transport.Noise
       }
 
       [Theory]
-      [InlineData(Bolt8TestVectorParameters.ActOne.EndStateHash, Bolt8TestVectorParameters.ActOne.InitiatorOutput)]
+      [InlineData(Bolt8TestVectorParameters.ActOne.END_STATE_HASH, Bolt8TestVectorParameters.ActOne.INITIATOR_OUTPUT)]
       public void ActOneOutputFitsLightningNetworkBolt8testVector(string expectedHashHex, string expectedOutputHex)
       {
          WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
@@ -79,7 +79,7 @@ namespace Network.Test.Protocol.Transport.Noise
       }
 
       [Theory]
-      [InlineData(Bolt8TestVectorParameters.ActOne.InitiatorOutput, Bolt8TestVectorParameters.ActOne.EndStateHash)]
+      [InlineData(Bolt8TestVectorParameters.ActOne.INITIATOR_OUTPUT, Bolt8TestVectorParameters.ActOne.END_STATE_HASH)]
       public void ActOneResponder(string validInputHex, string expectedHashHex)
       {
          WithResponderHandshakeInitiatedToKnownLocalKeys();
@@ -96,9 +96,9 @@ namespace Network.Test.Protocol.Transport.Noise
       }
 
       [Theory]
-      [InlineData(Bolt8TestVectorParameters.ActOne.InitiatorOutput,
-          Bolt8TestVectorParameters.ActTwo.EndStateHash,
-          Bolt8TestVectorParameters.ActTwo.ResponderOutput)]
+      [InlineData(Bolt8TestVectorParameters.ActOne.INITIATOR_OUTPUT,
+          Bolt8TestVectorParameters.ActTwo.END_STATE_HASH,
+          Bolt8TestVectorParameters.ActTwo.RESPONDER_OUTPUT)]
       public void ActTwoResponderSide(string actOneValidInput, string expectedHashHex, string expectedOutputHex)
       {
          WithResponderHandshakeInitiatedToKnownLocalKeys();
@@ -118,7 +118,7 @@ namespace Network.Test.Protocol.Transport.Noise
       }
 
       [Theory]
-      [InlineData(Bolt8TestVectorParameters.ActTwo.ResponderOutput, Bolt8TestVectorParameters.ActTwo.EndStateHash)]
+      [InlineData(Bolt8TestVectorParameters.ActTwo.RESPONDER_OUTPUT, Bolt8TestVectorParameters.ActTwo.END_STATE_HASH)]
       public void ActTwoInitiatorSide(string validInputHex, string expectedHashHex)
       {
          WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();
@@ -137,9 +137,9 @@ namespace Network.Test.Protocol.Transport.Noise
       }
 
       [Theory]
-      [InlineData(Bolt8TestVectorParameters.ActTwo.ResponderOutput,
-          Bolt8TestVectorParameters.ActThree.EndStateHash,
-          Bolt8TestVectorParameters.ActThree.InitiatorOutput)]
+      [InlineData(Bolt8TestVectorParameters.ActTwo.RESPONDER_OUTPUT,
+          Bolt8TestVectorParameters.ActThree.END_STATE_HASH,
+          Bolt8TestVectorParameters.ActThree.INITIATOR_OUTPUT)]
       public void ActThreeInitiatorSide(string validInputHex, string expectedHashHex, string expectedOutputHex)
       {
          WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys();

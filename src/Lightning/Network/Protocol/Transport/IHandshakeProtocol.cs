@@ -10,7 +10,7 @@ namespace Network.Protocol.Transport
 
       public bool Initiator { get; set; }
 
-      public byte[]? PrivateLey { get; set; }
+      public byte[]? PrivateKey { get; set; }
 
       public void WriteMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output);
 

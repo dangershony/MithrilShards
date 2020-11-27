@@ -13,6 +13,7 @@ using Network.Protocol;
 using Network.Protocol.Serialization;
 using Network.Protocol.Serialization.Serializers.Types;
 using Network.Protocol.Transport;
+using Network.Protocol.Transport.Noise;
 using Network.Settings;
 
 namespace Network
@@ -33,12 +34,19 @@ namespace Network
                   .AddProtocolTypeSerializers()
                   .AddMessageProcessors()
                   .AddTlvComponents()
-                  .ReplaceServices();
+                  .ReplaceServices()
+                  .AddNoiseComponents();
             });
 
          return forgeBuilder;
       }
 
+      private static IServiceCollection AddNoiseComponents(this IServiceCollection services)
+      {
+         services.AddSingleton<IHandshakeStateFactory, HandshakeStateFactory>();
+         return services;
+      }
+      
       private static IServiceCollection AddTlvComponents(this IServiceCollection services)
       {
          services.AddSingleton<ITlvStreamSerializer, TlvStreamSerializer>();

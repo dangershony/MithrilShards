@@ -12,47 +12,43 @@ namespace Network.Protocol.Transport
 
       public bool Initiator { get; set; }
 
-      public byte[] PrivateLey { get; set; } // TODO: this can be private or even hidden behind an interface.
+      public byte[] PrivateKey { get; set; } // TODO: this can be private or even hidden behind an interface.
 
       private readonly IHandshakeState _handshakeState;
-
+      
       private ITransport? _transport;
 
       private byte[] _messageHeader = new byte[2];
-
-      public HandshakeNoiseProtocol(NodeContext nodeContext, byte[]? remotePubKey)
+      
+      public HandshakeNoiseProtocol(NodeContext nodeContext, byte[]? remotePubKey, 
+         IHandshakeStateFactory handshakeFactory)
       {
-         PrivateLey = nodeContext.PrivateKey;
+         PrivateKey = nodeContext.PrivateKey;
          LocalPubKey = nodeContext.LocalPubKey;
          if (remotePubKey != null)
          {
             RemotePubKey = remotePubKey;
-            Initiator = true;
+            Initiator = true;   
          }
-
-         Noise.Protocol protocol = Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
-
-         protocol.VersionPrefix = LightningNetworkConfig.NoiseProtocolVersionPrefix;
-
-         _handshakeState = protocol.Create(Initiator, LightningNetworkConfig.ProlugeByteArray(),
-            PrivateLey, RemotePubKey!);
+         
+         _handshakeState = handshakeFactory.CreateLightningNetworkHandshakeState(PrivateKey,RemotePubKey!);
       }
-
+      
       public void WriteMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output) //TODO David add tests
       {
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
-
+         
          BinaryPrimitives.WriteUInt16BigEndian(_messageHeader,Convert.ToUInt16(message.Length));
-
+         
          int headerLength = _transport.WriteMessage(_messageHeader, output.GetSpan() );
 
          output.Advance(headerLength);
-
+         
          int messageLength = _transport.WriteMessage(message, output.GetSpan());
 
          output.Advance(messageLength);
-
+         
          HandleKeyRecycle();
       }
 
@@ -76,10 +72,10 @@ namespace Network.Protocol.Transport
       {
          if (_transport == null)
             return;
-
+         
          if (_transport.GetNumberOfInitiatorMessages() == LightningNetworkConfig.NumberOfNonceBeforeKeyRecycle)
             _transport.KeyRecycleInitiatorToResponder();
-
+         
          if (_transport.GetNumberOfResponderMessages() == LightningNetworkConfig.NumberOfNonceBeforeKeyRecycle)
             _transport.KeyRecycleResponderToInitiator();
       }
@@ -103,7 +99,7 @@ namespace Network.Protocol.Transport
                (int bytesWritten, _, ITransport? transport) = _handshakeState.WriteMessage(null, output.GetSpan());
 
                output.Advance(bytesWritten);
-
+               
                if (transport == null)
                   return;
 
@@ -122,7 +118,7 @@ namespace Network.Protocol.Transport
             if (transport == null)
             {
                (int bytesWritten, _, _) =  _handshakeState.WriteMessage(null, output.GetSpan());
-
+               
                output.Advance(bytesWritten);
             }
             else

@@ -18,7 +18,6 @@
    <ItemGroup>
      <Folder Include="Api\Models\Requests\" />
      <Folder Include="Api\Models\Responses\" />
-     <Folder Include="Protocol\Transport\Noise" />
    </ItemGroup>
 
    <ItemGroup>

@@ -21,7 +21,7 @@ namespace Network.Test.Protocol.Transport.Noise
       private void WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys()
       {
          _initiatorHandshakeState = InitiateHandShake(true, Bolt8TestVectorParameters.Initiator.PrivateKey
-             , Bolt8TestVectorParameters.Receiver.PublicKey);
+             , Bolt8TestVectorParameters.Responder.PublicKey);
 
          _initiatorHandshakeState.SetDh(
              new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.InitiatorEphemeralKeyPair));
@@ -29,10 +29,10 @@ namespace Network.Test.Protocol.Transport.Noise
 
       private void WithResponderHandshakeInitiatedToKnownLocalKeys()
       {
-         _responderHandshakeState = InitiateHandShake(false, Bolt8TestVectorParameters.Receiver.PrivateKey);
+         _responderHandshakeState = InitiateHandShake(false, Bolt8TestVectorParameters.Responder.PrivateKey);
 
          _responderHandshakeState.SetDh(
-             new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ReceiverEphemeralKeyPair));
+             new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ResponderEphemeralKeyPair));
       }
 
       private HandshakeState<ChaCha20Poly1305, CurveSecp256K1, Sha256> InitiateHandShake(bool isInitiator,
