@@ -30,7 +30,7 @@ namespace Network.Protocol.Transport
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
-         NodeContext nodeContext, 
+         NodeContext nodeContext,
          IHandshakeStateFactory handshakeStateFactory)
       {
          _logger = logger;
@@ -94,7 +94,6 @@ namespace Network.Protocol.Transport
 
                // decrypt the message length
                _deserializationContext.MessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
-
                reader.Advance(_handshakeProtocol.HeaderLength);
             }
 
@@ -107,8 +106,7 @@ namespace Network.Protocol.Transport
             }
 
             var decryptedOutput = new ArrayBufferWriter<byte>();
-            ReadOnlySequence<byte> encryptedMessage = reader.Sequence.Slice(_handshakeProtocol.HeaderLength, (int)_deserializationContext.MessageLength);
-            _handshakeProtocol.ReadMessage(encryptedMessage.ToArray(), decryptedOutput);
+            _handshakeProtocol.ReadMessage(reader.Sequence.Slice(reader.Position, (int)_deserializationContext.MessageLength), decryptedOutput);
             _networkPeerContext.Metrics.Received((int)_deserializationContext.MessageLength);
 
             // reset the reader and message flags
@@ -188,12 +186,7 @@ namespace Network.Protocol.Transport
                   // 16-byte MAC of the encrypted message length
                   // The encrypted Lightning message
                   // 16-byte MAC of the Lightning message
-                  var encryptedOutput = new ArrayBufferWriter<byte>();
-                  _handshakeProtocol.WriteMessage(payloadOutput.WrittenSpan, encryptedOutput);
-
-                  // write the lightning message to the underline buffer.
-                  output.Write(encryptedOutput.WrittenSpan);
-
+                  _handshakeProtocol.WriteMessage(new ReadOnlySequence<byte>(payloadOutput.WrittenMemory), output);
                   _networkPeerContext.Metrics.Sent(payloadOutput.WrittenCount);
                   _logger.LogDebug("Sent message '{Command}' with payload size {PayloadSize}.", command, payloadOutput.WrittenCount);
                }

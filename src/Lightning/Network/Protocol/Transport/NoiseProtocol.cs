@@ -39,32 +39,30 @@ namespace Network.Protocol.Transport
 
       public int HeaderLength { get { return HEADER_LENGTH; } }
 
-      public void WriteMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output) //TODO David add tests
+      public void WriteMessage(ReadOnlySequence<byte> message, IBufferWriter<byte> output) //TODO David add tests
       {
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         var expectedMessageLength = 2 + Aead.TAG_SIZE * 2 + message.Length;
-         
          BinaryPrimitives.WriteUInt16BigEndian(_messageHeaderCache, Convert.ToUInt16(message.Length));
 
-         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan(expectedMessageLength));
+         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan());
 
          output.Advance(headerLength);
 
-         int messageLength = _transport.WriteMessage(message, output.GetSpan(expectedMessageLength));
+         int messageLength = _transport.WriteMessage(message.FirstSpan, output.GetSpan());
 
          output.Advance(messageLength);
 
          HandleKeyRecycle();
       }
 
-      public void ReadMessage(ReadOnlySpan<byte> message, IBufferWriter<byte> output) //TODO David add tests
+      public void ReadMessage(ReadOnlySequence<byte> message, IBufferWriter<byte> output) //TODO David add tests
       {
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         int bytesRead = _transport.ReadMessage(message, output.GetSpan(message.Length)); // TODO check what if buffer is very big
+         int bytesRead = _transport.ReadMessage(message.FirstSpan, output.GetSpan()); // TODO check what if buffer is very big
 
          output.Advance(bytesRead);
 
@@ -97,11 +95,11 @@ namespace Network.Protocol.Transport
          return messageLengthDecrypted + Aead.TAG_SIZE;
       }
 
-      public void Handshake(ReadOnlySpan<byte> message, IBufferWriter<byte> output)
+      public void Handshake(ReadOnlySequence<byte> message, IBufferWriter<byte> output)
       {
          if (Initiator)
          {
-            if (message == null)
+            if (message.Length == 0)
             {
                (int bytesWritten, _, _) = _handshakeState.WriteMessage(null, output.GetSpan());
 
@@ -109,7 +107,7 @@ namespace Network.Protocol.Transport
             }
             else
             {
-               _handshakeState.ReadMessage(message, output.GetSpan());
+               _handshakeState.ReadMessage(message.FirstSpan, output.GetSpan());
 
                (int bytesWritten, _, ITransport? transport) = _handshakeState.WriteMessage(null, output.GetSpan());
 
@@ -122,7 +120,7 @@ namespace Network.Protocol.Transport
          }
          else
          {
-            (_, _, ITransport? transport) = _handshakeState.ReadMessage(message, output.GetSpan());
+            (_, _, ITransport? transport) = _handshakeState.ReadMessage(message.FirstSpan, output.GetSpan());
 
             if (transport == null)
             {

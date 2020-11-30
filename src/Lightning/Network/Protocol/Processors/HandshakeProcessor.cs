@@ -112,7 +112,7 @@ namespace Network.Protocol.Processors
       private HandshakeMessage Handshake(ReadOnlySequence<byte> input)
       {
          var output = new ArrayBufferWriter<byte>();
-         _handshakeProtocol.Handshake(input.FirstSpan, output);
+         _handshakeProtocol.Handshake(input, output);
          return new HandshakeMessage { Payload = new ReadOnlySequence<byte>(output.WrittenMemory) };
       }
 
