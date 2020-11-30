@@ -36,7 +36,7 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
 
          protected override (string,PingMessage) GetData()
          {
-            return ("0xf1ff0a0000000000000000000000",
+            return ("0xfff1000a00000000000000000000",
                   new PingMessage {BytesLen = 10, NumPongBytes = 65521, Ignored = new byte[10]});
          }
    }

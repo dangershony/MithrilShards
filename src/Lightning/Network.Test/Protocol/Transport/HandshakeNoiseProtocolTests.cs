@@ -39,27 +39,43 @@ namespace Network.Test.Protocol.Transport
 
          var input = new byte[66];
 
-         //  act one
+         //  act one initiator
          initiator.Handshake(null, buffer);
          buffer.WrittenSpan.CopyTo(input.AsSpan(0, 50));
          buffer.Clear();
+         // act one & two responder
          responder.Handshake(input.AsSpan(0, 50), buffer);
 
-         // act two
+         // act two & three initiator
          buffer.WrittenSpan.CopyTo(input.AsSpan(0, 50));
          buffer.Clear();
          initiator.Handshake(input.AsSpan(0, 50), buffer);
 
-         // act three
+         // act three responder
          buffer.WrittenSpan.CopyTo(input.AsSpan());
          buffer.Clear();
          responder.Handshake(input.AsSpan(), buffer);
 
+         // sending a message across initiator to responder
          initiator.WriteMessage(message.ToByteArray(), buffer);
          buffer.WrittenSpan.CopyTo(input.AsSpan());
          buffer.Clear();
-         responder.ReadMessage(input.AsSpan(0, 39), buffer);
-
+         int length = responder.ReadMessageLength(new ReadOnlySequence<byte>(input.AsSpan(0,18)
+            .ToArray()));
+         responder.ReadMessage(input.AsSpan(18,  length), buffer);
+         
+         Assert.Equal(buffer.WrittenSpan.ToArray(), message.ToByteArray());
+         
+         buffer.Clear();
+         
+         // sending a message across responder to initiator
+         responder.WriteMessage(message.ToByteArray(), buffer);
+         buffer.WrittenSpan.CopyTo(input.AsSpan());
+         buffer.Clear();
+         length = initiator.ReadMessageLength(new ReadOnlySequence<byte>(input.AsSpan(0,18)
+            .ToArray()));
+         initiator.ReadMessage(input.AsSpan(18, length), buffer);
+         
          Assert.Equal(buffer.WrittenSpan.ToArray(), message.ToByteArray());
       }
 
@@ -91,12 +107,12 @@ namespace Network.Test.Protocol.Transport
          _noiseProtocol.Handshake(null, buffer);
          buffer.Clear();
 
-         //read
+         //read & write
          _noiseProtocol.Handshake(expectedInputHex.ToByteArray(), buffer);
 
          //encrypted null so nothing to decrypt
-         Assert.Equal(buffer.WrittenCount, 0);
-         Assert.Empty(buffer.WrittenSpan.ToArray());
+         Assert.Equal(buffer.WrittenCount, 66);
+         Assert.NotEmpty(buffer.WrittenSpan.ToArray());
       }
 
       [Theory]
@@ -112,12 +128,8 @@ namespace Network.Test.Protocol.Transport
          _noiseProtocol.Handshake(null, buffer);
          buffer.Clear();
 
-         //read
+         //read & write
          _noiseProtocol.Handshake(actTwoInput.ToByteArray(), buffer);
-         buffer.Clear();
-
-         //write
-         _noiseProtocol.Handshake(null, buffer);
 
          var expectedOutput = expectedOutputHex.ToByteArray();
 

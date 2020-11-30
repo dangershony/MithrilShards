@@ -101,7 +101,7 @@ namespace Network.Protocol.Transport
          {
             if (message == null)
             {
-               (int bytesWritten, _, ITransport? transport) = _handshakeState.WriteMessage(null, output.GetSpan());
+               (int bytesWritten, _, _) = _handshakeState.WriteMessage(null, output.GetSpan());
 
                output.Advance(bytesWritten);
             }

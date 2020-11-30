@@ -31,14 +31,14 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
 
       protected override void AssertMessageDeserialized(InitMessage baseMessage, InitMessage expectedMessage)
       {
-         Assert.Equal(baseMessage,expectedMessage);
+         Assert.Equal(baseMessage.Features,expectedMessage.Features);
+         Assert.Equal(baseMessage.GlobalFeatures,expectedMessage.GlobalFeatures);
       }
 
       protected override (string, InitMessage) GetData()
       {
-         // 0x010003010001
-         // 0x001000000000
-         return ("0x001000000000", new InitMessage());
+         // 0x001000000000 from Bolt 1 without type as it is not sent to the serializer
+         return ("00000000", new InitMessage());
       }
    }
 }

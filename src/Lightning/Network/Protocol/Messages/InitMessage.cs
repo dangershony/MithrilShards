@@ -9,7 +9,7 @@ namespace Network.Protocol.Messages
 
       public override string Command => COMMAND;
 
-      public byte[] GlobalFeatures { get; set; }
-      public byte[] Features { get; set; }
+      public byte[] GlobalFeatures { get; set; } = new byte[0];
+      public byte[] Features { get; set; } = new byte[0];
    }
 }
