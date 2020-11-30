@@ -15,7 +15,7 @@ namespace Network.Protocol
 
       public bool InitComplete { get; set; }
 
-      public IHandshakeProtocol HandshakeProtocol { get; set; }
+      public IHandshakeProtocol? HandshakeProtocol { get; set; }
 
       public NetworkPeerContext(ILogger logger,
          IEventBus eventBus,
@@ -26,8 +26,7 @@ namespace Network.Protocol
          EndPoint remoteEndPoint,
          INetworkMessageWriter messageWriter)
          : base(logger, eventBus, direction, peerId, localEndPoint, publicEndPoint, remoteEndPoint, messageWriter)
-      {
-      }
+      { }
 
       public void SetHandshakeProtocol(IHandshakeProtocol handshakeProtocol)
       {

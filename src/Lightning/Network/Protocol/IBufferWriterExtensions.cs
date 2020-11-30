@@ -147,9 +147,10 @@ namespace Network.Protocol
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      public static int WriteBytes(this IBufferWriter<byte> writer, byte[] value)
+      public static int WriteBytes(this IBufferWriter<byte> writer, byte[]? value)
       {
-         ThrowHelper.ThrowArgumentNullException(nameof(value));
+         if (value == null)
+            ThrowHelper.ThrowArgumentNullException(nameof(value));
 
          writer.Write(value);
          return value.Length;
