@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network;
@@ -9,7 +10,7 @@ using Network.Protocol.Transport;
 
 namespace Network.Protocol
 {
-   public class NetworkPeerContext : PeerContext
+   public class NetworkPeerContext : PeerContext, INetworkPeerContext
    {
       public bool HandshakeComplete { get; set; }
 
