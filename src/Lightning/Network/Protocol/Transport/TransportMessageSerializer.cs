@@ -30,7 +30,7 @@ namespace Network.Protocol.Transport
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
-         NodeContext nodeContext, 
+         NodeContext nodeContext,
          IHandshakeStateFactory handshakeStateFactory)
       {
          _logger = logger;
@@ -94,7 +94,6 @@ namespace Network.Protocol.Transport
 
                // decrypt the message length
                _deserializationContext.MessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
-
                reader.Advance(_handshakeProtocol.HeaderLength);
             }
 
