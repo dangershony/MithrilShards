@@ -34,7 +34,7 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
 
       protected override (string, PongMessage) GetData()
       {
-         return ("0x0a0000000000000000000000",new PongMessage
+         return ("0x000a00000000000000000000",new PongMessage
          {
             BytesLen = 10,Ignored = new byte[10]
          });

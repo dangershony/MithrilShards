@@ -11,16 +11,16 @@ namespace Network.Protocol.Serialization.Serializers.Messages
       public override void SerializeMessage(PingMessage message, int protocolVersion, NetworkPeerContext peerContext,
          IBufferWriter<byte> output)
       {
-         output.WriteUShort(message.NumPongBytes);
-         output.WriteUShort(message.BytesLen);
+         output.WriteUShort(message.NumPongBytes, true);
+         output.WriteUShort(message.BytesLen, true);
          output.WriteBytes(message.Ignored);
       }
 
       public override PingMessage DeserializeMessage(ref SequenceReader<byte> reader, int protocolVersion,
          NetworkPeerContext peerContext)
       {
-         var numPongBytes = reader.ReadUShort();
-         var bytesLen = reader.ReadUShort();
+         var numPongBytes = reader.ReadUShort(true);
+         var bytesLen = reader.ReadUShort(true);
          
          return new PingMessage
          {

@@ -12,14 +12,14 @@ namespace Network.Protocol.Serialization.Serializers.Messages
       public override void SerializeMessage(PongMessage message, int protocolVersion, NetworkPeerContext peerContext,
          IBufferWriter<byte> output)
       {
-         output.WriteUShort(message.BytesLen);
+         output.WriteUShort(message.BytesLen, true);
          output.WriteBytes(message.Ignored);
       }
 
       public override PongMessage DeserializeMessage(ref SequenceReader<byte> reader, int protocolVersion,
          NetworkPeerContext peerContext)
       {
-         var bytesLen = reader.ReadUShort();
+         var bytesLen = reader.ReadUShort(true);
          
          return new PongMessage
          {
