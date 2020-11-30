@@ -35,48 +35,53 @@ namespace Network.Test.Protocol.Transport
          , Bolt8TestVectorParameters.Responder.PrivateKey), null,
             new HandshakeStateFactory());
 
-         var buffer = new ArrayBufferWriter<byte>(66);
-
-         var input = new byte[66];
-
          //  act one initiator
-         initiator.Handshake(null, buffer);
-         buffer.WrittenSpan.CopyTo(input.AsSpan(0, 50));
-         buffer.Clear();
+         var input = new ReadOnlySequence<byte>();
+         var output = new ArrayBufferWriter<byte>();
+         initiator.Handshake(input, output);
+
          // act one & two responder
-         responder.Handshake(input.AsSpan(0, 50), buffer);
+         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
+         output = new ArrayBufferWriter<byte>();
+         responder.Handshake(input, output);
 
          // act two & three initiator
-         buffer.WrittenSpan.CopyTo(input.AsSpan(0, 50));
-         buffer.Clear();
-         initiator.Handshake(input.AsSpan(0, 50), buffer);
+         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
+         output = new ArrayBufferWriter<byte>();
+         initiator.Handshake(input, output);
 
          // act three responder
-         buffer.WrittenSpan.CopyTo(input.AsSpan());
-         buffer.Clear();
-         responder.Handshake(input.AsSpan(), buffer);
+         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
+         output = new ArrayBufferWriter<byte>();
+         responder.Handshake(input, output);
 
          // sending a message across initiator to responder
-         initiator.WriteMessage(message.ToByteArray(), buffer);
-         buffer.WrittenSpan.CopyTo(input.AsSpan());
-         buffer.Clear();
-         int length = responder.ReadMessageLength(new ReadOnlySequence<byte>(input.AsSpan(0,18)
-            .ToArray()));
-         responder.ReadMessage(input.AsSpan(18,  length), buffer);
-         
-         Assert.Equal(buffer.WrittenSpan.ToArray(), message.ToByteArray());
-         
-         buffer.Clear();
-         
+         input = new ReadOnlySequence<byte>(message.ToByteArray());
+         output = new ArrayBufferWriter<byte>();
+         initiator.WriteMessage(input, output);
+
+         // responder receives the message
+         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
+         output = new ArrayBufferWriter<byte>();
+         int length = responder.ReadMessageLength(new ReadOnlySequence<byte>(input.Slice(0, responder.HeaderLength).ToArray()));
+         responder.ReadMessage(input.Slice(initiator.HeaderLength, length), output);
+
+         // check message decrypted are correctly
+         Assert.Equal(output.WrittenSpan.ToArray(), message.ToByteArray());
+
          // sending a message across responder to initiator
-         responder.WriteMessage(message.ToByteArray(), buffer);
-         buffer.WrittenSpan.CopyTo(input.AsSpan());
-         buffer.Clear();
-         length = initiator.ReadMessageLength(new ReadOnlySequence<byte>(input.AsSpan(0,18)
-            .ToArray()));
-         initiator.ReadMessage(input.AsSpan(18, length), buffer);
-         
-         Assert.Equal(buffer.WrittenSpan.ToArray(), message.ToByteArray());
+         input = new ReadOnlySequence<byte>(message.ToByteArray());
+         output = new ArrayBufferWriter<byte>();
+         responder.WriteMessage(input, output);
+
+         // initiator receives the message
+         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
+         output = new ArrayBufferWriter<byte>();
+         length = initiator.ReadMessageLength(new ReadOnlySequence<byte>(input.Slice(0, initiator.HeaderLength).ToArray()));
+         initiator.ReadMessage(input.Slice(initiator.HeaderLength, length), output);
+
+         // check message decrypted are correctly
+         Assert.Equal(output.WrittenSpan.ToArray(), message.ToByteArray());
       }
 
       [Theory]
@@ -87,7 +92,7 @@ namespace Network.Test.Protocol.Transport
 
          var buffer = new ArrayBufferWriter<byte>();
 
-         _noiseProtocol.Handshake(null, buffer);
+         _noiseProtocol.Handshake(new ReadOnlySequence<byte>(), buffer);
 
          var expectedOutput = expectedOutputHex.ToByteArray();
 
@@ -104,11 +109,11 @@ namespace Network.Test.Protocol.Transport
          var buffer = new ArrayBufferWriter<byte>();
 
          //write
-         _noiseProtocol.Handshake(null, buffer);
+         _noiseProtocol.Handshake(new ReadOnlySequence<byte>(), buffer);
          buffer.Clear();
 
          //read & write
-         _noiseProtocol.Handshake(expectedInputHex.ToByteArray(), buffer);
+         _noiseProtocol.Handshake(new ReadOnlySequence<byte>(expectedInputHex.ToByteArray()), buffer);
 
          //encrypted null so nothing to decrypt
          Assert.Equal(buffer.WrittenCount, 66);
@@ -125,11 +130,11 @@ namespace Network.Test.Protocol.Transport
          var buffer = new ArrayBufferWriter<byte>();
 
          //write
-         _noiseProtocol.Handshake(null, buffer);
+         _noiseProtocol.Handshake(new ReadOnlySequence<byte>(), buffer);
          buffer.Clear();
 
          //read & write
-         _noiseProtocol.Handshake(actTwoInput.ToByteArray(), buffer);
+         _noiseProtocol.Handshake(new ReadOnlySequence<byte>(actTwoInput.ToByteArray()), buffer);
 
          var expectedOutput = expectedOutputHex.ToByteArray();
 
@@ -147,7 +152,7 @@ namespace Network.Test.Protocol.Transport
          var buffer = new ArrayBufferWriter<byte>();
 
          // write and read
-         _noiseProtocol.Handshake(actOneInputHex.ToByteArray(), buffer);
+         _noiseProtocol.Handshake(new ReadOnlySequence<byte>(actOneInputHex.ToByteArray()), buffer);
 
          var expectedOutput = expectedOutputHex.ToByteArray();
 
@@ -166,11 +171,11 @@ namespace Network.Test.Protocol.Transport
          var buffer = new ArrayBufferWriter<byte>();
 
          //read
-         _noiseProtocol.Handshake(actOneInput.ToByteArray(), buffer);
+         _noiseProtocol.Handshake(new ReadOnlySequence<byte>(actOneInput.ToByteArray()), buffer);
          buffer.Clear();
 
          //write
-         _noiseProtocol.Handshake(actThreeInput.ToByteArray(), buffer);
+         _noiseProtocol.Handshake(new ReadOnlySequence<byte>(actThreeInput.ToByteArray()), buffer);
 
          Assert.Equal(buffer.WrittenCount, 0);
          Assert.Empty(buffer.WrittenSpan.ToArray());
