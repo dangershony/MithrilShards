@@ -5,7 +5,7 @@ namespace Network.Protocol.Messages
    [NetworkMessage(COMMAND)]
    public class PingMessage : BaseMessage
    {
-      public const ushort MAX_BYTES_LEN = 512;// 65531;
+      public const ushort MAX_BYTES_LEN = 4096;// 65531; TODO David check bigger messages
 
       public PingMessage()
       { }
