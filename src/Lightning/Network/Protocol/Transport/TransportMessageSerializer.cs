@@ -107,7 +107,7 @@ namespace Network.Protocol.Transport
 
             var decryptedOutput = new ArrayBufferWriter<byte>();
             ReadOnlySequence<byte> encryptedMessage = reader.Sequence.Slice(_handshakeProtocol.HeaderLength, (int)_deserializationContext.MessageLength);
-            _handshakeProtocol.ReadMessage(encryptedMessage.ToArray(), decryptedOutput);
+            _handshakeProtocol.ReadMessage(encryptedMessage, decryptedOutput);
             _networkPeerContext.Metrics.Received((int)_deserializationContext.MessageLength);
 
             // reset the reader and message flags

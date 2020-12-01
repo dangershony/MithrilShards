@@ -44,17 +44,18 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         var expectedMessageLength = 2 + Aead.TAG_SIZE * 2 + message.Length;
+         ushort messageLength = Convert.ToUInt16(message.Length);
          
-         BinaryPrimitives.WriteUInt16BigEndian(_messageHeaderCache, Convert.ToUInt16(message.Length));
+         BinaryPrimitives.WriteUInt16BigEndian(_messageHeaderCache, messageLength);
 
-         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan(expectedMessageLength));
+         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan(2 + Aead.TAG_SIZE));
 
          output.Advance(headerLength);
 
-         int messageLength = _transport.WriteMessage(message, output.GetSpan(expectedMessageLength));
+         int writtenMessageLength = _transport.WriteMessage(message.ToArray(),
+            output.GetSpan(messageLength + Aead.TAG_SIZE));
 
-         output.Advance(messageLength);
+         output.Advance(writtenMessageLength);
 
          HandleKeyRecycle();
       }
@@ -64,7 +65,7 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         int bytesRead = _transport.ReadMessage(message, output.GetSpan(message.Length)); // TODO check what if buffer is very big
+         int bytesRead = _transport.ReadMessage(message.ToArray(), output.GetSpan((int)message.Length)); // TODO check what if buffer is very big
 
          output.Advance(bytesRead);
 
@@ -109,7 +110,7 @@ namespace Network.Protocol.Transport
             }
             else
             {
-               _handshakeState.ReadMessage(message, output.GetSpan());
+               _handshakeState.ReadMessage(message.ToArray(), output.GetSpan());
 
                (int bytesWritten, _, ITransport? transport) = _handshakeState.WriteMessage(null, output.GetSpan());
 
@@ -122,7 +123,7 @@ namespace Network.Protocol.Transport
          }
          else
          {
-            (_, _, ITransport? transport) = _handshakeState.ReadMessage(message, output.GetSpan());
+            (_, _, ITransport? transport) = _handshakeState.ReadMessage(message.ToArray(), output.GetSpan());
 
             if (transport == null)
             {

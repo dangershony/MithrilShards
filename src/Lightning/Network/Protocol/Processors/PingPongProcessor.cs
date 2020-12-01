@@ -46,7 +46,7 @@ namespace Network.Protocol.Processors
             .AddSeconds(-30))
             throw new ProtocolViolationException("TODO David check how we fail a channel from here");
 
-         if (message.NumPongBytes > PongMessage.MAX_BYTES_LEN)
+         if (message.NumPongBytes > PingMessage.MAX_BYTES_LEN)
             return false;
 
          _lastPingReceivedDateTime = _dateTimeProvider.GetUtcNow();
@@ -77,7 +77,7 @@ namespace Network.Protocol.Processors
 
       private async Task PingAsync(CancellationToken cancellationToken)
       {
-         if(!PeerContext.InitComplete)
+         if(!PeerContext.InitComplete || cancellationToken.IsCancellationRequested)
             return;
 
          var bytesLength = _numberGenerator.GetUint32() % PingMessage.MAX_BYTES_LEN;
@@ -97,7 +97,8 @@ namespace Network.Protocol.Processors
       
       protected override ValueTask OnPeerHandshakedAsync()
       {
-         _ = _periodicWork.StartAsync(
+         _ = _periodicWork
+            .StartAsync(
             label: $"{nameof(_periodicWork)}-{PeerContext.PeerId}",
             work: PingAsync,
             interval: TimeSpan.FromSeconds(PING_INTERVAL_SECS),
