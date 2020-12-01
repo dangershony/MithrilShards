@@ -30,7 +30,7 @@ namespace Network.Protocol.Transport
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
-         NodeContext nodeContext,
+         NodeContext nodeContext, 
          IHandshakeStateFactory handshakeStateFactory)
       {
          _logger = logger;
@@ -106,7 +106,8 @@ namespace Network.Protocol.Transport
             }
 
             var decryptedOutput = new ArrayBufferWriter<byte>();
-            _handshakeProtocol.ReadMessage(reader.Sequence.Slice(reader.Position, (int)_deserializationContext.MessageLength), decryptedOutput);
+            ReadOnlySequence<byte> encryptedMessage = reader.Sequence.Slice(_handshakeProtocol.HeaderLength, (int)_deserializationContext.MessageLength);
+            _handshakeProtocol.ReadMessage(encryptedMessage.ToArray(), decryptedOutput);
             _networkPeerContext.Metrics.Received((int)_deserializationContext.MessageLength);
 
             // reset the reader and message flags

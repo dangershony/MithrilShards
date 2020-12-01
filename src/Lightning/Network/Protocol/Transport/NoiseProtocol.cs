@@ -44,13 +44,15 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
+         var expectedMessageLength = 2 + Aead.TAG_SIZE * 2 + message.Length;
+         
          BinaryPrimitives.WriteUInt16BigEndian(_messageHeaderCache, Convert.ToUInt16(message.Length));
 
-         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan());
+         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan(expectedMessageLength));
 
          output.Advance(headerLength);
 
-         int messageLength = _transport.WriteMessage(message.FirstSpan, output.GetSpan());
+         int messageLength = _transport.WriteMessage(message, output.GetSpan(expectedMessageLength));
 
          output.Advance(messageLength);
 
@@ -62,7 +64,7 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         int bytesRead = _transport.ReadMessage(message.FirstSpan, output.GetSpan()); // TODO check what if buffer is very big
+         int bytesRead = _transport.ReadMessage(message, output.GetSpan(message.Length)); // TODO check what if buffer is very big
 
          output.Advance(bytesRead);
 
@@ -107,7 +109,7 @@ namespace Network.Protocol.Transport
             }
             else
             {
-               _handshakeState.ReadMessage(message.FirstSpan, output.GetSpan());
+               _handshakeState.ReadMessage(message, output.GetSpan());
 
                (int bytesWritten, _, ITransport? transport) = _handshakeState.WriteMessage(null, output.GetSpan());
 
@@ -120,7 +122,7 @@ namespace Network.Protocol.Transport
          }
          else
          {
-            (_, _, ITransport? transport) = _handshakeState.ReadMessage(message.FirstSpan, output.GetSpan());
+            (_, _, ITransport? transport) = _handshakeState.ReadMessage(message, output.GetSpan());
 
             if (transport == null)
             {
