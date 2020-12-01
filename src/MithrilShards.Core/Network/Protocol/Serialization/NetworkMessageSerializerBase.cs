@@ -8,7 +8,6 @@ namespace MithrilShards.Core.Network.Protocol.Serialization
       where TMessageType : INetworkMessage, new()
       where TPeerContext : IPeerContext
    {
-
       public NetworkMessageSerializerBase()
       {
          Type messageType = typeof(TMessageType);

@@ -15,7 +15,7 @@ namespace Network.Protocol.Transport.Noise
       /// <summary>
       /// Maximum size of the Noise protocol message in bytes.
       /// </summary>
-      public const int MAX_MESSAGE_LENGTH = 65535;
+      public const int MAX_MESSAGE_LENGTH = 65569;//65535;
 
       /// <summary>
       /// Minimum size of the protocol name in bytes.
