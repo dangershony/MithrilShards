@@ -1,8 +1,8 @@
 ﻿using System.Buffers;
 using MithrilShards.Core.Network.Protocol.Serialization;
-using Network.Protocol.Types;
+using Network.Protocol;
 
-namespace Network.Protocol.Serialization.Serializers.Types
+namespace Network.Types.Serializers
 {
    public class PongFancyResponseSerializer : IProtocolTypeSerializer<PongFancyResponse>
    {

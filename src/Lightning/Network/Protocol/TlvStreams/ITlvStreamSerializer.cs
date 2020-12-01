@@ -1,8 +1,6 @@
 ﻿using System.Buffers;
-using System.Diagnostics.CodeAnalysis;
-using Network.Protocol.Types;
 
-namespace Network.Protocol.Serialization
+namespace Network.Protocol.TlvStreams
 {
    public interface ITlvStreamSerializer
    {

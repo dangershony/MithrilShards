@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Text;
-using Network.Protocol.Types;
+using Network.Protocol.TlvStreams.TlvRecords;
 
-namespace Network.Protocol.Serialization.Serializers.Messages
+namespace Network.Protocol.TlvStreams.Serializers
 {
    public class NetworksTlvSerializer : ITlvRecordSerializer
    {

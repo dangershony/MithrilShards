@@ -11,14 +11,14 @@ using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Core.Network.Server.Guards;
 using Network.Protocol;
 using Network.Protocol.Serialization;
-using Network.Protocol.Serialization.Serializers.Types;
+using Network.Protocol.TlvStreams;
 using Network.Protocol.Transport;
 using Network.Protocol.Transport.Noise;
 using Network.Settings;
 
 namespace Network
 {
-   public static class Startup
+   public static class Builder
    {
       public static IForgeBuilder UseLightningNetwork(this IForgeBuilder forgeBuilder)
       {
@@ -46,7 +46,7 @@ namespace Network
          services.AddSingleton<IHandshakeStateFactory, HandshakeStateFactory>();
          return services;
       }
-      
+
       private static IServiceCollection AddTlvComponents(this IServiceCollection services)
       {
          services.AddSingleton<ITlvStreamSerializer, TlvStreamSerializer>();

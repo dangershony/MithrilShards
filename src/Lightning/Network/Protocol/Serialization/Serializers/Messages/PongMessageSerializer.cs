@@ -1,11 +1,12 @@
 using System.Buffers;
 using Network.Protocol.Messages;
+using Network.Protocol.TlvStreams;
 
 namespace Network.Protocol.Serialization.Serializers.Messages
 {
    public class PongMessageSerializer : BaseMessageSerializer<PongMessage>
    {
-      public PongMessageSerializer(ITlvStreamSerializer tlvStreamSerializer) 
+      public PongMessageSerializer(ITlvStreamSerializer tlvStreamSerializer)
          : base(tlvStreamSerializer)
       { }
 
@@ -20,7 +21,7 @@ namespace Network.Protocol.Serialization.Serializers.Messages
          NetworkPeerContext peerContext)
       {
          var bytesLen = reader.ReadUShort(true);
-         
+
          return new PongMessage
          {
             BytesLen = bytesLen,

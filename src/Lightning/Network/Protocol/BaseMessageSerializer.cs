@@ -7,7 +7,7 @@ using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using Network.Protocol.Messages;
 using Network.Protocol.Serialization;
-using Network.Protocol.Types;
+using Network.Protocol.TlvStreams;
 
 namespace Network.Protocol
 {

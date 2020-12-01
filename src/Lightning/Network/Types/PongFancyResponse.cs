@@ -1,4 +1,4 @@
-﻿namespace Network.Protocol.Types
+﻿namespace Network.Types
 {
    public class PongFancyResponse
    {

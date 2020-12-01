@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MithrilShards.Dev.Controller.Models.Requests
+namespace Network.Api.Models.Responses
 {
    public class NodeInfoResponse
    {

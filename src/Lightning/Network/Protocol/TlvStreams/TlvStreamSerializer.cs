@@ -1,14 +1,11 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.Network.Protocol.Serialization;
-using Network.Protocol.Types;
 
-namespace Network.Protocol.Serialization.Serializers.Types
+namespace Network.Protocol.TlvStreams
 {
    public class TlvStreamSerializer : ITlvStreamSerializer
    {

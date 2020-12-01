@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
-namespace Network.Protocol.Types
+namespace Network.Protocol.TlvStreams
 {
    public class TlVStream
    {

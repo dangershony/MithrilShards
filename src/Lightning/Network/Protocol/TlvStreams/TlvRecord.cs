@@ -1,4 +1,4 @@
-﻿namespace Network.Protocol.Types
+﻿namespace Network.Protocol.TlvStreams
 {
    public class TlvRecord
    {

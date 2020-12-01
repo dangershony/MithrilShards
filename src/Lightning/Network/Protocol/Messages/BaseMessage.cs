@@ -1,5 +1,5 @@
 ﻿using MithrilShards.Core.Network.Protocol;
-using Network.Protocol.Types;
+using Network.Protocol.TlvStreams;
 
 namespace Network.Protocol.Messages
 {

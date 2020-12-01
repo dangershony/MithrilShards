@@ -11,8 +11,9 @@ using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.PeerBehaviorManager;
 using MithrilShards.Core.Network.Protocol.Processors;
 using Network.Protocol.Messages;
+using Network.Protocol.TlvStreams;
+using Network.Protocol.TlvStreams.TlvRecords;
 using Network.Protocol.Transport;
-using Network.Protocol.Types;
 
 namespace Network.Protocol.Processors
 {

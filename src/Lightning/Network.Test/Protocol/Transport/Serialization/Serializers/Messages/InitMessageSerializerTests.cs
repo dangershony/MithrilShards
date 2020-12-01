@@ -4,6 +4,7 @@ using Moq;
 using Network.Protocol.Messages;
 using Network.Protocol.Serialization;
 using Network.Protocol.Serialization.Serializers.Messages;
+using Network.Protocol.TlvStreams;
 using Network.Test.Protocol.Transport.Noise;
 using Xunit;
 
@@ -11,7 +12,7 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
 {
    public class InitMessageSerializerTests : BaseMessageSerializerTests<InitMessage>
    {
-      public InitMessageSerializerTests() 
+      public InitMessageSerializerTests()
          : base(new InitMessageSerializer(new Mock<ITlvStreamSerializer>().Object))
       { }
 
@@ -19,8 +20,8 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
       {
          return new InitMessage
          {
-            Features = new byte[]{0x01},
-            GlobalFeatures = new byte[]{0x03}
+            Features = new byte[] { 0x01 },
+            GlobalFeatures = new byte[] { 0x03 }
          };
       }
 
@@ -31,8 +32,8 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
 
       protected override void AssertMessageDeserialized(InitMessage baseMessage, InitMessage expectedMessage)
       {
-         Assert.Equal(baseMessage.Features,expectedMessage.Features);
-         Assert.Equal(baseMessage.GlobalFeatures,expectedMessage.GlobalFeatures);
+         Assert.Equal(baseMessage.Features, expectedMessage.Features);
+         Assert.Equal(baseMessage.GlobalFeatures, expectedMessage.GlobalFeatures);
       }
 
       protected override (string, InitMessage) GetData()
