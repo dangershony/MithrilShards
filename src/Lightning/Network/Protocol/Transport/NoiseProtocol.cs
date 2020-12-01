@@ -44,13 +44,15 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
+         var expectedMessageLength = 2 + Aead.TAG_SIZE * 2 + message.Length;
+         
          BinaryPrimitives.WriteUInt16BigEndian(_messageHeaderCache, Convert.ToUInt16(message.Length));
 
-         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan());
+         int headerLength = _transport.WriteMessage(_messageHeaderCache, output.GetSpan(expectedMessageLength));
 
          output.Advance(headerLength);
 
-         int messageLength = _transport.WriteMessage(message, output.GetSpan());
+         int messageLength = _transport.WriteMessage(message, output.GetSpan(expectedMessageLength));
 
          output.Advance(messageLength);
 
@@ -62,7 +64,7 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         int bytesRead = _transport.ReadMessage(message, output.GetSpan()); // TODO check what if buffer is very big
+         int bytesRead = _transport.ReadMessage(message, output.GetSpan(message.Length)); // TODO check what if buffer is very big
 
          output.Advance(bytesRead);
 

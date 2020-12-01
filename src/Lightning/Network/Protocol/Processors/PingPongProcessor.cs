@@ -18,7 +18,7 @@ namespace Network.Protocol.Processors
       INetworkMessageHandler<PingMessage>,
       INetworkMessageHandler<PongMessage>
    {
-      const int PING_INTERVAL_SECS = 60;
+      const int PING_INTERVAL_SECS = 30;
       
       private readonly IDateTimeProvider _dateTimeProvider;
       private readonly IPeriodicWork _periodicWork;
@@ -46,7 +46,7 @@ namespace Network.Protocol.Processors
             .AddSeconds(-30))
             throw new ProtocolViolationException("TODO David check how we fail a channel from here");
 
-         if (message.NumPongBytes > PingMessage.MAX_BYTES_LEN)
+         if (message.NumPongBytes > PongMessage.MAX_BYTES_LEN)
             return false;
 
          _lastPingReceivedDateTime = _dateTimeProvider.GetUtcNow();
@@ -77,14 +77,17 @@ namespace Network.Protocol.Processors
 
       private async Task PingAsync(CancellationToken cancellationToken)
       {
-         var bytesLength = _numberGenerator.GetUint32();
-       
-         while(bytesLength > PingMessage.MAX_BYTES_LEN || _lastSentPingMessages.ContainsKey((ushort)bytesLength))
-            bytesLength = _numberGenerator.GetUint32();
+         if(!PeerContext.InitComplete)
+            return;
+
+         var bytesLength = _numberGenerator.GetUint32() % PingMessage.MAX_BYTES_LEN;
+         
+         while(_lastSentPingMessages.ContainsKey((ushort)bytesLength))
+            bytesLength = _numberGenerator.GetUint32() % PingMessage.MAX_BYTES_LEN;
          
          var pingMessage = new PingMessage((ushort)bytesLength);
 
-         _lastSentPingMessages.GetOrAdd((ushort)bytesLength, _
+         _lastSentPingMessages.GetOrAdd(pingMessage.NumPongBytes, _
             => new TrackedPingMessage(pingMessage, _dateTimeProvider.GetUtcNow()));
 
          logger.LogDebug($"Sending ping to {PeerContext.PeerId}");
