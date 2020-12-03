@@ -55,7 +55,7 @@ namespace Network.Protocol.Processors
             Ignored = new byte[message.NumPongBytes]}, cancellation)
             .ConfigureAwait(false);
 
-         logger.LogDebug($"Send pong to {PeerContext.PeerId}");
+         logger.LogDebug($"Send pong to {PeerContext.PeerId} with length {message.NumPongBytes}");
          
          // will prevent to handle noise messages to other Processors
          return false;
@@ -63,7 +63,7 @@ namespace Network.Protocol.Processors
 
       public ValueTask<bool> ProcessMessageAsync(PongMessage message, CancellationToken cancellation)
       {
-         logger.LogDebug($"Processing pong from {PeerContext.PeerId}");
+         logger.LogDebug($"Processing pong from {PeerContext.PeerId} with length {message.BytesLen}");
          
          if(_lastSentPingMessages.ContainsKey(message.BytesLen) && 
             _lastSentPingMessages.Remove(message.BytesLen,out var trackedPingMessage))
@@ -90,7 +90,7 @@ namespace Network.Protocol.Processors
          _lastSentPingMessages.GetOrAdd(pingMessage.NumPongBytes, _
             => new TrackedPingMessage(pingMessage, _dateTimeProvider.GetUtcNow()));
 
-         logger.LogDebug($"Sending ping to {PeerContext.PeerId}");
+         logger.LogDebug($"Sending ping to {PeerContext.PeerId} with pong length of {pingMessage.NumPongBytes}");
          
          await SendMessageAsync(pingMessage, cancellationToken).ConfigureAwait(false);
       }

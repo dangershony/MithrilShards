@@ -84,12 +84,12 @@ namespace Network.Protocol.Transport
             _transport.KeyRecycleResponderToInitiator();
       }
 
-      public int ReadMessageLength(ReadOnlySequence<byte> encryptedHeader) //TODO David add tests
+      public int ReadMessageLength(ReadOnlySpan<byte> encryptedHeader) //TODO David add tests
       {
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         _transport.ReadMessage(encryptedHeader.FirstSpan, _messageHeaderCache);
+         _transport.ReadMessage(encryptedHeader, _messageHeaderCache);
 
          ushort messageLengthDecrypted = (ushort)BinaryPrimitives.ReadUInt16BigEndian(_messageHeaderCache); // TODO Dan test header size bigger then 2 bytes
 

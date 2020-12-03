@@ -16,7 +16,7 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
 
       protected override PongMessage WithRandomMessage(Random random)
       {
-         ushort len = (ushort)random.Next(PongMessage.MAX_BYTES_LEN);
+         ushort len = (ushort)random.Next(PingMessage.MAX_BYTES_LEN);
          return new PongMessage {BytesLen = len,Ignored = new byte[len]};
       }
 
