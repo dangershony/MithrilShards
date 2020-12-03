@@ -17,6 +17,6 @@
 
    <ItemGroup>
      <PackageReference Include="NaCl.Core" Version="2.0.2" />
-     <PackageReference Include="NBitcoin" Version="5.0.65" />
+     <PackageReference Include="NBitcoin" Version="5.0.67" />
    </ItemGroup>
 </Project>

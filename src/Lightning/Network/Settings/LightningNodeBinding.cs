@@ -10,9 +10,14 @@ namespace Network.Settings
       /// <summary>IP address and port number of the peer we wants to connect to.</summary>
       public string? LightningEndPoint { get; set; }
 
-      public bool TryGetEndPoint(/*[MaybeNullWhen(false)]*/ out LightningEndpoint? endPoint)
+      public bool TryGetEndPoint([MaybeNullWhen(false)] out LightningEndpoint? endPoint)
       {
          endPoint = null;
+
+         if (LightningEndPoint == null)
+         {
+            return false;
+         }
 
          if (!LightningEndpoint.TryParse(LightningEndPoint, out endPoint))
          {

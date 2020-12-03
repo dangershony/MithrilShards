@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ namespace Network.Protocol.TlvStreams
          );
       }
 
-      public bool TryGetType(ulong recordType, out ITlvRecordSerializer? tlvRecordSerializer)
+      public bool TryGetType(ulong recordType, [MaybeNullWhen(false)] out ITlvRecordSerializer tlvRecordSerializer)
       {
          return _tlvRecordTypeMappings.TryGetValue(recordType, out tlvRecordSerializer);
       }
