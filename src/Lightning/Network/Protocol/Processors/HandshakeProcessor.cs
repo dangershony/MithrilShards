@@ -117,22 +117,25 @@ namespace Network.Protocol.Processors
          return new HandshakeMessage { Payload = new ReadOnlySequence<byte>(output.WrittenMemory) };
       }
 
-      public ValueTask<bool> ProcessMessageAsync(InitMessage message, CancellationToken cancellation)
+      public async ValueTask<bool> ProcessMessageAsync(InitMessage message, CancellationToken cancellation)
       {
          logger.LogDebug("Handshake Init received.");
 
          // validate init message
 
          PeerContext.OnInitMessageCompleted();
-         return new ValueTask<bool>(true);
+         
+         await SendMessageAsync(CreateInitMessage(), cancellation).ConfigureAwait(false);
+         
+         return true;// new ValueTask<bool>(true);
       }
 
       private InitMessage CreateInitMessage()
       {
          return new InitMessage
          {
-            GlobalFeatures = new byte[] { 1, 2, 3, 4 },
-            Features = new byte[] { 1, 2, 3, 4, 5 },
+            GlobalFeatures = new byte[4],
+            Features = new byte[4],
             Extension = new TlVStream
             {
                Records = new List<TlvRecord>

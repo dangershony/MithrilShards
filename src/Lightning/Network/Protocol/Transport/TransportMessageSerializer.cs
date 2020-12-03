@@ -90,8 +90,12 @@ namespace Network.Protocol.Transport
                   return false;
                }
 
-               ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position, _handshakeProtocol.HeaderLength);
+               //ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position, _handshakeProtocol.HeaderLength);
 
+               ReadOnlySpan<byte> encryptedHeader = reader.CurrentSpan.Slice(reader.Position.GetInteger(), _handshakeProtocol.HeaderLength);
+               
+               _logger.Log(LogLevel.Critical,$"length:{reader.Length}, position : {reader.Position.GetInteger()}, consumed: {consumed.GetInteger()}, examined: {examined.GetInteger()}");
+               
                // decrypt the message length
                _deserializationContext.MessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
                reader.Advance(_handshakeProtocol.HeaderLength);
@@ -106,13 +110,17 @@ namespace Network.Protocol.Transport
             }
 
             var decryptedOutput = new ArrayBufferWriter<byte>();
-            ReadOnlySequence<byte> encryptedMessage = reader.Sequence.Slice(_handshakeProtocol.HeaderLength, (int)_deserializationContext.MessageLength);
+            ReadOnlySequence<byte> encryptedMessage = reader.Sequence.Slice(reader.Position, (int)_deserializationContext.MessageLength);
             _handshakeProtocol.ReadMessage(encryptedMessage, decryptedOutput);
             _networkPeerContext.Metrics.Received((int)_deserializationContext.MessageLength);
 
             // reset the reader and message flags
             reader.Advance(_deserializationContext.MessageLength);
-            examined = consumed = reader.Position;
+            
+            if(examined.GetInteger() != reader.Position.GetInteger())
+               throw new IndexOutOfRangeException();
+            
+            consumed = examined;
             _deserializationContext.MessageLength = 0;
 
             // now try to read the payload
@@ -149,7 +157,10 @@ namespace Network.Protocol.Transport
             {
                message = new HandshakeMessage { Payload = input.Slice(reader.Position, nextLength) };
                reader.Advance(nextLength);
-               examined = consumed = reader.Position;
+               if(examined.GetInteger() != reader.Position.GetInteger())
+                  throw new IndexOutOfRangeException();
+            
+               consumed = examined;
                _deserializationContext.AdvanceStep();
                return true;
             }
