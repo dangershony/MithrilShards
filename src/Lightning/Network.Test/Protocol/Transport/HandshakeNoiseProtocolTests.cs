@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Buffers;
 using MithrilShards.Core;
@@ -10,7 +11,7 @@ namespace Network.Test.Protocol.Transport
 {
    public class HandshakeNoiseProtocolTests
    {
-      private HandshakeNoiseProtocol _noiseProtocol;
+      private HandshakeNoiseProtocol? _noiseProtocol;
 
       private static HandshakeNoiseProtocol GetInitiatorNoiseProtocol() =>
          new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(
@@ -208,7 +209,7 @@ namespace Network.Test.Protocol.Transport
 
             handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.InitiatorEphemeralKeyPair));
 
-            return handshake;
+            return handshake ?? throw new ArgumentNullException();
          }
       }
 
@@ -229,7 +230,7 @@ namespace Network.Test.Protocol.Transport
 
             handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ResponderEphemeralKeyPair));
 
-            return handshake;
+            return handshake ?? throw new ArgumentNullException();
          }
       }
    }

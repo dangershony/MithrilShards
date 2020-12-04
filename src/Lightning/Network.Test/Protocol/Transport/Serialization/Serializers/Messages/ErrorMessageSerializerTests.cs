@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Text;
 using Moq;
 using Network.Protocol.Messages;
-using Network.Protocol.Serialization;
 using Network.Protocol.Serialization.Serializers.Messages;
+using Network.Protocol.TlvStreams;
 using Network.Test.Protocol.Transport.Noise;
 using Xunit;
 

@@ -1,5 +1,5 @@
 using System.Buffers;
-using System.Linq;
+using Network.Protocol.TlvStreams;
 using Network.Protocol.Messages;
 
 namespace Network.Protocol.Serialization.Serializers.Messages

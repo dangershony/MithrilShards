@@ -3,8 +3,8 @@ using System.Buffers;
 using System.Collections.Generic;
 using Moq;
 using Network.Protocol.Messages;
-using Network.Protocol.Serialization;
 using Network.Protocol.Serialization.Serializers.Messages;
+using Network.Protocol.TlvStreams;
 using Xunit;
 
 namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
