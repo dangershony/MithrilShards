@@ -1,12 +1,10 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Network.Protocol.Messages;
 using Network.Protocol.Serialization;
 using Network.Protocol.Serialization.Serializers.Messages;
-using Network.Protocol.Serialization.Serializers.Types;
 using Xunit;
 
 namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
@@ -34,9 +32,9 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
          Assert.Equal(message.Ignored,expectedMessage.Ignored);
       }
 
-         protected override (string,PingMessage) GetData()
+         protected override IEnumerable<(string,PingMessage)> GetData()
          {
-            return ("0xfff1000a00000000000000000000",
+            yield return ("0xfff1000a00000000000000000000",
                   new PingMessage {BytesLen = 10, NumPongBytes = 65521, Ignored = new byte[10]});
          }
    }

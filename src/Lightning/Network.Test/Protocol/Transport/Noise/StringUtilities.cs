@@ -22,7 +22,22 @@ namespace Network.Test.Protocol.Transport.Noise
 
         public static string ToHexString(this ReadOnlySpan<byte> span)
         {
-           return span.ToArray().ToHexString();
+           var sb = new StringBuilder();
+           sb.Append("0x");
+           foreach (byte b in span)
+              sb.Append(b.ToString("X2"));
+
+           return sb.ToString().ToLower();
+        }
+        
+        public static string ToHexString(this Span<byte> span)
+        {
+           var sb = new StringBuilder();
+           sb.Append("0x");
+           foreach (byte b in span)
+              sb.Append(b.ToString("X2"));
+
+           return sb.ToString().ToLower();
         }
         
         public static string ToHexString(this IEnumerable<byte> arr)

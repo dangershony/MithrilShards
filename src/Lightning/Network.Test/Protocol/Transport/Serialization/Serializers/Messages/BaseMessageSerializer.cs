@@ -42,7 +42,7 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
       protected abstract TMessage WithRandomMessage(Random random);
       protected abstract void AssertExpectedSerialization(ArrayBufferWriter<byte> outputBuffer, TMessage message);
       protected abstract void AssertMessageDeserialized(TMessage baseMessage, TMessage expectedMessage);
-      protected abstract (string, TMessage) GetData();
+      protected abstract IEnumerable<(string, TMessage)> GetData();
 
       [Fact]
       public void SerializesTheMessageToOutput()
@@ -52,7 +52,6 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
          TMessage message = WithRandomMessage(random);
 
          var outputBuffer = new ArrayBufferWriter<byte>();
-
          serializer.SerializeMessage(message, 0, context, outputBuffer);
 
          AssertExpectedSerialization(outputBuffer, message);
@@ -62,13 +61,14 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
       [Fact]
       public void DeserializesTheMessageToOutput()
       {
-         var (messageHex, expectedMessage) = GetData();
+         foreach ((string messageHex, TMessage expectedMessage) in GetData())
+         {
+            var reader = new SequenceReader<byte>(new ReadOnlySequence<byte>(messageHex.ToByteArray()));
          
-         var reader = new SequenceReader<byte>(new ReadOnlySequence<byte>(messageHex.ToByteArray()));
+            var result= serializer.DeserializeMessage(ref reader , 0, context);
          
-         var result= serializer.DeserializeMessage(ref reader , 0, context);
-         
-         AssertMessageDeserialized(result, expectedMessage);
+            AssertMessageDeserialized(result, expectedMessage);   
+         }
       }
    }
 }
