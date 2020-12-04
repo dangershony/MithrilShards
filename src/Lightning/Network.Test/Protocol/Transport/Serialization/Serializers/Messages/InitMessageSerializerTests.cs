@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using Moq;
 using Network.Protocol.Messages;
 using Network.Protocol.Serialization;
@@ -36,10 +37,10 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
          Assert.Equal(baseMessage.GlobalFeatures, expectedMessage.GlobalFeatures);
       }
 
-      protected override (string, InitMessage) GetData()
+      protected override IEnumerable<(string, InitMessage)> GetData()
       {
          // 0x001000000000 from Bolt 1 without type as it is not sent to the serializer
-         return ("00000000", new InitMessage());
+         yield return ("00000000", new InitMessage());
       }
    }
 }

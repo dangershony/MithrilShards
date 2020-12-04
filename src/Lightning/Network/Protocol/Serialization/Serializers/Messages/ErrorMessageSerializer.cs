@@ -13,16 +13,16 @@ namespace Network.Protocol.Serialization.Serializers.Messages
       public override void SerializeMessage(ErrorMessage message, int protocolVersion, NetworkPeerContext peerContext,
          IBufferWriter<byte> output)
       {
-         output.WriteByteArray(message.ChannelId);
-         output.WriteUShort(message.Len);
-         output.WriteByteArray(message.Data);
+         output.WriteBytes(message.ChannelId);
+         output.WriteUShort(message.Len,true);
+         output.WriteBytes(message.Data);
       }
 
       public override ErrorMessage DeserializeMessage(ref SequenceReader<byte> reader, int protocolVersion,
          NetworkPeerContext peerContext)
       {
          var channelId = reader.ReadBytes(32).ToArray();
-         ushort len = reader.ReadUShort();
+         ushort len = reader.ReadUShort(true);
 
          return new ErrorMessage
          {

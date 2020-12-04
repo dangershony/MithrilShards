@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using Moq;
 using Network.Protocol.Messages;
 using Network.Protocol.Serialization;
@@ -32,9 +33,9 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
          Assert.Equal(expectedMessage.Ignored,baseMessage.Ignored);
       }
 
-      protected override (string, PongMessage) GetData()
+      protected override IEnumerable<(string,PongMessage)> GetData()
       {
-         return ("0x000a00000000000000000000",new PongMessage
+         yield return ("0x000a00000000000000000000",new PongMessage
          {
             BytesLen = 10,Ignored = new byte[10]
          });
