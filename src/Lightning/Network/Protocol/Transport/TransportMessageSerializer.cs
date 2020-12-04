@@ -90,12 +90,8 @@ namespace Network.Protocol.Transport
                   return false;
                }
 
-               //ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position, _handshakeProtocol.HeaderLength);
-
                ReadOnlySpan<byte> encryptedHeader = reader.CurrentSpan.Slice(reader.Position.GetInteger(), _handshakeProtocol.HeaderLength);
-
-               _logger.Log(LogLevel.Critical, $"length:{reader.Length}, position : {reader.Position.GetInteger()}, consumed: {consumed.GetInteger()}, examined: {examined.GetInteger()}");
-
+               
                // decrypt the message length
                _deserializationContext.MessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);
                reader.Advance(_handshakeProtocol.HeaderLength);
