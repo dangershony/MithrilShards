@@ -94,8 +94,7 @@ namespace Network.Test.Protocol.Transport
             Bolt8TestVectorParameters.Initiator.PrivateKey), Bolt8TestVectorParameters.Responder.PublicKey,
             new InitiatorTestHandshakeStateFactory());
 
-         var responder = new NoiseProtocolImplementation();
-         responder.SetPrivateKey(Bolt8TestVectorParameters.Responder.PrivateKey);
+         var responder = new NoiseProtocolImplementation(Bolt8TestVectorParameters.Responder.PrivateKey);
          responder.InitHandShake();
 
          //  act one initiator
@@ -151,8 +150,7 @@ namespace Network.Test.Protocol.Transport
       {
          const string message = "0x68656c6c6f";
 
-         var initiator =  new NoiseProtocolImplementation();
-         initiator.SetPrivateKey(Bolt8TestVectorParameters.Initiator.PrivateKey);
+         var initiator =  new NoiseProtocolImplementation(Bolt8TestVectorParameters.Initiator.PrivateKey);
          initiator.InitHandShake();
          
          var responder = new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(new DefaultRandomNumberGenerator()
