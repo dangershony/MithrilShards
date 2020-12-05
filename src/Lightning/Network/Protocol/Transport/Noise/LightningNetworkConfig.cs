@@ -10,6 +10,13 @@ namespace Network.Protocol.Transport.Noise
       public const string PROTOCOL_NAME = "Noise_XK_secp256k1_ChaChaPoly_SHA256";
       private const string PROLUGE = "lightning";
 
+      public static byte[] ProtocolNameByteArray()
+      {
+         var byteArray = new byte[PROTOCOL_NAME.Length];
+         Encoding.ASCII.GetBytes(PROTOCOL_NAME, 0, PROTOCOL_NAME.Length, byteArray, 0);
+         return byteArray;
+      }
+      
       /// <summary>
       ///
       /// </summary>
