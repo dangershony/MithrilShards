@@ -10,7 +10,7 @@ namespace Network.Protocol.Transport.NewNoise
       {
          if (string.IsNullOrEmpty(hex)) return null;
 			
-         var startIndex = hex.ToLower().StartsWith("0x") ? 2 : 0;
+         int startIndex = hex.ToLower().StartsWith("0x") ? 2 : 0;
 			
          return Enumerable.Range(startIndex, hex.Length - startIndex)
             .Where(x => x % 2 == 0)
@@ -18,7 +18,7 @@ namespace Network.Protocol.Transport.NewNoise
             .ToArray();
       }
       
-      public Span<byte> GenerateKey() => ToByteArray("0x2222222222222222222222222222222222222222222222222222222222222222");
+      public byte[] GenerateKey() => ToByteArray("0x2222222222222222222222222222222222222222222222222222222222222222");
 
       public ReadOnlySpan<byte> GetPublicKey(byte[] privateKey) => new Key(privateKey).PubKey.ToBytes();
    }
