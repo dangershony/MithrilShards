@@ -2,7 +2,7 @@ using System;
 
 namespace NoiseProtocol
 {
-   public class NoiseProtocolImplementation : INoiseProtocol
+   public class NoiseProtocol : INoiseProtocol
    {
       readonly IEllipticCurveActions _curveActions;
       readonly IHkdf _hkdf;
@@ -12,7 +12,7 @@ namespace NoiseProtocol
 
       HandshakeContext _handshakeContext;
       
-      public NoiseProtocolImplementation(byte[] privateKey)
+      public NoiseProtocol(byte[] privateKey)
       {
          _handshakeContext = new HandshakeContext(privateKey);
          _curveActions = new EllipticCurveActions();
@@ -22,7 +22,7 @@ namespace NoiseProtocol
          _hasher = new HashFunction();
       }
 
-      public NoiseProtocolImplementation(IEllipticCurveActions curveActions, IHkdf hkdf, 
+      public NoiseProtocol(IEllipticCurveActions curveActions, IHkdf hkdf, 
          IAeadConstruction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,
          byte[] privateKey)
       {

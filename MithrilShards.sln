@@ -83,6 +83,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Network.Test", "src\Lightni
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseProtocol", "src\Lightning\NoiseProtocol\NoiseProtocol.csproj", "{0CD98C30-5773-4139-839D-A557E8E3DC60}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseProtocol.Test", "src\Lightning\NoiseProtocol.Test\NoiseProtocol.Test.csproj", "{DF21CC3F-5433-4B5E-915D-805013DEE09D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -173,6 +175,10 @@ Global
 		{0CD98C30-5773-4139-839D-A557E8E3DC60}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CD98C30-5773-4139-839D-A557E8E3DC60}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0CD98C30-5773-4139-839D-A557E8E3DC60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF21CC3F-5433-4B5E-915D-805013DEE09D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF21CC3F-5433-4B5E-915D-805013DEE09D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF21CC3F-5433-4B5E-915D-805013DEE09D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF21CC3F-5433-4B5E-915D-805013DEE09D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -197,6 +203,7 @@ Global
 		{FCD96FB6-3118-42FA-9675-17021C1FFF8B} = {F51BD2C5-C053-4F4D-9B39-8565C112C989}
 		{21424F71-F2E7-4E2F-9791-3D3A372F8566} = {F51BD2C5-C053-4F4D-9B39-8565C112C989}
 		{0CD98C30-5773-4139-839D-A557E8E3DC60} = {F51BD2C5-C053-4F4D-9B39-8565C112C989}
+		{DF21CC3F-5433-4B5E-915D-805013DEE09D} = {F51BD2C5-C053-4F4D-9B39-8565C112C989}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5624037D-68BC-4AD5-8802-500F2ADE8DED}
