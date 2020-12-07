@@ -24,6 +24,7 @@ namespace NoiseProtocol
          Span<byte> output) 
       {
          _oldHkdf.ExtractAndExpand2(chainingKey,inputKeyMaterial,output);
+         
          // Span<byte> tempKey = stackalloc byte[HashLen];
          // HmacHash(chainingKey, tempKey, inputKeyMaterial);
          //
@@ -37,7 +38,7 @@ namespace NoiseProtocol
       private void HmacHash(
          ReadOnlySpan<byte> key,
          Span<byte> hmac,
-         ReadOnlySpan<byte> data1 = default,
+         ReadOnlySpan<byte> data1,
          ReadOnlySpan<byte> data2 = default)
       {
          Span<byte> ipad = stackalloc byte[BlockLen];
@@ -52,9 +53,12 @@ namespace NoiseProtocol
             opad[i] ^= 0x5C;
          }
 
-         _inner.Hash(ipad, data1, data2, hmac);
+         if(data2 == null)
+            _inner.Hash(ipad, data1, hmac);
+         else
+            _inner.Hash(ipad, data1, data2, hmac);
 
-         _outer.Hash(opad,hmac,hmac);
+         _outer.Hash(opad, hmac, hmac);
       }
    }
 }
