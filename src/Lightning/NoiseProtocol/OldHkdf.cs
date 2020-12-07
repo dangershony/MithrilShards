@@ -39,35 +39,6 @@ namespace NoiseProtocol
          HmacHash(tempKey, output2, output1, _two);
       }
 
-      /// <summary>
-      /// Takes a chainingKey byte sequence of length HashLen,
-      /// and an inputKeyMaterial byte sequence with length
-      /// either zero bytes, 32 bytes, or DhLen bytes. Writes a
-      /// byte sequences of length 3 * HashLen into output parameter.
-      /// </summary>
-      public void ExtractAndExpand3(
-         ReadOnlySpan<byte> chainingKey,
-         ReadOnlySpan<byte> inputKeyMaterial,
-         Span<byte> output)
-      {
-         int hashLen = _inner.HashLen;
-
-         Debug.Assert(chainingKey.Length == hashLen);
-         Debug.Assert(output.Length == 3 * hashLen);
-
-         Span<byte> tempKey = stackalloc byte[hashLen];
-         HmacHash(chainingKey, tempKey, inputKeyMaterial);
-
-         var output1 = output.Slice(0, hashLen);
-         HmacHash(tempKey, output1, _one);
-
-         var output2 = output.Slice(hashLen, hashLen);
-         HmacHash(tempKey, output2, output1, _two);
-
-         var output3 = output.Slice(2 * hashLen, hashLen);
-         HmacHash(tempKey, output3, output2, _three);
-      }
-
       private void HmacHash(
          ReadOnlySpan<byte> key,
          Span<byte> hmac,
