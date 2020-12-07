@@ -54,13 +54,11 @@ namespace NoiseProtocol.Test
             new HandshakeNoiseProtocolTests.ResponderTestHandshakeStateFactory());
 
          //  act one initiator
-         var input = new ReadOnlySequence<byte>();
-         var output = new ArrayBufferWriter<byte>();
          var actOne = initiator.StartNewHandshake(Bolt8TestVectorParameters.Responder.PublicKey);
 
          // act one & two responder
-         input = new ReadOnlySequence<byte>(actOne.ToArray());
-         output = new ArrayBufferWriter<byte>();
+         var input = new ReadOnlySequence<byte>(actOne.ToArray());
+         var output = new ArrayBufferWriter<byte>();
          responder.Handshake(input, output);
 
          // act two & three initiator
