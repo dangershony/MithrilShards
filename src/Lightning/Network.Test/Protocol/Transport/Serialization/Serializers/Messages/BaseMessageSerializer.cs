@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
 {
-   public abstract class BaseMessageSerializerTests<TMessage> 
+   public abstract class BaseMessageSerializerTests<TMessage>
       where TMessage : BaseMessage, new()
    {
       protected readonly BaseMessageSerializer<TMessage> serializer;
@@ -22,52 +22,62 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
       private static readonly Random _random = new Random();
 
       protected NetworkPeerContext context;
-      
+
       protected BaseMessageSerializerTests(BaseMessageSerializer<TMessage> serializer)
       {
          this.serializer = serializer;
-         
+
          context = new NetworkPeerContext( //TODO David change this when moved to interface
             new Mock<ILogger>().Object,
             new Mock<IEventBus>().Object,
             PeerConnectionDirection.Inbound, //TODO create a random enum generator
             _random.Next(int.MaxValue).ToString(), // string peerId,
-            new Mock<IPEndPoint>((long)_random.Next(int.MaxValue),9735).Object,
-            new Mock<IPEndPoint>((long)_random.Next(int.MaxValue),9735).Object,
-            new Mock<IPEndPoint>((long)_random.Next(int.MaxValue),9735).Object,
+            new Mock<IPEndPoint>((long)_random.Next(int.MaxValue), 9735).Object,
+            new Mock<IPEndPoint>((long)_random.Next(int.MaxValue), 9735).Object,
+            new Mock<IPEndPoint>((long)_random.Next(int.MaxValue), 9735).Object,
             new Mock<INetworkMessageWriter>().Object
          );
       }
 
       protected abstract TMessage WithRandomMessage(Random random);
+
       protected abstract void AssertExpectedSerialization(ArrayBufferWriter<byte> outputBuffer, TMessage message);
+
       protected abstract void AssertMessageDeserialized(TMessage baseMessage, TMessage expectedMessage);
+
       protected abstract IEnumerable<(string, TMessage)> GetData();
 
       [Fact]
-      public void SerializesTheMessageToOutput()
+      public void SerializesThenDeserializesMessage()
       {
          var random = new Random();
 
          TMessage message = WithRandomMessage(random);
 
          var outputBuffer = new ArrayBufferWriter<byte>();
-         serializer.SerializeMessage(message, 0, context, outputBuffer);
+         serializer.Serialize(message, 0, context, outputBuffer);
 
          AssertExpectedSerialization(outputBuffer, message);
+
+         var reader = new SequenceReader<byte>(new ReadOnlySequence<byte>(outputBuffer.WrittenMemory));
+         TMessage messageResult = serializer.Deserialize(ref reader, 0, context);
+
+         AssertMessageDeserialized(messageResult, message);
       }
 
-
       [Fact]
-      public void DeserializesTheMessageToOutput()
+      public void DeserializesThenSerializeTheMessages()
       {
          foreach ((string messageHex, TMessage expectedMessage) in GetData())
          {
             var reader = new SequenceReader<byte>(new ReadOnlySequence<byte>(messageHex.ToByteArray()));
-         
-            var result= serializer.DeserializeMessage(ref reader , 0, context);
-         
-            AssertMessageDeserialized(result, expectedMessage);   
+            var message = serializer.Deserialize(ref reader, 0, context);
+
+            var outputBuffer = new ArrayBufferWriter<byte>();
+            serializer.Serialize(message, 0, context, outputBuffer);
+            string resultHex = outputBuffer.WrittenMemory.ToArray().ToHexString();
+
+            Assert.Equal(resultHex, messageHex);
          }
       }
    }

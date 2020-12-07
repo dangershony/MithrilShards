@@ -1,9 +1,17 @@
-﻿namespace Network.Protocol.TlvStreams
+﻿using System.Buffers;
+
+namespace Network.Protocol.TlvStreams
 {
    public class TlvRecord
    {
       public ulong Type { get; set; }
 
       public ulong Size { get; set; }
+
+      /// <summary>
+      /// In cases where the tlv record is unknown
+      /// this field can be used to hold the payload
+      /// </summary>
+      public byte[]? Payload { get; set; }
    }
 }

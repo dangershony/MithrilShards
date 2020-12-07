@@ -137,6 +137,8 @@ namespace Network.Protocol.TlvStreams
                }
                else
                {
+                  message.Records.Add(new TlvRecord() { Type = recordType, Size = recordLength });
+
                   // read record value (we aren't interested in these bytes so we just advance)
                   reader.Advance((long)recordLength);
                }
