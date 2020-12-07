@@ -3,7 +3,7 @@ using Network.Protocol.Transport.Noise;
 
 namespace Network.Protocol.Transport.NewNoise
 {
-   public class NoiseProtocolImplementation : INoiseProtocol
+   public class NoiseProtocolImplementation : INoiseProtocol, IDisposable
    {
       readonly IEllipticCurveActions _curveActions;
       readonly IHkdf _hkdf;
@@ -183,6 +183,12 @@ namespace Network.Protocol.Transport.NewNoise
             .CopyTo(_handshakeContext.ChainingKey);
       
          _aeadConstruction.SetKey(ckAndTempKey.AsSpan(32));
+      }
+      
+      public void Dispose()
+      {
+         var dispose = _hkdf as IDisposable;
+         dispose?.Dispose();
       }
    }
 }
