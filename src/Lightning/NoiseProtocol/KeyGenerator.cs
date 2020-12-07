@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using NBitcoin;
 
-namespace Network.Protocol.Transport.NewNoise
+namespace NoiseProtocol
 {
    public class KeyGenerator : IKeyGenerator
    {

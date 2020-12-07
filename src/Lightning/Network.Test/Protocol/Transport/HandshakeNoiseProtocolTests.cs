@@ -1,8 +1,6 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using MithrilShards.Core;
 using Network.Protocol.Transport;
-using Network.Protocol.Transport.NewNoise;
 using Network.Protocol.Transport.Noise;
 using Network.Test.Protocol.Transport.Noise;
 using Xunit;
