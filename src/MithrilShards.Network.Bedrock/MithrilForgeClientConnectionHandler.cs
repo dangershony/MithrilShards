@@ -76,7 +76,8 @@ namespace MithrilShards.Network.Bedrock
 
             try
             {
-               ProtocolReadResult<INetworkMessage> result = await reader.ReadAsync(protocol, connection.ConnectionClosed).ConfigureAwait(false);
+               ProtocolReadResult<INetworkMessage> result =
+                  await reader.ReadAsync(protocol, connection.ConnectionClosed).ConfigureAwait(false);
 
                if (result.IsCompleted)
                {
@@ -90,6 +91,11 @@ namespace MithrilShards.Network.Bedrock
             catch (OperationCanceledException)
             {
                break;
+            }
+            catch (Exception e)
+            {
+               _logger.LogError(new EventId(0),e,e.Message);
+               throw;
             }
             finally
             {

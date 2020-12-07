@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Buffers;
 using MithrilShards.Core;
@@ -10,7 +11,7 @@ namespace Network.Test.Protocol.Transport
 {
    public class HandshakeNoiseProtocolTests
    {
-      private HandshakeNoiseProtocol _noiseProtocol;
+      private HandshakeNoiseProtocol? _noiseProtocol;
 
       private static HandshakeNoiseProtocol GetInitiatorNoiseProtocol() =>
          new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(
@@ -63,7 +64,7 @@ namespace Network.Test.Protocol.Transport
          // responder receives the message
          input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
          output = new ArrayBufferWriter<byte>();
-         int length = responder.ReadMessageLength(new ReadOnlySequence<byte>(input.Slice(0, responder.HeaderLength).ToArray()));
+         int length = responder.ReadMessageLength(input.Slice(0, responder.HeaderLength).ToArray());
          responder.ReadMessage(input.Slice(initiator.HeaderLength, length), output);
 
          // check message decrypted are correctly
@@ -77,7 +78,7 @@ namespace Network.Test.Protocol.Transport
          // initiator receives the message
          input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
          output = new ArrayBufferWriter<byte>();
-         length = initiator.ReadMessageLength(new ReadOnlySequence<byte>(input.Slice(0, initiator.HeaderLength).ToArray()));
+         length = initiator.ReadMessageLength(input.Slice(0, initiator.HeaderLength).ToArray());
          initiator.ReadMessage(input.Slice(initiator.HeaderLength, length), output);
 
          // check message decrypted are correctly
@@ -208,7 +209,7 @@ namespace Network.Test.Protocol.Transport
 
             handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.InitiatorEphemeralKeyPair));
 
-            return handshake;
+            return handshake ?? throw new ArgumentNullException();
          }
       }
 
@@ -229,7 +230,7 @@ namespace Network.Test.Protocol.Transport
 
             handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ResponderEphemeralKeyPair));
 
-            return handshake;
+            return handshake ?? throw new ArgumentNullException();
          }
       }
    }

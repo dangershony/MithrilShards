@@ -18,8 +18,8 @@
       "MinimumLevel": {
          "Default": "Debug",
          "Override": {
-            "Bedrock.Framework": "Debug",
-            "MithrilShards.Network.Bedrock": "Debug",
+            "Bedrock.Framework": "Warning",
+            "MithrilShards.Network.Bedrock": "Warning",
             "Microsoft": "Warning",
             "System": "Warning"
          }
