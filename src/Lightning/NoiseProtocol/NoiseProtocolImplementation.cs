@@ -1,14 +1,13 @@
 using System;
-using Network.Protocol.Transport.Noise;
 
-namespace Network.Protocol.Transport.NewNoise
+namespace NoiseProtocol
 {
-   public class NoiseProtocolImplementation : INoiseProtocol, IDisposable
+   public class NoiseProtocolImplementation : INoiseProtocol
    {
       readonly IEllipticCurveActions _curveActions;
       readonly IHkdf _hkdf;
       readonly IAeadConstruction _aeadConstruction;
-      readonly IHasher _hasher;
+      readonly IHashFunction _hasher;
       readonly IKeyGenerator _keyGenerator;
 
       HandshakeContext _handshakeContext;
@@ -17,14 +16,14 @@ namespace Network.Protocol.Transport.NewNoise
       {
          _handshakeContext = new HandshakeContext(privateKey);
          _curveActions = new EllipticCurveActions();
-         _hkdf = new Hkdf();
+         _hkdf = new Hkdf(new HashFunction(),new HashFunction());
          _aeadConstruction = new AeadConstruction();
          _keyGenerator = new KeyGenerator();
-         _hasher = new Hasher();
+         _hasher = new HashFunction();
       }
 
       public NoiseProtocolImplementation(IEllipticCurveActions curveActions, IHkdf hkdf, 
-         IAeadConstruction aeadConstruction, IHash hash, IKeyGenerator keyGenerator, IHasher hasher,
+         IAeadConstruction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,
          byte[] privateKey)
       {
          _curveActions = curveActions;
@@ -183,12 +182,6 @@ namespace Network.Protocol.Transport.NewNoise
             .CopyTo(_handshakeContext.ChainingKey);
       
          _aeadConstruction.SetKey(ckAndTempKey.AsSpan(32));
-      }
-      
-      public void Dispose()
-      {
-         var dispose = _hkdf as IDisposable;
-         dispose?.Dispose();
       }
    }
 }
