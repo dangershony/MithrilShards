@@ -13,11 +13,7 @@ namespace NoiseProtocol
          Encoding.ASCII.GetBytes(PROTOCOL_NAME, 0, PROTOCOL_NAME.Length, byteArray, 0);
          return byteArray;
       }
-      
-      /// <summary>
-      ///
-      /// </summary>
-      /// <returns></returns>
+
       public static byte[] ProlugeByteArray()
       {
          var byteArray = new byte[PROLUGE.Length];

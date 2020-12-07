@@ -31,6 +31,8 @@ namespace NoiseProtocol
 
          cipher.Encrypt(nonce, plaintext.ToArray(), cipherTextOutput, tag, ad.ToArray());
 
+         _nonce++;
+         
          return cipherTextOutput.Length + tag.Length;
       }
 
@@ -50,6 +52,8 @@ namespace NoiseProtocol
 
          cipher.Decrypt(nonce, cipherTextWithoutTag, tag, plaintext, ad);
 
+         _nonce++;
+         
          return cipherTextWithoutTag.Length;
       }
    }
