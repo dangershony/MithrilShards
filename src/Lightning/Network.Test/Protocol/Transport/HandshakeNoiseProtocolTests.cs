@@ -83,7 +83,7 @@ namespace Network.Test.Protocol.Transport
          Assert.Equal(output.WrittenSpan.ToArray(), message.ToByteArray());
       }
       
-      [Fact]
+       [Fact]
       public void MyFunnyTestResponder()
       {
          const string message = "0x68656c6c6f";
@@ -92,7 +92,7 @@ namespace Network.Test.Protocol.Transport
             Bolt8TestVectorParameters.Initiator.PrivateKey), Bolt8TestVectorParameters.Responder.PublicKey,
             new InitiatorTestHandshakeStateFactory());
 
-         var responder = new NoiseProtocolImplementation(Bolt8TestVectorParameters.Responder.PrivateKey);
+         var responder = new NoiseProtocol.NoiseProtocol(Bolt8TestVectorParameters.Responder.PrivateKey);
          responder.InitHandShake();
 
          //  act one initiator
@@ -148,7 +148,7 @@ namespace Network.Test.Protocol.Transport
       {
          const string message = "0x68656c6c6f";
 
-         var initiator =  new NoiseProtocolImplementation(Bolt8TestVectorParameters.Initiator.PrivateKey);
+         var initiator =  new NoiseProtocol.NoiseProtocol(Bolt8TestVectorParameters.Initiator.PrivateKey);
          initiator.InitHandShake();
          
          var responder = new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(new DefaultRandomNumberGenerator()
@@ -175,7 +175,7 @@ namespace Network.Test.Protocol.Transport
          output = new ArrayBufferWriter<byte>();
          responder.Handshake(input, output);
       }
-
+      
       [Theory]
       [InlineData(Bolt8TestVectorParameters.ActOne.INITIATOR_OUTPUT)]
       public void TestHandshakeActOneInitiatorSide(string expectedOutputHex)
@@ -273,7 +273,7 @@ namespace Network.Test.Protocol.Transport
          Assert.Empty(buffer.WrittenSpan.ToArray());
       }
 
-      private class PredefinedKeysNodeContext : NodeContext
+      public class PredefinedKeysNodeContext : NodeContext
       {
          public PredefinedKeysNodeContext(IRandomNumberGenerator randomNumberGenerator,
             byte[] privateKey)
@@ -283,7 +283,7 @@ namespace Network.Test.Protocol.Transport
          }
       }
 
-      private class InitiatorTestHandshakeStateFactory : IHandshakeStateFactory
+      public class InitiatorTestHandshakeStateFactory : IHandshakeStateFactory
       {
          public IHandshakeState CreateLightningNetworkHandshakeState(byte[] privateKey, byte[]? remotePublicKey)
          {
@@ -298,13 +298,15 @@ namespace Network.Test.Protocol.Transport
 
                as HandshakeState<ChaCha20Poly1305, CurveSecp256K1, Sha256>;
 
-            handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.InitiatorEphemeralKeyPair));
+            handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(new KeyPair(
+               Bolt8TestVectorParameters.InitiatorEphemeralKeyPair.PrivateKey,
+               Bolt8TestVectorParameters.InitiatorEphemeralKeyPair.PublicKey)));
 
             return handshake;
          }
       }
 
-      private class ResponderTestHandshakeStateFactory : IHandshakeStateFactory
+      public class ResponderTestHandshakeStateFactory : IHandshakeStateFactory
       {
          public IHandshakeState CreateLightningNetworkHandshakeState(byte[] privateKey, byte[]? remotePublicKey)
          {
@@ -319,7 +321,9 @@ namespace Network.Test.Protocol.Transport
 
                as HandshakeState<ChaCha20Poly1305, CurveSecp256K1, Sha256>;
 
-            handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ResponderEphemeralKeyPair));
+            handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(new KeyPair(
+               Bolt8TestVectorParameters.ResponderEphemeralKeyPair.PrivateKey,
+               Bolt8TestVectorParameters.ResponderEphemeralKeyPair.PublicKey)));
 
             return handshake;
          }
