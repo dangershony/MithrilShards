@@ -4,30 +4,31 @@ using Network.Protocol.TlvStreams.TlvRecords;
 
 namespace Network.Protocol.TlvStreams.Serializers
 {
-   public class NetworksTlvSerializer : ITlvRecordSerializer
+   /// <summary>
+   /// A dummy tlv serializer for unknown tlv types
+   /// </summary>
+   public class TestDummyTlvSerializer : ITlvRecordSerializer
    {
-      public Type GetRecordType() => typeof(NetworksTlvSerializer);
-
-      public ulong RecordTlvType
+      public TestDummyTlvSerializer(ulong recordTlvType)
       {
-         get { return 1; }
+         RecordTlvType = recordTlvType;
       }
+
+      public Type GetRecordType() => typeof(TestDummyTlvSerializer);
+
+      public ulong RecordTlvType { get; }
 
       public void Serialize(TlvRecord message, IBufferWriter<byte> output)
       {
          // for now just fill the buffer
          output.Write(message.Payload.AsSpan());
-
-         // TODO
       }
 
       public TlvRecord Deserialize(ref SequenceReader<byte> reader)
       {
-         var result = new NetworksTlvRecord { Type = RecordTlvType, Size = (ulong)reader.Remaining };
+         var result = new TlvRecord { Type = RecordTlvType, Size = (ulong)reader.Remaining };
 
          result.Payload = reader.ReadBytes((int)reader.Remaining).ToArray();
-
-         // TODO
 
          return result;
       }

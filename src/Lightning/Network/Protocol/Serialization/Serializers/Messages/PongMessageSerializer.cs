@@ -20,7 +20,7 @@ namespace Network.Protocol.Serialization.Serializers.Messages
       public override PongMessage DeserializeMessage(ref SequenceReader<byte> reader, int protocolVersion,
          NetworkPeerContext peerContext)
       {
-         var bytesLen = reader.ReadUShort(true);
+         ushort bytesLen = reader.ReadUShort(true);
 
          return new PongMessage
          {
