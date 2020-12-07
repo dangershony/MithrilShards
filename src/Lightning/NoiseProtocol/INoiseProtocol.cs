@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Network.Protocol.Transport.NewNoise
+namespace NoiseProtocol
 {
    public interface INoiseProtocol
    {

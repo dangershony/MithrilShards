@@ -1,7 +1,7 @@
 using System;
 using NBitcoin;
 
-namespace Network.Protocol.Transport.NewNoise
+namespace NoiseProtocol
 {
    public class EllipticCurveActions : IEllipticCurveActions
    {
