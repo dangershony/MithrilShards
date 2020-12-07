@@ -9,26 +9,29 @@ namespace NoiseProtocol
 
       readonly IHashFunction _inner,_outer;
 
+      OldHkdf _oldHkdf = new OldHkdf();
+
       public Hkdf(IHashFunction inner, IHashFunction outer)
       {
          _inner = inner;
          _outer = outer;
       }
 
-      public int HashLen => 32;
-      public int BlockLen => 64;
+      static int HashLen => 32;
+      static int BlockLen => 64;
       
       public void ExtractAndExpand(ReadOnlySpan<byte> chainingKey, ReadOnlySpan<byte> inputKeyMaterial,
-         Span<byte> output)
+         Span<byte> output) 
       {
-         Span<byte> tempKey = stackalloc byte[HashLen];
-         HmacHash(chainingKey, tempKey, inputKeyMaterial);
-
-         var output1 = output.Slice(0, HashLen);
-         HmacHash(tempKey, output1, _one);
-
-         var output2 = output.Slice(HashLen, HashLen);
-         HmacHash(tempKey, output2, output1, _two);
+         _oldHkdf.ExtractAndExpand2(chainingKey,inputKeyMaterial,output);
+         // Span<byte> tempKey = stackalloc byte[HashLen];
+         // HmacHash(chainingKey, tempKey, inputKeyMaterial);
+         //
+         // var output1 = output.Slice(0, HashLen);
+         // HmacHash(tempKey, output1, _one);
+         //
+         // var output2 = output.Slice(HashLen, HashLen);
+         // HmacHash(tempKey, output2, output1, _two);
       }
 
       private void HmacHash(
@@ -49,7 +52,7 @@ namespace NoiseProtocol
             opad[i] ^= 0x5C;
          }
 
-         _inner.Hash(ipad,data1,data2,hmac);
+         _inner.Hash(ipad, data1, data2, hmac);
 
          _outer.Hash(opad,hmac,hmac);
       }

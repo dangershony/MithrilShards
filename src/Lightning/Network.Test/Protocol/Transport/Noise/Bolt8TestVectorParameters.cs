@@ -16,20 +16,32 @@ namespace Network.Test.Protocol.Transport.Noise
         private const string RESPONDER_EPHEMERAL_PRIVATE_KEY_HEX = "0x2222222222222222222222222222222222222222222222222222222222222222";
         private const string RESPONDER_EPHEMERAL_PUBLIC_KEY_HEX = "0x02466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27";
 
-        public static KeyPair Initiator =>
-                new KeyPair(INITIATOR_PRIVATE_KEY_HEX.ToByteArray(),
+        public class Key
+        {
+           public byte[] PublicKey { get; }
+           public byte[] PrivateKey { get; }
+
+           public Key(byte[] privatKey, byte[] publicKey)
+           {
+              PrivateKey = privatKey;
+              PublicKey = publicKey;
+           }
+        }
+        
+        public static Key Initiator =>
+                new Key(INITIATOR_PRIVATE_KEY_HEX.ToByteArray(),
                 INITIATOR_PUBLIC_KEY_HEX.ToByteArray());
 
-        public static KeyPair InitiatorEphemeralKeyPair =>
-            new KeyPair(INITIATOR_EPHEMERAL_PRIVATE_KEY_HEX.ToByteArray(),
+        public static Key InitiatorEphemeralKeyPair =>
+            new Key(INITIATOR_EPHEMERAL_PRIVATE_KEY_HEX.ToByteArray(),
                 INITIATOR_EPHEMERAL_PUBLIC_KEY_HEX.ToByteArray());
         
-        public static KeyPair Responder =>
-            new KeyPair(RESPONDER_PRIVATE_KEY_HEX.ToByteArray(),
+        public static Key Responder =>
+            new Key(RESPONDER_PRIVATE_KEY_HEX.ToByteArray(),
                 RESPONDER_PUBLIC_KEY_HEX.ToByteArray());
         
-        public static KeyPair ResponderEphemeralKeyPair =>
-            new KeyPair(RESPONDER_EPHEMERAL_PRIVATE_KEY_HEX.ToByteArray(),
+        public static Key ResponderEphemeralKeyPair =>
+            new Key(RESPONDER_EPHEMERAL_PRIVATE_KEY_HEX.ToByteArray(),
                 RESPONDER_EPHEMERAL_PUBLIC_KEY_HEX.ToByteArray());
 
         public static class ActOne
