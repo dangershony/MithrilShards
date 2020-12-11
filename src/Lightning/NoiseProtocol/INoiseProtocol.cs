@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 
 namespace NoiseProtocol
 {
@@ -6,9 +7,9 @@ namespace NoiseProtocol
    {
       void InitHandShake();
 
-      ReadOnlySpan<byte> StartNewHandshake(byte[] remotePublicKey);
+      void StartNewHandshake(byte[] remotePublicKey, IBufferWriter<byte> output);
 
-      ReadOnlySpan<byte> ProcessHandshakeRequest(ReadOnlySpan<byte> handshakeRequest);
+      void ProcessHandshakeRequest(ReadOnlySpan<byte> handshakeRequest, IBufferWriter<byte> output);
 
       void CompleteHandshake(ReadOnlySpan<byte> handshakeRequest);
    }
