@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace NoiseProtocol
 {
-   public class OldHash
+   public class OldHash : IHashWithState
    {
       private readonly byte[] _state = new byte[104];
       private int _currentStateLength = 0;

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace NoiseProtocol.Test
 {
-   public class NoiseProtocolTests
+   public class NoiseProtocolWithExistingNoiseTests
    {
       const string MESSAGE = "0x68656c6c6f";
       

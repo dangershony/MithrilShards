@@ -5,7 +5,7 @@ using NaCl.Core;
 
 namespace NoiseProtocol
 {
-   public class AeadConstruction : IAeadConstruction
+   public class ChaCha20Poly1305CipherFunction : ICipherFunction
    {
       byte[] _key = new byte[32];
       ulong _nonce;
