@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network.Client;
 using MithrilShards.Core.Network.Events;
-using MithrilShards.Dev.Controller.Models.Requests;
+using MithrilShards.WebApi;
 using Network.Api.Models.Requests;
 using Network.Protocol.Transport;
 using Network.Settings;
@@ -16,13 +16,13 @@ namespace Network.Api.Controllers
 {
    [ApiController]
    [Route("[controller]")]
-   public class PeerControllerDev : ControllerBase
+   public class PeerController : ControllerBase
    {
-      private readonly ILogger<PeerControllerDev> _logger;
+      private readonly ILogger<PeerController> _logger;
       private readonly IEventBus _eventBus;
       private readonly NetworkRequiredConnection? _requiredConnection;
 
-      public PeerControllerDev(ILogger<PeerControllerDev> logger, IEventBus eventBus, IEnumerable<IConnector>? connectors)
+      public PeerController(ILogger<PeerController> logger, IEventBus eventBus, IEnumerable<IConnector>? connectors)
       {
          _logger = logger;
          _eventBus = eventBus;

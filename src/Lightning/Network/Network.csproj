@@ -11,12 +11,16 @@
 
    <ItemGroup>
       <ProjectReference Include="..\..\MithrilShards.Core\MithrilShards.Core.csproj" />
-      <ProjectReference Include="..\..\MithrilShards.Dev.Controller\MithrilShards.Dev.Controller.csproj" />
       <ProjectReference Include="..\..\MithrilShards.Network.Bedrock\MithrilShards.Network.Bedrock.csproj" />
+      <ProjectReference Include="..\..\MithrilShards.WebApi\MithrilShards.WebApi.csproj" />
    </ItemGroup>
 
    <ItemGroup>
-     <PackageReference Include="NaCl.Core" Version="2.0.2" />
-     <PackageReference Include="NBitcoin" Version="5.0.67" />
+      <PackageReference Include="NaCl.Core" Version="2.0.2" />
+      <PackageReference Include="NBitcoin" Version="5.0.67" />
    </ItemGroup>
+
+   <PropertyGroup>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+   </PropertyGroup>
 </Project>

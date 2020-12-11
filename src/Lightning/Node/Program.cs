@@ -21,7 +21,7 @@ namespace Node
             .UseForge<DefaultForge>(args, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
             .UseBedrockForgeServer<TransportMessageSerializer>()
-            .UseApi()
+            .UseApi(options => options.AssemblyScaffoldEnabler = (assemblyScaffoldEnabler) => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
             .UseLightningNetwork()
             .RunConsoleAsync().ConfigureAwait(false);
       }
@@ -32,19 +32,19 @@ namespace Node
             .UseForge<DefaultForge>(args, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
             .UseBedrockForgeServer<TransportMessageSerializer>()
-            .UseApi()
+            .UseApi(options => options.AssemblyScaffoldEnabler = (assemblyScaffoldEnabler) => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
             .UseLightningNetwork()
             .RunConsoleAsync();
 
          string[] args1 = args.Append("--ForgeConnectivity:Listeners:0:Endpoint=127.0.0.1:9736")
-                              .Append("--DevController:EndPoint=127.0.0.1:5001")
+                              .Append("--WebApi:EndPoint=127.0.0.1:5001")
                               .ToArray();
 
          Task node2 = new ForgeBuilder()
             .UseForge<DefaultForge>(args1, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
             .UseBedrockForgeServer<TransportMessageSerializer>()
-            .UseApi()
+            .UseApi(options => options.AssemblyScaffoldEnabler = (assemblyScaffoldEnabler) => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
             .UseLightningNetwork()
             .RunConsoleAsync();
 

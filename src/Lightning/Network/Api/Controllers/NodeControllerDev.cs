@@ -2,31 +2,29 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
-using MithrilShards.Dev.Controller.Models.Requests;
+using MithrilShards.WebApi;
 using Network.Api.Models.Responses;
 
 namespace Network.Api.Controllers
 {
-   [ApiController]
-   [Route("[controller]")]
-   public class NodeControllerDev : ControllerBase
+   [Area(WebApiArea.AREA_DEV)]
+   public class NodeController : MithrilControllerBase
    {
-      private readonly ILogger<PeerControllerDev> _logger;
+      private readonly ILogger<NodeController> _logger;
       private readonly IEventBus _eventBus;
       private readonly NodeContext _nodeContext;
 
-      public NodeControllerDev(ILogger<PeerControllerDev> logger, IEventBus eventBus, NodeContext nodeContext)
+      public NodeController(ILogger<NodeController> logger, IEventBus eventBus, NodeContext nodeContext)
       {
          _logger = logger;
          _eventBus = eventBus;
          _nodeContext = nodeContext;
       }
 
-      [HttpGet]
+      [HttpGet("Info")]
       [ProducesResponseType(StatusCodes.Status200OK)]
       [ProducesResponseType(StatusCodes.Status404NotFound)]
       [ProducesResponseType(StatusCodes.Status400BadRequest)]
-      [Route("Info")]
       public ActionResult<NodeInfoResponse> Info()
       {
          return Ok(new NodeInfoResponse { NodeId = new NBitcoin.Key(_nodeContext.PrivateKey).PubKey.ToHex() });
