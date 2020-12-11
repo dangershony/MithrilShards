@@ -48,7 +48,7 @@ namespace NoiseProtocol
          Debug.Assert(key.Length == _inner.HashLen);
          Debug.Assert(hmac.Length == _inner.HashLen);
 
-         var blockLen = _inner.BlockLen;
+         int blockLen = _inner.BlockLen;
 
          Span<byte> ipad = stackalloc byte[blockLen];
          Span<byte> opad = stackalloc byte[blockLen];
