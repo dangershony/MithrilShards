@@ -3,15 +3,20 @@ using System.Diagnostics;
 
 namespace NoiseProtocol
 {
-   public class OldHkdf
+   public class OldHkdf : IHkdf, IDisposable
    {
-         private static readonly byte[] _one = new byte[] { 1 };
-      private static readonly byte[] _two = new byte[] { 2 };
-      private static readonly byte[] _three = new byte[] { 3 };
+         private static readonly byte[] _one = { 1 };
+      private static readonly byte[] _two = { 2 };
 
-      private readonly OldHash _inner = new OldHash();
-      private readonly OldHash _outer = new OldHash();
+      private readonly IHashWithState _inner;
+      private readonly IHashWithState _outer;
       private bool _disposed;
+
+      public OldHkdf(IHashWithState inner, IHashWithState outer)
+      {
+         _inner = inner;
+         _outer = outer;
+      }
 
       /// <summary>
       /// Takes a chainingKey byte sequence of length HashLen,
@@ -19,7 +24,7 @@ namespace NoiseProtocol
       /// either zero bytes, 32 bytes, or DhLen bytes. Writes a
       /// byte sequences of length 2 * HashLen into output parameter.
       /// </summary>
-      public void ExtractAndExpand2(
+      public void ExtractAndExpand(
          ReadOnlySpan<byte> chainingKey,
          ReadOnlySpan<byte> inputKeyMaterial,
          Span<byte> output)
@@ -74,12 +79,19 @@ namespace NoiseProtocol
 
       public void Dispose()
       {
-         if (!_disposed)
-         {
-            _inner.Dispose();
-            _outer.Dispose();
-            _disposed = true;
-         }
+         if (_disposed) 
+            return;
+         
+         DisposeHash(_inner);
+         DisposeHash(_outer);
+         _disposed = true;
+      }
+
+      private static void DisposeHash(object hashWithState)
+      {
+         var hash = hashWithState as IDisposable;
+
+         hash?.Dispose();
       }
    }
 }
