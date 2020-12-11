@@ -4,7 +4,6 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Protocol.Channels;
 using Xunit;
-using Network.Test.Protocol.Transport.Noise;
 
 namespace Protocol.Test
 {
