@@ -27,17 +27,17 @@ namespace NoiseProtocol.Test
          initiator.Handshake(input, output);
 
          // act one & two responder
-         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
+         input = new ReadOnlySequence<byte>(output.WrittenMemory);
          output = new ArrayBufferWriter<byte>();
-         var actTwo = responder.ProcessHandshakeRequest(input.FirstSpan);
+         responder.ProcessHandshakeRequest(input.FirstSpan, output);
 
          // act two & three initiator
-         input = new ReadOnlySequence<byte>(actTwo.ToArray());
+         input = new ReadOnlySequence<byte>(output.WrittenMemory);
          output = new ArrayBufferWriter<byte>();
          initiator.Handshake(input, output);
 
          // act three responder
-         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
+         input = new ReadOnlySequence<byte>(output.WrittenMemory);
          responder.CompleteHandshake(input.FirstSpan);
       }
       
@@ -54,20 +54,21 @@ namespace NoiseProtocol.Test
             new HandshakeNoiseProtocolTests.ResponderTestHandshakeStateFactory());
 
          //  act one initiator
-         var actOne = initiator.StartNewHandshake(Bolt8TestVectorParameters.Responder.PublicKey);
+         var output = new ArrayBufferWriter<byte>();
+         initiator.StartNewHandshake(Bolt8TestVectorParameters.Responder.PublicKey, output);
 
          // act one & two responder
-         var input = new ReadOnlySequence<byte>(actOne.ToArray());
-         var output = new ArrayBufferWriter<byte>();
+         var input = new ReadOnlySequence<byte>(output.WrittenMemory);
+         output = new ArrayBufferWriter<byte>();
          responder.Handshake(input, output);
 
          // act two & three initiator
-         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
+         input = new ReadOnlySequence<byte>(output.WrittenMemory);
          output = new ArrayBufferWriter<byte>();
-         var actThree = initiator.ProcessHandshakeRequest(input.ToArray());
+         initiator.ProcessHandshakeRequest(input.FirstSpan, output);
 
          // act three responder
-         input = new ReadOnlySequence<byte>(actThree.ToArray());
+         input = new ReadOnlySequence<byte>(output.WrittenMemory);
          output = new ArrayBufferWriter<byte>();
          responder.Handshake(input, output);
       }

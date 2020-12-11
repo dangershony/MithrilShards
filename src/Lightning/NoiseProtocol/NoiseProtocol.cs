@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 
 namespace NoiseProtocol
 {
@@ -9,8 +10,9 @@ namespace NoiseProtocol
       readonly ICipherFunction _aeadConstruction;
       readonly IHashFunction _hasher;
       readonly IKeyGenerator _keyGenerator;
+      
 
-      HandshakeContext _handshakeContext;
+      readonly HandshakeContext _handshakeContext;
       
       public NoiseProtocol(byte[] privateKey)
       {
@@ -41,16 +43,16 @@ namespace NoiseProtocol
          _hasher.Hash(_handshakeContext.ChainingKey, LightningNetworkConfig.ProlugeByteArray(), _handshakeContext.Hash);
       }
 
-      public ReadOnlySpan<byte> StartNewHandshake(byte[] remotePublicKey)
+      public void StartNewHandshake(byte[] remotePublicKey, IBufferWriter<byte> output)
       {
          _hasher.Hash(_handshakeContext.Hash, remotePublicKey, _handshakeContext.Hash);
 
          _handshakeContext.SetRemotePublicKey(remotePublicKey);
          
-         return GenerateLocalEphemeralAndProcessRemotePublicKey(remotePublicKey);
+         GenerateLocalEphemeralAndProcessRemotePublicKey(remotePublicKey, output);
       }
       
-      public ReadOnlySpan<byte> ProcessHandshakeRequest(ReadOnlySpan<byte> handshakeRequest)
+      public void ProcessHandshakeRequest(ReadOnlySpan<byte> handshakeRequest, IBufferWriter<byte> output)
       {
          if (!_handshakeContext.HasRemotePublic)
          {
@@ -61,14 +63,14 @@ namespace NoiseProtocol
 
             //responder act two
 
-            return GenerateLocalEphemeralAndProcessRemotePublicKey(re.ToArray());
+            GenerateLocalEphemeralAndProcessRemotePublicKey(re.ToArray(), output);
          }
          else
          {
             //act two initiator
             ReadOnlySpan<byte> re = HandleReceivedHandshakeRequest(_handshakeContext.EphemeralPrivateKey, handshakeRequest);
 
-            return CompleteInitiatorHandshake(re);
+            CompleteInitiatorHandshake(re, output);
          }
       }
 
@@ -105,12 +107,12 @@ namespace NoiseProtocol
          ckAndTempKey.AsSpan(32).CopyTo(_handshakeContext.Rk);
       }
 
-      private ReadOnlySpan<byte> CompleteInitiatorHandshake(ReadOnlySpan<byte> re)
+      private void CompleteInitiatorHandshake(ReadOnlySpan<byte> re, IBufferWriter<byte> output)
       {
          //act three initiator
-         var outputText = new byte[66];
+         Span<byte> outputText = output.GetSpan(66);
          
-         Span<byte> cipher = outputText.AsSpan(1, 49);
+         Span<byte> cipher = outputText.Slice(1, 49);
 
          _aeadConstruction.EncryptWithAd(_handshakeContext.Hash, 
             _keyGenerator.GetPublicKey(_handshakeContext.PrivateKey).ToArray(), cipher);
@@ -121,11 +123,12 @@ namespace NoiseProtocol
 
          ExtractNextKeys(se);
 
-         _aeadConstruction.EncryptWithAd(_handshakeContext.Hash, new byte[0], outputText.AsSpan(50));
+         _aeadConstruction.EncryptWithAd(_handshakeContext.Hash, new byte[0], 
+            outputText.Slice(50, 16));
 
          ExtractFinalChannelKeys();
 
-         return outputText;
+         output.Advance(66);
       }
 
       private ReadOnlySpan<byte> HandleReceivedHandshakeRequest(ReadOnlySpan<byte> privateKey,
@@ -141,22 +144,23 @@ namespace NoiseProtocol
          var secret = _curveActions.Multiply(privateKey.ToArray(), re); //es and ee
 
          ExtractNextKeys(secret);
-         
-         var c = handshakeRequest.Slice(34);
-         var plainText = new byte[16];
+
+         var c = handshakeRequest.Slice(34, 16);
+         var plainText = new byte[16];//TODO David move to cache on class
          _aeadConstruction.DecryptWithAd(_handshakeContext.Hash, c, plainText);
 
          _hasher.Hash(_handshakeContext.Hash, c.ToArray(), _handshakeContext.Hash);
          return re;
       }
 
-      private ReadOnlySpan<byte> GenerateLocalEphemeralAndProcessRemotePublicKey(byte[] publicKey)
+      private void GenerateLocalEphemeralAndProcessRemotePublicKey(byte[] publicKey, IBufferWriter<byte> output)
       {
-         var outputText = new byte[50];
+         Span<byte> outputText = output.GetSpan(50);
+         
+         Span<byte> ephemeralPublicKey = outputText.Slice(1, 33);
+         Span<byte> cipher = outputText.Slice(34, 16);
          
          _handshakeContext.EphemeralPrivateKey = _keyGenerator.GenerateKey();
-
-         var ephemeralPublicKey = outputText.AsSpan(1, 33);
 
          _keyGenerator.GetPublicKey(_handshakeContext.EphemeralPrivateKey)
             .CopyTo(ephemeralPublicKey);
@@ -167,16 +171,16 @@ namespace NoiseProtocol
 
          ExtractNextKeys(es);
          
-         _aeadConstruction.EncryptWithAd(_handshakeContext.Hash, null, outputText.AsSpan(34));
+         _aeadConstruction.EncryptWithAd(_handshakeContext.Hash, null, cipher);
 
-         _hasher.Hash(_handshakeContext.Hash, outputText.AsSpan(34), _handshakeContext.Hash);
-
-         return outputText;
+         _hasher.Hash(_handshakeContext.Hash, cipher, _handshakeContext.Hash);
+         
+         output.Advance(50);
       }
       
       private void ExtractNextKeys(ReadOnlySpan<byte> se)
       {
-         var ckAndTempKey = new byte[64];
+         var ckAndTempKey = new byte[64]; //TODO David move to cache on class
       
          _hkdf.ExtractAndExpand(_handshakeContext.ChainingKey, se, ckAndTempKey);
       
