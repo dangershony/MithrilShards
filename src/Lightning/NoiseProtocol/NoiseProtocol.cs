@@ -11,18 +11,7 @@ namespace NoiseProtocol
       readonly IHashFunction _hasher;
       readonly IKeyGenerator _keyGenerator;
       
-
       readonly HandshakeContext _handshakeContext;
-      
-      public NoiseProtocol(byte[] privateKey)
-      {
-         _handshakeContext = new HandshakeContext(privateKey);
-         _curveActions = new EllipticCurveActions();
-         _hkdf = new OldHkdf(new OldHash(), new OldHash());
-         _aeadConstruction = new ChaCha20Poly1305CipherFunction();
-         _keyGenerator = new KeyGenerator();
-         _hasher = new HashFunction();
-      }
 
       public NoiseProtocol(IEllipticCurveActions curveActions, IHkdf hkdf, 
          ICipherFunction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,

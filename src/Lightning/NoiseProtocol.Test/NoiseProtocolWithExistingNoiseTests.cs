@@ -18,7 +18,9 @@ namespace NoiseProtocol.Test
             Bolt8TestVectorParameters.Initiator.PrivateKey), Bolt8TestVectorParameters.Responder.PublicKey,
             new HandshakeNoiseProtocolTests.InitiatorTestHandshakeStateFactory());
 
-         var responder = new NoiseProtocol(Bolt8TestVectorParameters.Responder.PrivateKey);
+         var responder = new NoiseProtocol(new EllipticCurveActions(), new OldHkdf(new OldHash(), new OldHash()),
+            new ChaCha20Poly1305CipherFunction(), new KeyGenerator(), new HashFunction(), 
+            Bolt8TestVectorParameters.Responder.PrivateKey);
          responder.InitHandShake();
 
          //  act one initiator
@@ -44,7 +46,9 @@ namespace NoiseProtocol.Test
       [Fact]
       public void TestNewNoiseInitiatorWithExistingResponder()
       {
-         var initiator =  new NoiseProtocol(Bolt8TestVectorParameters.Initiator.PrivateKey);
+         var initiator =  new NoiseProtocol(new EllipticCurveActions(),new OldHkdf(new OldHash(), new OldHash()),
+            new ChaCha20Poly1305CipherFunction(), new KeyGenerator(), new HashFunction(), 
+            Bolt8TestVectorParameters.Initiator.PrivateKey);
          initiator.InitHandShake();
 
          var responder = new HandshakeNoiseProtocol(new HandshakeNoiseProtocolTests.PredefinedKeysNodeContext(
