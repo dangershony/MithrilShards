@@ -6,7 +6,7 @@ namespace NoiseProtocol
    {
       readonly IEllipticCurveActions _curveActions;
       readonly IHkdf _hkdf;
-      readonly IAeadConstruction _aeadConstruction;
+      readonly ICipherFunction _aeadConstruction;
       readonly IHashFunction _hasher;
       readonly IKeyGenerator _keyGenerator;
 
@@ -16,14 +16,14 @@ namespace NoiseProtocol
       {
          _handshakeContext = new HandshakeContext(privateKey);
          _curveActions = new EllipticCurveActions();
-         _hkdf = new Hkdf(new HashFunction(),new HashFunction());
-         _aeadConstruction = new AeadConstruction();
+         _hkdf = new OldHkdf(new OldHash(), new OldHash());
+         _aeadConstruction = new ChaCha20Poly1305CipherFunction();
          _keyGenerator = new KeyGenerator();
          _hasher = new HashFunction();
       }
 
       public NoiseProtocol(IEllipticCurveActions curveActions, IHkdf hkdf, 
-         IAeadConstruction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,
+         ICipherFunction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,
          byte[] privateKey)
       {
          _curveActions = curveActions;
@@ -110,9 +110,10 @@ namespace NoiseProtocol
          //act three initiator
          var outputText = new byte[66];
          
-         var cipher = outputText.AsSpan(1, 49);
+         Span<byte> cipher = outputText.AsSpan(1, 49);
 
-         _aeadConstruction.EncryptWithAd(_handshakeContext.Hash, _keyGenerator.GetPublicKey(_handshakeContext.PrivateKey).ToArray(), cipher);
+         _aeadConstruction.EncryptWithAd(_handshakeContext.Hash, 
+            _keyGenerator.GetPublicKey(_handshakeContext.PrivateKey).ToArray(), cipher);
 
          _hasher.Hash(_handshakeContext.Hash, cipher, _handshakeContext.Hash);
 
@@ -127,10 +128,11 @@ namespace NoiseProtocol
          return outputText;
       }
 
-      private ReadOnlySpan<byte> HandleReceivedHandshakeRequest(ReadOnlySpan<byte> privateKey,ReadOnlySpan<byte> handshakeRequest)
+      private ReadOnlySpan<byte> HandleReceivedHandshakeRequest(ReadOnlySpan<byte> privateKey,
+         ReadOnlySpan<byte> handshakeRequest)
       {
-         if (handshakeRequest[0] != 0)
-            throw new ArgumentException(); // version byte
+         if (!handshakeRequest.StartsWith(LightningNetworkConfig.NoiseProtocolVersionPrefix))
+            throw new AggregateException("Unsupported version in request");
 
          var re = handshakeRequest.Slice(1, 33);
 

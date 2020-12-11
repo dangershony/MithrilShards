@@ -2,7 +2,7 @@ using System;
 
 namespace NoiseProtocol
 {
-   public interface IAeadConstruction
+   public interface ICipherFunction
    {
       void SetKey(Span<byte> key);
       
