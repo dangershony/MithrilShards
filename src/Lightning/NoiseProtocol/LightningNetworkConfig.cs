@@ -24,5 +24,7 @@ namespace NoiseProtocol
       public static readonly byte[] NoiseProtocolVersionPrefix = {0x00};
 
       public static readonly ulong NumberOfNonceBeforeKeyRecycle = 1000;
+      
+      public static long MAX_MESSAGE_LENGTH = 65535;
    }
 }
