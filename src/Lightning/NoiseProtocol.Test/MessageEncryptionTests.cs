@@ -85,7 +85,7 @@ namespace NoiseProtocol.Test
          var encryptedMessage = GetArray(39); //the message that is encrypted is 39 bytes should be protocol max length
          ReadOnlySpan<byte> decryptedMessage = null;
 
-         for (var i = 0; i <= iterationTarget; i++)
+         for (int i = 0; i <= iterationTarget; i++)
          {
             encryptedMessage.Clear();
             

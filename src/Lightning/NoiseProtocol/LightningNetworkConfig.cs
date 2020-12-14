@@ -4,8 +4,8 @@ namespace NoiseProtocol
 {
    public static class LightningNetworkConfig
    {
-      public const string PROTOCOL_NAME = "Noise_XK_secp256k1_ChaChaPoly_SHA256";
-      private const string PROLUGE = "lightning";
+      const string PROTOCOL_NAME = "Noise_XK_secp256k1_ChaChaPoly_SHA256";
+      private const string PROLOGUE = "lightning";
 
       public static byte[] ProtocolNameByteArray()
       {
@@ -14,17 +14,17 @@ namespace NoiseProtocol
          return byteArray;
       }
 
-      public static byte[] ProlugeByteArray()
+      public static byte[] PrologueByteArray()
       {
-         var byteArray = new byte[PROLUGE.Length];
-         Encoding.ASCII.GetBytes(PROLUGE, 0, PROLUGE.Length, byteArray, 0);
+         var byteArray = new byte[PROLOGUE.Length];
+         Encoding.ASCII.GetBytes(PROLOGUE, 0, PROLOGUE.Length, byteArray, 0);
          return byteArray;
       }
 
       public static readonly byte[] NoiseProtocolVersionPrefix = {0x00};
 
-      public static readonly ulong NumberOfNonceBeforeKeyRecycle = 1000;
-      
-      public static long MAX_MESSAGE_LENGTH = 65535;
+      public const ulong NUMBER_OF_NONCE_BEFORE_KEY_RECYCLE = 1000;
+
+      public const long MAX_MESSAGE_LENGTH = 65535;
    }
 }
