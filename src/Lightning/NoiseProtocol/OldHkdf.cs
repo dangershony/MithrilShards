@@ -5,7 +5,7 @@ namespace NoiseProtocol
 {
    public class OldHkdf : IHkdf, IDisposable
    {
-         private static readonly byte[] _one = { 1 };
+      static readonly byte[] _one = {1};
       private static readonly byte[] _two = { 2 };
 
       private readonly IHashWithState _inner;

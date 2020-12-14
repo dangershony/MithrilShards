@@ -12,7 +12,7 @@ namespace NoiseProtocol
       readonly INoiseMessageTransformer _messageTransformer;
       readonly IKeyGenerator _keyGenerator;
 
-      public HandshakeContext HandshakeContext { get; }
+      public HandshakeContext HandshakeContext { get; set; }
 
       public NoiseProtocol(IEllipticCurveActions curveActions, IHkdf hkdf, 
          ICipherFunction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,
@@ -26,6 +26,20 @@ namespace NoiseProtocol
          _messageTransformer = messageTransformer;
          HandshakeContext = new HandshakeContext(privateKey);
       }
+      
+      public NoiseProtocol(IEllipticCurveActions curveActions, IHkdf hkdf, 
+         ICipherFunction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,
+         INoiseMessageTransformer messageTransformer)
+      {
+         _curveActions = curveActions;
+         _hkdf = hkdf;
+         _aeadConstruction = aeadConstruction;
+         _keyGenerator = keyGenerator;
+         _hasher = hasher;
+         _messageTransformer = messageTransformer; 
+      }
+
+      public void SetPrivateKey(byte[] privateKey) => HandshakeContext = new HandshakeContext(privateKey);
 
       public void InitHandShake()
       {
@@ -44,7 +58,7 @@ namespace NoiseProtocol
          GenerateLocalEphemeralAndProcessRemotePublicKey(remotePublicKey, output);
       }
       
-      public void ProcessHandshakeRequest(ReadOnlySpan<byte> handshakeRequest, IBufferWriter<byte> output)
+      public void ProcessHandshakeRequest(ReadOnlySequence<byte> handshakeRequest, IBufferWriter<byte> output)
       {
          if (!HandshakeContext.HasRemotePublic)
          {
@@ -68,16 +82,16 @@ namespace NoiseProtocol
       }
 
       // responder act three
-      public void CompleteResponderHandshake(ReadOnlySpan<byte> handshakeRequest)
+      public void CompleteResponderHandshake(ReadOnlySequence<byte> handshakeRequest)
       {
-         if (handshakeRequest[0] != 0)
-            throw new ArgumentException(); // version byte
+         if (!handshakeRequest.FirstSpan.StartsWith(LightningNetworkConfig.NoiseProtocolVersionPrefix))
+            throw new AggregateException("Unsupported version in request");
          
          var cipher = handshakeRequest.Slice(1, 49);
 
          HandshakeContext.RemotePublicKey = new byte[33];
          
-         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, cipher, HandshakeContext.RemotePublicKey);
+         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, cipher.FirstSpan, HandshakeContext.RemotePublicKey);
          
          _hasher.Hash(HandshakeContext.Hash,cipher.ToArray(),HandshakeContext.Hash);
          
@@ -86,7 +100,7 @@ namespace NoiseProtocol
          ExtractNextKeys(se);
          
          var plainText = new byte[16];
-         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, handshakeRequest.Slice(50), plainText);
+         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, handshakeRequest.FirstSpan.Slice(50), plainText);
          
          ExtractFinalChannelKeysForResponder();
       }
@@ -101,22 +115,22 @@ namespace NoiseProtocol
 
       void ExtractFinalChannelKeysForInitiator()
       {
-         var ckAndTempKey = new byte[64];
+         var SkAndRk = new byte[64];
          
-         _hkdf.ExtractAndExpand(HandshakeContext.ChainingKey, new byte[0].AsSpan(), ckAndTempKey);
+         _hkdf.ExtractAndExpand(HandshakeContext.ChainingKey, new byte[0].AsSpan(), SkAndRk);
 
-         _messageTransformer.SetKeys(HandshakeContext.ChainingKey,ckAndTempKey.AsSpan(0, 32),
-            ckAndTempKey.AsSpan(32));
+         _messageTransformer.SetKeys(HandshakeContext.ChainingKey,SkAndRk.AsSpan(0, 32),
+            SkAndRk.AsSpan(32));
       }
       
       void ExtractFinalChannelKeysForResponder()
       {
-         var ckAndTempKey = new byte[64];
+         var rkAndSk = new byte[64];
          
-         _hkdf.ExtractAndExpand(HandshakeContext.ChainingKey, new byte[0].AsSpan(), ckAndTempKey);
+         _hkdf.ExtractAndExpand(HandshakeContext.ChainingKey, new byte[0].AsSpan(), rkAndSk);
 
-         _messageTransformer.SetKeys(HandshakeContext.ChainingKey,ckAndTempKey.AsSpan(32),
-            ckAndTempKey.AsSpan(0, 32));
+         _messageTransformer.SetKeys(HandshakeContext.ChainingKey,rkAndSk.AsSpan(32),
+            rkAndSk.AsSpan(0, 32));
       }
 
       private void CompleteInitiatorHandshake(ReadOnlySpan<byte> re, IBufferWriter<byte> output)
@@ -144,25 +158,26 @@ namespace NoiseProtocol
       }
 
       private ReadOnlySpan<byte> HandleReceivedHandshakeRequest(ReadOnlySpan<byte> privateKey,
-         ReadOnlySpan<byte> handshakeRequest)
+         ReadOnlySequence<byte> handshakeRequest)
       {
-         if (!handshakeRequest.StartsWith(LightningNetworkConfig.NoiseProtocolVersionPrefix))
+         if (!handshakeRequest.FirstSpan.StartsWith(LightningNetworkConfig.NoiseProtocolVersionPrefix))
             throw new AggregateException("Unsupported version in request");
 
          var re = handshakeRequest.Slice(1, 33);
 
          _hasher.Hash(HandshakeContext.Hash, re.ToArray(), HandshakeContext.Hash);
 
-         var secret = _curveActions.Multiply(privateKey.ToArray(), re); //es and ee
+         var secret = _curveActions.Multiply(privateKey.ToArray(), re.FirstSpan); //es and ee
 
          ExtractNextKeys(secret);
 
          var c = handshakeRequest.Slice(34, 16);
          var plainText = new byte[16];//TODO David move to cache on class
-         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, c, plainText);
+         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, c.FirstSpan, plainText);
 
          _hasher.Hash(HandshakeContext.Hash, c.ToArray(), HandshakeContext.Hash);
-         return re;
+         
+         return re.FirstSpan;
       }
 
       private void GenerateLocalEphemeralAndProcessRemotePublicKey(byte[] publicKey, IBufferWriter<byte> output)
