@@ -68,7 +68,7 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         _transport.ReadMessage(message, output); // TODO check what if buffer is very big
+         int bytesRead = _transport.ReadMessage(message, output); // TODO check what if buffer is very big
       }
 
       public int ReadMessageLength(ReadOnlySequence<byte> encryptedHeader) //TODO David add tests
