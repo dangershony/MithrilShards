@@ -12,7 +12,7 @@ namespace NoiseProtocol.Test
         {
             if (string.IsNullOrEmpty(hex)) return null;
 			
-            var startIndex = hex.ToLower().StartsWith("0x") ? 2 : 0;
+            int startIndex = hex.ToLower().StartsWith("0x") ? 2 : 0;
 			
             return Enumerable.Range(startIndex, hex.Length - startIndex)
                 .Where(x => x % 2 == 0)

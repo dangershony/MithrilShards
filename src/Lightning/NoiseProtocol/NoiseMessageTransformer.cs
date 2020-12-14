@@ -57,7 +57,7 @@ namespace NoiseProtocol
       
       private void KeyRecycle(ICipherFunction cipherFunction)
       {
-         if (cipherFunction.GetNonce() < LightningNetworkConfig.NumberOfNonceBeforeKeyRecycle)
+         if (cipherFunction.GetNonce() < LightningNetworkConfig.NUMBER_OF_NONCE_BEFORE_KEY_RECYCLE)
             return;
          
          Span<byte> keys = stackalloc byte[Aead.KEY_SIZE * 2];

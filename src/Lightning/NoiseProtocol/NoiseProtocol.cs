@@ -31,7 +31,7 @@ namespace NoiseProtocol
       {
          _hasher.Hash(LightningNetworkConfig.ProtocolNameByteArray(), HandshakeContext.ChainingKey);
 
-         _hasher.Hash(HandshakeContext.ChainingKey, LightningNetworkConfig.ProlugeByteArray(), HandshakeContext.Hash);
+         _hasher.Hash(HandshakeContext.ChainingKey, LightningNetworkConfig.PrologueByteArray(), HandshakeContext.Hash);
       }
 
       // initiator act one
