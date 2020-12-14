@@ -5,13 +5,15 @@ namespace NoiseProtocol
 {
    public interface INoiseProtocol
    {
+      void SetPrivateKey(byte[] privateKey);
+      
       void InitHandShake();
 
       void StartNewInitiatorHandshake(byte[] remotePublicKey, IBufferWriter<byte> output);
 
-      void ProcessHandshakeRequest(ReadOnlySpan<byte> handshakeRequest, IBufferWriter<byte> output);
+      void ProcessHandshakeRequest(ReadOnlySequence<byte> handshakeRequest, IBufferWriter<byte> output);
 
-      void CompleteResponderHandshake(ReadOnlySpan<byte> handshakeRequest);
+      void CompleteResponderHandshake(ReadOnlySequence<byte> handshakeRequest);
 
       INoiseMessageTransformer GetMessageTransformer();
    }
