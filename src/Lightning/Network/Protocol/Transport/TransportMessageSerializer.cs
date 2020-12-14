@@ -91,7 +91,7 @@ namespace Network.Protocol.Transport
                   return false;
                }
 
-               ReadOnlySpan<byte> encryptedHeader = reader.CurrentSpan.Slice(reader.Position.GetInteger(), _handshakeProtocol.HeaderLength);
+               ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position.GetInteger(), _handshakeProtocol.HeaderLength);
                
                // decrypt the message length
                _deserializationContext.MessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);

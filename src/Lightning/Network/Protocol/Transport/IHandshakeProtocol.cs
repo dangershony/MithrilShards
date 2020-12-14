@@ -18,7 +18,7 @@ namespace Network.Protocol.Transport
 
       public void ReadMessage(ReadOnlySequence<byte> message, IBufferWriter<byte> output);
 
-      public int ReadMessageLength(ReadOnlySpan<byte> encryptedHeader);
+      public int ReadMessageLength(ReadOnlySequence<byte> encryptedHeader);
 
       public void Handshake(ReadOnlySequence<byte> message, IBufferWriter<byte> output);
    }
