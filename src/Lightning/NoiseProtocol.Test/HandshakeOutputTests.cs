@@ -7,39 +7,6 @@ namespace NoiseProtocol.Test
 {
    public class HandshakeOutputTests : Bolt8InitiatedNoiseProtocolTests
    {
-      // private NoiseProtocol _noiseProtocol;
-      //
-      // private void WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys()
-      // {
-      //    _noiseProtocol = NoiseProtocol(new FixedKeysGenerator(
-      //          Bolt8TestVectorParameters.InitiatorEphemeralKeyPair.PrivateKey,
-      //          Bolt8TestVectorParameters.InitiatorEphemeralKeyPair.PublicKey)
-      //          .AddKeys(Bolt8TestVectorParameters.Initiator.PrivateKey,
-      //             Bolt8TestVectorParameters.Initiator.PublicKey),
-      //       Bolt8TestVectorParameters.Initiator.PrivateKey);
-      //    
-      //    _noiseProtocol.InitHandShake();
-      // }
-      //
-      // private void WithResponderHandshakeInitiatedToKnownLocalKeys()
-      // {
-      //    _noiseProtocol = NoiseProtocol(new FixedKeysGenerator(
-      //          Bolt8TestVectorParameters.ResponderEphemeralKeyPair.PrivateKey,
-      //          Bolt8TestVectorParameters.ResponderEphemeralKeyPair.PublicKey)
-      //          .AddKeys(Bolt8TestVectorParameters.Responder.PrivateKey,
-      //             Bolt8TestVectorParameters.Responder.PublicKey),
-      //       Bolt8TestVectorParameters.Responder.PrivateKey);
-      //    
-      //    _noiseProtocol.InitHandShake();
-      // }
-      //
-      // private static NoiseProtocol NoiseProtocol(IKeyGenerator keyGenerator, byte[] s)
-      // {
-      //    return new NoiseProtocol(new EllipticCurveActions(), new OldHkdf(new OldHash(), new OldHash()),
-      //       new ChaCha20Poly1305CipherFunction(), keyGenerator, new HashFunction(),
-      //       s);
-      // }
-
       private void WithInitiatorActOneCompletedSuccessfully()
       {
          IBufferWriter<byte> buffer = new ArrayBufferWriter<byte>(50);
@@ -75,7 +42,7 @@ namespace NoiseProtocol.Test
 
          var buffer = new ArrayBufferWriter<byte>(50);
 
-         NoiseProtocol.ProcessHandshakeRequest(actOneValidInput.ToByteArray(), buffer);
+         NoiseProtocol.ProcessHandshakeRequest(new ReadOnlySequence<Byte>(actOneValidInput.ToByteArray()), buffer);
 
          var expectedOutput = expectedOutputHex.ToByteArray();
 
@@ -96,7 +63,7 @@ namespace NoiseProtocol.Test
 
          var buffer = new ArrayBufferWriter<byte>();
 
-         NoiseProtocol.ProcessHandshakeRequest(validInputHex.ToByteArray(), buffer);
+         NoiseProtocol.ProcessHandshakeRequest(new ReadOnlySequence<Byte>(validInputHex.ToByteArray()), buffer);
          
          var expectedOutput = expectedOutputHex.ToByteArray();
 

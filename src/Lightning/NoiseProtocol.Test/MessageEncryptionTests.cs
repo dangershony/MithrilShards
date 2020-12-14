@@ -148,9 +148,9 @@ namespace NoiseProtocol.Test
          var actThreeBuffer = GetArray(66);
          
          _initiatorHandshakeState.StartNewInitiatorHandshake(Bolt8TestVectorParameters.Responder.PublicKey, actOneBuffer);
-         _responderHandshakeState.ProcessHandshakeRequest(actOneBuffer.WrittenSpan, actTwoBuffer);
-         _initiatorHandshakeState.ProcessHandshakeRequest(actTwoBuffer.WrittenSpan, actThreeBuffer);
-         _responderHandshakeState.CompleteResponderHandshake(actThreeBuffer.WrittenSpan);
+         _responderHandshakeState.ProcessHandshakeRequest(new ReadOnlySequence<Byte>(actOneBuffer.WrittenMemory) , actTwoBuffer);
+         _initiatorHandshakeState.ProcessHandshakeRequest(new ReadOnlySequence<Byte>(actTwoBuffer.WrittenMemory), actThreeBuffer);
+         _responderHandshakeState.CompleteResponderHandshake(new ReadOnlySequence<Byte>(actThreeBuffer.WrittenMemory));
 
          return (_initiatorHandshakeState.GetMessageTransformer(), _responderHandshakeState.GetMessageTransformer());
       }
