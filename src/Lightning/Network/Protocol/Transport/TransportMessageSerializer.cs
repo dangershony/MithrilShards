@@ -69,7 +69,7 @@ namespace Network.Protocol.Transport
             lightningEndpoint = (LightningEndpoint)res;
          }
 
-         _handshakeProtocol = new HandshakeNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey, _handshakeStateFactory);
+         _handshakeProtocol = new HandshakeWithNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey, _handshakeStateFactory);
          _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
       }
 

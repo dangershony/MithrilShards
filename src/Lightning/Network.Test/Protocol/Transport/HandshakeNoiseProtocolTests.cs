@@ -9,15 +9,15 @@ namespace Network.Test.Protocol.Transport
 {
    public class HandshakeNoiseProtocolTests
    {
-      private HandshakeNoiseProtocol _noiseProtocol;
+      private HandshakeWithNoiseProtocol _noiseProtocol;
 
-      private static HandshakeNoiseProtocol GetInitiatorNoiseProtocol() =>
-         new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(
+      private static HandshakeWithNoiseProtocol GetInitiatorNoiseProtocol() =>
+         new HandshakeWithNoiseProtocol(new PredefinedKeysNodeContext(
                new DefaultRandomNumberGenerator(), Bolt8TestVectorParameters.Initiator.PrivateKey)
             , Bolt8TestVectorParameters.Responder.PublicKey, new InitiatorTestHandshakeStateFactory());
 
-      private static HandshakeNoiseProtocol GetResponderNoiseProtocol() =>
-         new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(
+      private static HandshakeWithNoiseProtocol GetResponderNoiseProtocol() =>
+         new HandshakeWithNoiseProtocol(new PredefinedKeysNodeContext(
                new DefaultRandomNumberGenerator(), Bolt8TestVectorParameters.Responder.PrivateKey)
             , null, new ResponderTestHandshakeStateFactory());
 
@@ -26,11 +26,11 @@ namespace Network.Test.Protocol.Transport
       {
          const string message = "0x68656c6c6f";
 
-         var initiator = new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(new DefaultRandomNumberGenerator(),
+         var initiator = new HandshakeWithNoiseProtocol(new PredefinedKeysNodeContext(new DefaultRandomNumberGenerator(),
             Bolt8TestVectorParameters.Initiator.PrivateKey), Bolt8TestVectorParameters.Responder.PublicKey,
             new HandshakeStateFactory());
 
-         var responder = new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(new DefaultRandomNumberGenerator()
+         var responder = new HandshakeWithNoiseProtocol(new PredefinedKeysNodeContext(new DefaultRandomNumberGenerator()
          , Bolt8TestVectorParameters.Responder.PrivateKey), null,
             new HandshakeStateFactory());
 
