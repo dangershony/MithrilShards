@@ -7,10 +7,12 @@ namespace NoiseProtocol
    {
       void InitHandShake();
 
-      void StartNewHandshake(byte[] remotePublicKey, IBufferWriter<byte> output);
+      void StartNewInitiatorHandshake(byte[] remotePublicKey, IBufferWriter<byte> output);
 
       void ProcessHandshakeRequest(ReadOnlySpan<byte> handshakeRequest, IBufferWriter<byte> output);
 
-      void CompleteHandshake(ReadOnlySpan<byte> handshakeRequest);
+      void CompleteResponderHandshake(ReadOnlySpan<byte> handshakeRequest);
+
+      INoiseMessageTransformer GetMessageTransformer();
    }
 }

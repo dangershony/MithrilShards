@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Buffers;
 using System.Buffers.Binary;
-using System.Runtime.Serialization;
 using Network.Protocol.Transport.Noise;
 
 namespace Network.Protocol.Transport
 {
-   public class HandshakeNoiseProtocol : IHandshakeProtocol
+   public class HandshakeWithNoiseProtocol : IHandshakeProtocol
    {
       private const int HEADER_LENGTH = 18;
 
@@ -23,7 +22,7 @@ namespace Network.Protocol.Transport
 
       private readonly byte[] _messageHeaderCache = new byte[2];
 
-      public HandshakeNoiseProtocol(NodeContext nodeContext, byte[]? remotePubKey,
+      public HandshakeWithNoiseProtocol(NodeContext nodeContext, byte[]? remotePubKey,
          IHandshakeStateFactory handshakeFactory)
       {
          PrivateKey = nodeContext.PrivateKey;

@@ -7,14 +7,19 @@ namespace NoiseProtocol
 {
    public class ChaCha20Poly1305CipherFunction : ICipherFunction
    {
-      byte[] _key = new byte[32];
+      readonly byte[] _key = new byte[32];
       ulong _nonce;
 
-      public void SetKey(Span<byte> key)
+      public void SetKey(ReadOnlySpan<byte> key)
       {
          key.CopyTo(_key);
          _nonce = 0;
-      } 
+      }
+
+      public ReadOnlySpan<byte> GetKey() => _key;
+
+      public ulong GetNonce() => _nonce;
+
 
       public int EncryptWithAd(ReadOnlySpan<byte> ad, ReadOnlySpan<byte> plaintext, Span<byte> ciphertext)
       {

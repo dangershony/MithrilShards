@@ -14,12 +14,15 @@ namespace NoiseProtocol.Test
       [Fact]
       public void TestNewNoiseResponderCommWithExistingInitiator()
       {
-         var initiator = new HandshakeNoiseProtocol(new HandshakeNoiseProtocolTests.PredefinedKeysNodeContext(new DefaultRandomNumberGenerator(),
+         var initiator = new HandshakeWithNoiseProtocol(new HandshakeNoiseProtocolTests.PredefinedKeysNodeContext(new DefaultRandomNumberGenerator(),
             Bolt8TestVectorParameters.Initiator.PrivateKey), Bolt8TestVectorParameters.Responder.PublicKey,
             new HandshakeNoiseProtocolTests.InitiatorTestHandshakeStateFactory());
 
-         var responder = new NoiseProtocol(new EllipticCurveActions(), new OldHkdf(new OldHash(), new OldHash()),
-            new ChaCha20Poly1305CipherFunction(), new KeyGenerator(), new HashFunction(), 
+         var hkdf = new OldHkdf(new OldHash(), new OldHash());
+         
+         var responder = new NoiseProtocol(new EllipticCurveActions(), hkdf, new ChaCha20Poly1305CipherFunction()
+            , new KeyGenerator(), new HashFunction(),new NoiseMessageTransformer(hkdf,
+               new ChaCha20Poly1305CipherFunction(), new ChaCha20Poly1305CipherFunction()),  
             Bolt8TestVectorParameters.Responder.PrivateKey);
          responder.InitHandShake();
 
@@ -40,18 +43,21 @@ namespace NoiseProtocol.Test
 
          // act three responder
          input = new ReadOnlySequence<byte>(output.WrittenMemory);
-         responder.CompleteHandshake(input.FirstSpan);
+         responder.CompleteResponderHandshake(input.FirstSpan);
       }
       
       [Fact]
       public void TestNewNoiseInitiatorWithExistingResponder()
       {
-         var initiator =  new NoiseProtocol(new EllipticCurveActions(),new OldHkdf(new OldHash(), new OldHash()),
-            new ChaCha20Poly1305CipherFunction(), new KeyGenerator(), new HashFunction(), 
+         var hkdf = new OldHkdf(new OldHash(), new OldHash());
+         
+         var initiator =  new NoiseProtocol(new EllipticCurveActions(),hkdf, new ChaCha20Poly1305CipherFunction(),
+            new KeyGenerator(), new HashFunction(),new NoiseMessageTransformer(hkdf,
+               new ChaCha20Poly1305CipherFunction(), new ChaCha20Poly1305CipherFunction()),
             Bolt8TestVectorParameters.Initiator.PrivateKey);
          initiator.InitHandShake();
 
-         var responder = new HandshakeNoiseProtocol(new HandshakeNoiseProtocolTests.PredefinedKeysNodeContext(
+         var responder = new HandshakeWithNoiseProtocol(new HandshakeNoiseProtocolTests.PredefinedKeysNodeContext(
                new DefaultRandomNumberGenerator(),
                Bolt8TestVectorParameters.Responder.PrivateKey),
             null,
@@ -59,7 +65,7 @@ namespace NoiseProtocol.Test
 
          //  act one initiator
          var output = new ArrayBufferWriter<byte>();
-         initiator.StartNewHandshake(Bolt8TestVectorParameters.Responder.PublicKey, output);
+         initiator.StartNewInitiatorHandshake(Bolt8TestVectorParameters.Responder.PublicKey, output);
 
          // act one & two responder
          var input = new ReadOnlySequence<byte>(output.WrittenMemory);

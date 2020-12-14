@@ -9,19 +9,13 @@ namespace NoiseProtocol
          PrivateKey = privateKey;
          Hash = new byte[32];
          ChainingKey = new byte[32];
-         Sk = new byte[32];
-         Rk = new byte[32];
          EphemeralPrivateKey = new byte[0];
       }
 
       public byte[] Hash { get; }
       public byte[] ChainingKey { get; }
       public byte[] EphemeralPrivateKey { get; set; }
-      public byte[] Sk { get; }
-      public byte[] Rk { get; }
-
-      public byte[] PrivateKey { get; set; }
-
+      public byte[] PrivateKey { get; }
       public byte[] RemotePublicKey { get; set; } = new byte[0];
 
       public void SetRemotePublicKey(byte[] remotePublicKey)
