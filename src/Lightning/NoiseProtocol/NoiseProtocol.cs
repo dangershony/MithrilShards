@@ -58,7 +58,7 @@ namespace NoiseProtocol
       // initiator act one
       public void StartNewInitiatorHandshake(byte[] remotePublicKey, IBufferWriter<byte> output)
       {
-         _logger.LogInformation("Started initiator handshake act one");
+         _logger.LogDebug("Initiator handshake: starting act one");
          
          _hasher.Hash(HandshakeContext.Hash, remotePublicKey, HandshakeContext.Hash);
 
@@ -66,43 +66,41 @@ namespace NoiseProtocol
          
          GenerateLocalEphemeralAndProcessRemotePublicKey(remotePublicKey, output);
          
-         _logger.LogInformation("Completed initiator handshake act one");
+         _logger.LogDebug("Completed act one");
       }
       
       public void ProcessHandshakeRequest(ReadOnlySequence<byte> handshakeRequest, IBufferWriter<byte> output)
       {
          if (!HandshakeContext.HasRemotePublic)
          {
-            _logger.LogInformation("Started responder handshake act one");
+            _logger.LogDebug("Responder handshake: starting act one");
             
             _hasher.Hash(HandshakeContext.Hash,_keyGenerator.GetPublicKey(HandshakeContext.PrivateKey).ToArray(),HandshakeContext.Hash);
             ReadOnlySpan<byte> re = HandleReceivedHandshakeRequest(HandshakeContext.PrivateKey, handshakeRequest);
 
-            _logger.LogInformation("Completed responder handshake act one");
-            _logger.LogInformation("Started responder handshake act two");
+            _logger.LogDebug("Completed act one, starting act tow");
 
             GenerateLocalEphemeralAndProcessRemotePublicKey(re.ToArray(), output);
             
-            _logger.LogInformation("Completed responder handshake act two");
+            _logger.LogDebug("Completed act two");
          }
          else
          {
-            _logger.LogInformation("Started responder handshake act two");
+            _logger.LogDebug("Initiator handshake: started act two");
             ReadOnlySpan<byte> re = HandleReceivedHandshakeRequest(HandshakeContext.EphemeralPrivateKey, handshakeRequest);
 
-            _logger.LogInformation("Completed responder handshake act two");
-            _logger.LogInformation("Started responder handshake act two");
-            
+            _logger.LogDebug("Completed act two, starting act three");
+
             CompleteInitiatorHandshake(re, output);
             
-            _logger.LogInformation("Completed responder handshake act two");
+            _logger.LogDebug("Completed act three");
          }
       }
 
       // responder act three
       public void CompleteResponderHandshake(ReadOnlySequence<byte> handshakeRequest)
       {
-         _logger.LogInformation("Started responder handshake act three");
+         _logger.LogInformation("Responder handshake: started act three");
          
          if (!handshakeRequest.FirstSpan.StartsWith(LightningNetworkConfig.NoiseProtocolVersionPrefix))
             throw new AggregateException("Unsupported version in request");
@@ -124,7 +122,7 @@ namespace NoiseProtocol
          
          ExtractFinalChannelKeysForResponder();
          
-         _logger.LogInformation("Completed responder handshake act three");
+         _logger.LogInformation("Completed act three");
       }
 
       public INoiseMessageTransformer GetMessageTransformer()

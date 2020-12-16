@@ -41,7 +41,7 @@ namespace NoiseProtocol
          var cipherTextOutput = ciphertext.Slice(0, plaintext.Length);
          var tag = ciphertext.Slice(plaintext.Length, Aead.TAG_SIZE);
 
-         _logger.LogInformation($"Encrypting plain text with length of {plaintext.Length} with nonce {_nonce}");
+         _logger.LogDebug($"Encrypting plain text with length of {plaintext.Length} with nonce {_nonce}");
          
          cipher.Encrypt(nonce, plaintext.ToArray(), cipherTextOutput, tag, ad.ToArray());
 
@@ -64,7 +64,7 @@ namespace NoiseProtocol
          var cipherTextWithoutTag = ciphertext.Slice(0, ciphertext.Length - Aead.TAG_SIZE);
          var tag = ciphertext.Slice(ciphertext.Length - Aead.TAG_SIZE);
 
-         _logger.LogInformation($"Decrypting plain text with length of {plaintext.Length} with nonce {_nonce}");
+         _logger.LogDebug($"Decrypting plain text with length of {plaintext.Length} with nonce {_nonce}");
          
          cipher.Decrypt(nonce, cipherTextWithoutTag, tag, plaintext, ad);
 

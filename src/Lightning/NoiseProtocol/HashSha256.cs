@@ -19,7 +19,7 @@ namespace NoiseProtocol
          sha256.ComputeHash(span.ToArray());
          sha256.Hash.AsSpan()
             .CopyTo(output);
-         _logger.LogInformation($"hashed 1 parameter into output");
+         _logger.LogDebug($"hashed 1 parameter into output");
       }
 
       public void Hash(ReadOnlySpan<byte> first, ReadOnlySpan<byte> second, Span<byte> output)
@@ -34,7 +34,7 @@ namespace NoiseProtocol
          sha256.Hash.AsSpan()
             .CopyTo(output);
          
-         _logger.LogInformation($"hashed 2 parameters into output");
+         _logger.LogDebug($"hashed 2 parameters into output");
       }
 
       public void Hash(ReadOnlySpan<byte> first, ReadOnlySpan<byte> second, ReadOnlySpan<byte> third, Span<byte> output)
@@ -50,7 +50,7 @@ namespace NoiseProtocol
          sha256.Hash.AsSpan()
             .CopyTo(output);
          
-         _logger.LogInformation($"hashed 3 parameters into output");
+         _logger.LogDebug($"hashed 3 parameters into output");
       }
    }
 }
