@@ -1,14 +1,21 @@
 using System;
 using System.Buffers.Binary;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using NaCl.Core;
 
 namespace NoiseProtocol
 {
    public class ChaCha20Poly1305CipherFunction : ICipherFunction
    {
+      private readonly ILogger<ChaCha20Poly1305CipherFunction> _logger;
       readonly byte[] _key = new byte[32];
       ulong _nonce;
+
+      public ChaCha20Poly1305CipherFunction(ILogger<ChaCha20Poly1305CipherFunction> logger)
+      {
+         _logger = logger;
+      }
 
       public void SetKey(ReadOnlySpan<byte> key)
       {
@@ -34,6 +41,8 @@ namespace NoiseProtocol
          var cipherTextOutput = ciphertext.Slice(0, plaintext.Length);
          var tag = ciphertext.Slice(plaintext.Length, Aead.TAG_SIZE);
 
+         _logger.LogInformation($"Encrypting plain text with length of {plaintext.Length} with nonce {_nonce}");
+         
          cipher.Encrypt(nonce, plaintext.ToArray(), cipherTextOutput, tag, ad.ToArray());
 
          _nonce++;
@@ -55,6 +64,8 @@ namespace NoiseProtocol
          var cipherTextWithoutTag = ciphertext.Slice(0, ciphertext.Length - Aead.TAG_SIZE);
          var tag = ciphertext.Slice(ciphertext.Length - Aead.TAG_SIZE);
 
+         _logger.LogInformation($"Decrypting plain text with length of {plaintext.Length} with nonce {_nonce}");
+         
          cipher.Decrypt(nonce, cipherTextWithoutTag, tag, plaintext, ad);
 
          _nonce++;

@@ -38,8 +38,7 @@ namespace Network.Protocol.Transport
          }
 
          _noiseProtocol = noiseProtocol;
-         _noiseProtocol.SetPrivateKey(PrivateKey);
-         _noiseProtocol.InitHandShake();
+         _noiseProtocol.InitHandShake(PrivateKey);
          
         // _handshakeState = handshakeFactory.CreateLightningNetworkHandshakeState(PrivateKey, RemotePubKey!);
       }

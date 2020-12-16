@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Moq;
 using Network.Test.Protocol.Transport.Noise;
 
 namespace NoiseProtocol.Test
@@ -15,7 +17,7 @@ namespace NoiseProtocol.Test
                   Bolt8TestVectorParameters.Initiator.PublicKey),
             Bolt8TestVectorParameters.Initiator.PrivateKey);
          
-         NoiseProtocol.InitHandShake();
+         NoiseProtocol.InitHandShake(Bolt8TestVectorParameters.Initiator.PrivateKey);
       }
 
       protected void WithResponderHandshakeInitiatedToKnownLocalKeys()
@@ -27,16 +29,19 @@ namespace NoiseProtocol.Test
                   Bolt8TestVectorParameters.Responder.PublicKey),
             Bolt8TestVectorParameters.Responder.PrivateKey);
          
-         NoiseProtocol.InitHandShake();
+         NoiseProtocol.InitHandShake(Bolt8TestVectorParameters.Responder.PrivateKey);
       }
 
       internal static NoiseProtocol InitiateNoiseProtocol(IKeyGenerator keyGenerator, byte[] s)
       {
          var hkdf = new OldHkdf(new OldHash(), new OldHash());
          
-         return new NoiseProtocol(new EllipticCurveActions(), hkdf, new ChaCha20Poly1305CipherFunction(),
-            keyGenerator, new HashFunction(), new NoiseMessageTransformer(hkdf,
-               new ChaCha20Poly1305CipherFunction(), new ChaCha20Poly1305CipherFunction() ), s);
+         return new NoiseProtocol(new EllipticCurveActions(), hkdf, new ChaCha20Poly1305CipherFunction(
+               new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object), keyGenerator, 
+               new Sha256(new Mock<ILogger<Sha256>>().Object), new NoiseMessageTransformer(hkdf,
+               new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
+               new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
+               new Mock<ILogger<NoiseMessageTransformer>>().Object),new Mock<ILogger<NoiseProtocol>>().Object);
       }
    }
 }

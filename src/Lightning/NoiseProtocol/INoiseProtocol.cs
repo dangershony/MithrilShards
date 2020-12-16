@@ -5,9 +5,7 @@ namespace NoiseProtocol
 {
    public interface INoiseProtocol
    {
-      void SetPrivateKey(byte[] privateKey);
-      
-      void InitHandShake();
+      void InitHandShake(byte[] privateKey);
 
       void StartNewInitiatorHandshake(byte[] remotePublicKey, IBufferWriter<byte> output);
 
