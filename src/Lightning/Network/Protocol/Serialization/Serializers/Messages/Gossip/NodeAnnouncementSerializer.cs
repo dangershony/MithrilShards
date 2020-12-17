@@ -31,7 +31,7 @@ namespace Network.Protocol.Serialization.Serializers.Messages.Gossip
       {
          var message = new NodeAnnouncement
          {
-            Signature = (Signature)reader.ReadBytes(Signature.SIGNATURE_LENGTH), 
+            Signature = (Signature) reader.ReadBytes(Signature.SIGNATURE_LENGTH), 
             Len = reader.ReadUShort(true)
          };
 

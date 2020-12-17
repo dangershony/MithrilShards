@@ -1,9 +1,10 @@
 using System;
-
 namespace Network.Protocol.Messages.Types
 {
-   public struct Signature
+   public readonly struct Signature
    {
+      public override int GetHashCode() => _value.GetHashCode();
+
       public const ushort SIGNATURE_LENGTH = 64;
       
       readonly byte[] _value;
