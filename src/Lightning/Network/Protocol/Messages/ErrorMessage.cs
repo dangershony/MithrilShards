@@ -8,7 +8,7 @@ namespace Network.Protocol.Messages
    {
       private const string COMMAND = "17";
       public override string Command => COMMAND;
-      
+         
       public byte[] ChannelId { get; set; }
 
       public ushort Len { get; set; }
