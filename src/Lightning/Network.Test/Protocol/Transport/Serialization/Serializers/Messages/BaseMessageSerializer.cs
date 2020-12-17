@@ -73,6 +73,8 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
             var reader = new SequenceReader<byte>(new ReadOnlySequence<byte>(messageHex.ToByteArray()));
             var message = serializer.Deserialize(ref reader, 0, context);
 
+            AssertMessageDeserialized(message, expectedMessage);
+               
             var outputBuffer = new ArrayBufferWriter<byte>();
             serializer.Serialize(message, 0, context, outputBuffer);
             string resultHex = outputBuffer.WrittenMemory.ToArray().ToHexString();

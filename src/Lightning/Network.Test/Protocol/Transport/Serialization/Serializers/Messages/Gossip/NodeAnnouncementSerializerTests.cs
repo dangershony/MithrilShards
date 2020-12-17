@@ -72,7 +72,7 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages.Gos
          yield return (new byte[140].ToHexString(),
             new NodeAnnouncement
          {
-            Addresses = new byte[32], Addrlen = 32, Alias = new byte[32],
+            Addresses = new byte[0], Addrlen = 0, Alias = new byte[32],
             Features = new byte[0], Len = 0, Signature = (Signature) new byte[64],
             NodeId = (Point) new byte[33],Timestamp = 0, RgbColor = new byte[3]
          });
