@@ -2,7 +2,7 @@ using System;
 
 namespace Network.Protocol.Messages.Types
 {
-   public readonly struct ChainHash
+   public class ChainHash
    {
       readonly byte[] _value;
       

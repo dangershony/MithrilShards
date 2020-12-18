@@ -2,7 +2,7 @@ using System;
 
 namespace Network.Protocol.Messages.Types
 {
-   public struct ChannelId
+   public class ChannelId
    {
       readonly byte[] _value;
       
