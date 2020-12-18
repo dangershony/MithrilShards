@@ -9,7 +9,7 @@ namespace Network.Protocol
 
       bool InitComplete { get; set; }
 
-      IHandshakeProtocol HandshakeProtocol { get; set; }
+      IHandshakeProtocol? HandshakeProtocol { get; set; }
 
       void SetHandshakeProtocol(IHandshakeProtocol handshakeProtocol);
 

@@ -1,20 +1,21 @@
 using System;
+using MithrilShards.Core.DataTypes;
 
 namespace Network.Protocol.Messages.Types
 {
    public class ChainHash
    {
-      readonly byte[] _value;
+      readonly UInt256 _value;
       
       public ChainHash(byte[] value)
       {
-         if (value.Length > 32)
-            throw new ArgumentOutOfRangeException(nameof(value));
-            
-         _value = value;
+         // if (value.Length > 32)
+         //    throw new ArgumentOutOfRangeException(nameof(value));
+         //    
+         _value = new UInt256(value);
       }
 
-      public static implicit operator byte[](ChainHash hash) => hash._value;
+      public static implicit operator byte[](ChainHash hash) => hash._value.GetBytes().ToArray();
       public static explicit operator ChainHash(byte[] bytes) => new ChainHash(bytes);
       public static explicit operator ChainHash(ReadOnlySpan<byte> bytes) => new ChainHash(bytes.ToArray());
    }

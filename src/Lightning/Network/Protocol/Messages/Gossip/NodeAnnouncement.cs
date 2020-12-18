@@ -10,11 +10,11 @@ namespace Network.Protocol.Messages.Gossip
 
       public NodeAnnouncement()
       {
-         Signature = new Signature();
+         Signature = new CompressedSignature();
          Len = 0;
          Features = new byte[0];
          Timestamp = 0;
-         NodeId = new Point();
+         NodeId = new PublicKey();
          RgbColor = new byte[0];
          Alias = new byte[0];
          Addrlen = 0;
@@ -23,7 +23,7 @@ namespace Network.Protocol.Messages.Gossip
 
       public override string Command => COMMAND;
 
-      public Signature Signature { get; set; }
+      public CompressedSignature Signature { get; set; }
 
       public ushort Len { get; set; }
 
@@ -31,7 +31,7 @@ namespace Network.Protocol.Messages.Gossip
 
       public uint Timestamp { get; set; }
 
-      public Point NodeId { get; set; }
+      public PublicKey NodeId { get; set; }
 
       public byte[] RgbColor { get; set; }
 

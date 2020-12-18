@@ -15,15 +15,15 @@ namespace Network.Protocol.Serialization.Serializers.Messages.Gossip
          NetworkPeerContext peerContext,
          IBufferWriter<byte> output)
       {
-         output.WriteBytes(message.Signature);
-         output.WriteUShort(message.Len, true);
-         output.WriteBytes(message.Features);
-         output.WriteUInt(message.Timestamp, true);
-         output.WriteBytes(message.NodeId);
-         output.WriteBytes(message.RgbColor);
-         output.WriteBytes(message.Alias);
-         output.WriteUShort(message.Addrlen, true);
-         output.WriteBytes(message.Addresses);
+            output.WriteBytes(message.Signature);
+            output.WriteUShort(message.Len, true);
+            output.WriteBytes(message.Features);
+            output.WriteUInt(message.Timestamp, true);
+            output.WriteBytes(message.NodeId);
+            output.WriteBytes(message.RgbColor);
+            output.WriteBytes(message.Alias);
+            output.WriteUShort(message.Addrlen, true);
+            output.WriteBytes(message.Addresses);
       }
 
       public override NodeAnnouncement DeserializeMessage(ref SequenceReader<byte> reader, int protocolVersion,
@@ -31,13 +31,13 @@ namespace Network.Protocol.Serialization.Serializers.Messages.Gossip
       {
          var message = new NodeAnnouncement
          {
-            Signature = (Signature) reader.ReadBytes(Signature.SIGNATURE_LENGTH), 
+            Signature = (CompressedSignature) reader.ReadBytes(CompressedSignature.SIGNATURE_LENGTH), 
             Len = reader.ReadUShort(true)
          };
 
          message.Features = reader.ReadBytes(message.Len).ToArray();
          message.Timestamp = reader.ReadUInt(true);
-         message.NodeId = (Point) reader.ReadBytes(Point.POINT_LENGTH);
+         message.NodeId = (PublicKey) reader.ReadBytes(PublicKey.LENGTH);
          message.RgbColor = reader.ReadBytes(3).ToArray();
          message.Alias = reader.ReadBytes(32).ToArray();
          message.Addrlen = reader.ReadUShort(true);

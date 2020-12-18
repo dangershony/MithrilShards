@@ -34,11 +34,11 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages.Gos
          
          return new NodeAnnouncement
          {
-            Signature = (Signature) GetRandomBytes(random, Signature.SIGNATURE_LENGTH),
+            Signature = (CompressedSignature) GetRandomBytes(random, CompressedSignature.SIGNATURE_LENGTH),
             Len = len,
             Features = GetRandomBytes(random, len),
             Timestamp = (uint) random.Next(int.MaxValue),
-            NodeId = (Point) GetRandomBytes(random,Point.POINT_LENGTH),
+            NodeId = (PublicKey) GetRandomBytes(random,PublicKey.LENGTH),
             RgbColor = GetRandomBytes(random,3),
             Alias = GetRandomBytes(random,32),
             Addrlen = addrlen,
@@ -49,8 +49,8 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages.Gos
       protected override void AssertExpectedSerialization(ArrayBufferWriter<byte> outputBuffer,
          NodeAnnouncement message)
       {
-         Assert.Equal(outputBuffer.WrittenCount,Signature.SIGNATURE_LENGTH + 2 + message.Len + 4 +
-                                                Point.POINT_LENGTH + 3 + 32 + 2 + message.Addrlen);
+         Assert.Equal(outputBuffer.WrittenCount,CompressedSignature.SIGNATURE_LENGTH + 2 + message.Len + 4 +
+                                                PublicKey.LENGTH + 3 + 32 + 2 + message.Addrlen);
          
          
       }
@@ -73,8 +73,8 @@ namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages.Gos
             new NodeAnnouncement
          {
             Addresses = new byte[0], Addrlen = 0, Alias = new byte[32],
-            Features = new byte[0], Len = 0, Signature = (Signature) new byte[64],
-            NodeId = (Point) new byte[33],Timestamp = 0, RgbColor = new byte[3]
+            Features = new byte[0], Len = 0, Signature = (CompressedSignature) new byte[64],
+            NodeId = (PublicKey) new byte[33],Timestamp = 0, RgbColor = new byte[3]
          });
       }
    }
