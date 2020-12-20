@@ -21,7 +21,7 @@ namespace Network.Protocol.Transport
    {
       private readonly ILogger<TransportMessageSerializer> _logger;
       private readonly INetworkMessageSerializerManager _networkMessageSerializerManager;
-      private readonly INoiseProtocol _noiseProtocol;
+      private readonly IHandshakeProcessor _handshakeProcessor;
       private readonly NodeContext _nodeContext;
 
       private NetworkPeerContext _networkPeerContext;
@@ -32,12 +32,12 @@ namespace Network.Protocol.Transport
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
          NodeContext nodeContext,
-         INoiseProtocol handshakeStateFactory)
+         IHandshakeProcessor handshakeProcessor)
       {
          _logger = logger;
          _networkMessageSerializerManager = networkMessageSerializerManager;
          _nodeContext = nodeContext;
-         _noiseProtocol = handshakeStateFactory;
+         _handshakeProcessor = handshakeProcessor;
          _deserializationContext = new DeserializationContext();
 
          //initialized by SetPeerContext
@@ -70,7 +70,7 @@ namespace Network.Protocol.Transport
             lightningEndpoint = (LightningEndpoint)res;
          }
 
-         _handshakeProtocol = new HandshakeWithNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey, _noiseProtocol);
+         _handshakeProtocol = new HandshakeWithNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey, _handshakeProcessor);
          _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
       }
 

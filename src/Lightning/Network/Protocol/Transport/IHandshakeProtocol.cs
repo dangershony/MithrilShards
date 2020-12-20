@@ -6,7 +6,6 @@ namespace Network.Protocol.Transport
    public interface IHandshakeProtocol
    {
       public byte[] RemotePubKey { get; set; }
-      public string? LocalPubKey { get; set; }
 
       public bool Initiator { get; set; }
 

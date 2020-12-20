@@ -52,7 +52,7 @@ namespace Network
          services.AddSingleton<IHashFunction,NoiseProtocol.Sha256>();
          services.AddTransient<INoiseMessageTransformer,NoiseMessageTransformer>();
          services.AddSingleton<IKeyGenerator,KeyGenerator>();
-         services.AddSingleton<INoiseProtocol, NoiseProtocol.NoiseProtocol>();
+         services.AddSingleton<IHandshakeProcessor, NoiseProtocol.HandshakeProcessor>();
          return services;
       }
 

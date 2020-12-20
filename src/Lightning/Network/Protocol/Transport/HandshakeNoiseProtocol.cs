@@ -12,25 +12,19 @@ namespace Network.Protocol.Transport
       private const int HEADER_LENGTH = 18;
 
       public byte[]? RemotePubKey { get; set; }
-      public string LocalPubKey { get; set; }
 
       public bool Initiator { get; set; }
 
-      public byte[] PrivateKey { get; set; } // TODO: this can be private or even hidden behind an interface.
-
-      // private readonly IHandshakeState _handshakeState;
-      //
-      // private ITransport? _transport;
+      public byte[] PrivateKey { get; set; } // TODO: David replace with fundamental type when integrated
 
       private readonly ArrayBufferWriter<byte> _messageHeaderCache = new ArrayBufferWriter<byte>(2);
-      readonly INoiseProtocol _noiseProtocol;
-      INoiseMessageTransformer _transport;
+      private readonly IHandshakeProcessor _noiseProtocol;
+      private INoiseMessageTransformer? _transport;
 
       public HandshakeWithNoiseProtocol(NodeContext nodeContext, byte[]? remotePubKey,
-         INoiseProtocol noiseProtocol)
+         IHandshakeProcessor noiseProtocol)
       {
          PrivateKey = nodeContext.PrivateKey;
-         LocalPubKey = nodeContext.LocalPubKey;
          if (remotePubKey != null)
          {
             RemotePubKey = remotePubKey;
@@ -39,8 +33,6 @@ namespace Network.Protocol.Transport
 
          _noiseProtocol = noiseProtocol;
          _noiseProtocol.InitHandShake(PrivateKey);
-         
-        // _handshakeState = handshakeFactory.CreateLightningNetworkHandshakeState(PrivateKey, RemotePubKey!);
       }
 
       public int HeaderLength { get { return HEADER_LENGTH; } }

@@ -6,7 +6,7 @@ namespace NoiseProtocol.Test
 {
    public class Bolt8InitiatedNoiseProtocolTests
    {
-      protected NoiseProtocol NoiseProtocol;
+      protected HandshakeProcessor NoiseProtocol;
 
       protected void WithInitiatorHandshakeInitiatedToKnownLocalAndRemoteKeys()
       {
@@ -32,16 +32,16 @@ namespace NoiseProtocol.Test
          NoiseProtocol.InitHandShake(Bolt8TestVectorParameters.Responder.PrivateKey);
       }
 
-      internal static NoiseProtocol InitiateNoiseProtocol(IKeyGenerator keyGenerator, byte[] s)
+      internal static HandshakeProcessor InitiateNoiseProtocol(IKeyGenerator keyGenerator, byte[] s)
       {
          var hkdf = new OldHkdf(new OldHash(), new OldHash());
          
-         return new NoiseProtocol(new EllipticCurveActions(), hkdf, new ChaCha20Poly1305CipherFunction(
+         return new HandshakeProcessor(new EllipticCurveActions(), hkdf, new ChaCha20Poly1305CipherFunction(
                new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object), keyGenerator, 
                new Sha256(new Mock<ILogger<Sha256>>().Object), new NoiseMessageTransformer(hkdf,
                new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
                new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
-               new Mock<ILogger<NoiseMessageTransformer>>().Object),new Mock<ILogger<NoiseProtocol>>().Object);
+               new Mock<ILogger<NoiseMessageTransformer>>().Object),new Mock<ILogger<HandshakeProcessor>>().Object);
       }
    }
 }

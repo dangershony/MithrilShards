@@ -3,7 +3,7 @@ using System.Buffers;
 
 namespace NoiseProtocol
 {
-   public interface INoiseProtocol
+   public interface IHandshakeProcessor
    {
       void InitHandShake(byte[] privateKey);
 

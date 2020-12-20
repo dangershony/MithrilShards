@@ -10,8 +10,8 @@ namespace NoiseProtocol.Test
    public class MessageEncryptionTests : Bolt8InitiatedNoiseProtocolTests
    {
       private readonly ITestOutputHelper _testOutputHelper;
-      private NoiseProtocol _initiatorHandshakeState;
-      private NoiseProtocol _responderHandshakeState;
+      private HandshakeProcessor _initiatorHandshakeState;
+      private HandshakeProcessor _responderHandshakeState;
 
       public MessageEncryptionTests(ITestOutputHelper testOutputHelper)
       {

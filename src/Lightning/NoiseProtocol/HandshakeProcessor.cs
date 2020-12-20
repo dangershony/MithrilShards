@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 
 namespace NoiseProtocol
 {
-   public class NoiseProtocol : INoiseProtocol
+   public class HandshakeProcessor : IHandshakeProcessor
    {
-      private readonly ILogger<NoiseProtocol> _logger;
+      private readonly ILogger<HandshakeProcessor> _logger;
       
       readonly IEllipticCurveActions _curveActions;
       readonly IHkdf _hkdf;
@@ -17,23 +17,9 @@ namespace NoiseProtocol
 
       public HandshakeContext HandshakeContext { get; set; }
 
-      public NoiseProtocol(IEllipticCurveActions curveActions, IHkdf hkdf, 
+      public HandshakeProcessor(IEllipticCurveActions curveActions, IHkdf hkdf, 
          ICipherFunction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,
-         INoiseMessageTransformer messageTransformer, byte[] privateKey, ILogger<NoiseProtocol> logger)
-      {
-         _curveActions = curveActions;
-         _hkdf = hkdf;
-         _aeadConstruction = aeadConstruction;
-         _keyGenerator = keyGenerator;
-         _hasher = hasher;
-         _messageTransformer = messageTransformer;
-         _logger = logger;
-         HandshakeContext = new HandshakeContext(privateKey);
-      }
-      
-      public NoiseProtocol(IEllipticCurveActions curveActions, IHkdf hkdf, 
-         ICipherFunction aeadConstruction, IKeyGenerator keyGenerator, IHashFunction hasher,
-         INoiseMessageTransformer messageTransformer, ILogger<NoiseProtocol> logger)
+         INoiseMessageTransformer messageTransformer, ILogger<HandshakeProcessor> logger)
       {
          _curveActions = curveActions;
          _hkdf = hkdf;
