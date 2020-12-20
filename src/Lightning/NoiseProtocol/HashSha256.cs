@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace NoiseProtocol
 {
-   public class Sha256 : IHashFunction
+   public class Sha256 : INoiseHashFunction
    {
       private readonly ILogger<Sha256> _logger;
 
@@ -35,22 +35,6 @@ namespace NoiseProtocol
             .CopyTo(output);
          
          _logger.LogDebug($"hashed 2 parameters into output");
-      }
-
-      public void Hash(ReadOnlySpan<byte> first, ReadOnlySpan<byte> second, ReadOnlySpan<byte> third, Span<byte> output)
-      {
-         var array = new byte[first.Length + second.Length + third.Length];
-
-         first.CopyTo(array.AsSpan(0, first.Length));
-         second.CopyTo(array.AsSpan(first.Length, second.Length));
-         third.CopyTo(array.AsSpan(second.Length, third.Length));
-
-         using var sha256 = SHA256.Create();
-         sha256.ComputeHash(array);
-         sha256.Hash.AsSpan()
-            .CopyTo(output);
-         
-         _logger.LogDebug($"hashed 3 parameters into output");
       }
    }
 }

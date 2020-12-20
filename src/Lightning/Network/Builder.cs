@@ -49,7 +49,7 @@ namespace Network
          services.AddTransient<IHashWithState,OldHash>();
          services.AddSingleton<NoiseProtocol.IHkdf,OldHkdf>();
          services.AddTransient<ICipherFunction,ChaCha20Poly1305CipherFunction>();
-         services.AddSingleton<IHashFunction,NoiseProtocol.Sha256>();
+         services.AddSingleton<INoiseHashFunction,NoiseProtocol.Sha256>();
          services.AddTransient<INoiseMessageTransformer,NoiseMessageTransformer>();
          services.AddSingleton<IKeyGenerator,KeyGenerator>();
          services.AddSingleton<IHandshakeProcessor, NoiseProtocol.HandshakeProcessor>();
