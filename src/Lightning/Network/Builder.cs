@@ -46,8 +46,8 @@ namespace Network
       {
          //services.AddSingleton<IHandshakeStateFactory, HandshakeStateFactory>();
          services.AddSingleton<IEllipticCurveActions,EllipticCurveActions>();
-         services.AddTransient<IHashWithState,OldHash>();
-         services.AddSingleton<NoiseProtocol.IHkdf,OldHkdf>();
+         services.AddTransient<IHashWithState,HashWithState>();
+         services.AddSingleton<NoiseProtocol.IHkdf,Hkdf>();
          services.AddTransient<ICipherFunction,ChaCha20Poly1305CipherFunction>();
          services.AddSingleton<INoiseHashFunction,NoiseProtocol.Sha256>();
          services.AddTransient<INoiseMessageTransformer,NoiseMessageTransformer>();

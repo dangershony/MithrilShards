@@ -4,13 +4,13 @@ using System.Security.Cryptography;
 
 namespace NoiseProtocol
 {
-   public class OldHash : IHashWithState
+   public class HashWithState : IHashWithState
    {
       private readonly byte[] _state = new byte[104];
       private int _currentStateLength = 0;
       private bool _disposed;
 
-      public OldHash() => Reset();
+      public HashWithState() => Reset();
 
       public int HashLen => 32;
       public int BlockLen => 64;

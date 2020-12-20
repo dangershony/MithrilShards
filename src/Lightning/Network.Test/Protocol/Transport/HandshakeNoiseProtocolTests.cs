@@ -36,10 +36,10 @@ namespace Network.Test.Protocol.Transport
                   Bolt8TestVectorParameters.Responder.PublicKey)));
 
       static HandshakeProcessor NewNoiseProtocol(IKeyGenerator keyGenerator) =>
-         new HandshakeProcessor(new EllipticCurveActions(), new OldHkdf(new OldHash(), new OldHash()), 
+         new HandshakeProcessor(new EllipticCurveActions(), new Hkdf(new HashWithState(), new HashWithState()), 
             new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object)
             , keyGenerator, new NoiseProtocol.Sha256(new Mock<ILogger<NoiseProtocol.Sha256>>().Object),
-            new NoiseMessageTransformer(new OldHkdf(new OldHash(), new OldHash()),
+            new NoiseMessageTransformer(new Hkdf(new HashWithState(), new HashWithState()),
                new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
                new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
                new Mock<ILogger<NoiseMessageTransformer>>().Object),new Mock<ILogger<HandshakeProcessor>>().Object);

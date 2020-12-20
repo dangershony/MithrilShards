@@ -10,10 +10,10 @@ namespace NoiseProtocol.Test
       const string MESSAGE = "0x68656c6c6f";
       
       static HandshakeProcessor NewNoiseProtocol() =>
-         new HandshakeProcessor(new EllipticCurveActions(), new OldHkdf(new OldHash(), new OldHash()), 
+         new HandshakeProcessor(new EllipticCurveActions(), new Hkdf(new HashWithState(), new HashWithState()), 
             new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object)
             , new KeyGenerator(), new Sha256(new Mock<ILogger<Sha256>>().Object),
-            new NoiseMessageTransformer(new OldHkdf(new OldHash(), new OldHash()),
+            new NoiseMessageTransformer(new Hkdf(new HashWithState(), new HashWithState()),
                new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
                new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
                new Mock<ILogger<NoiseMessageTransformer>>().Object),new Mock<ILogger<HandshakeProcessor>>().Object);

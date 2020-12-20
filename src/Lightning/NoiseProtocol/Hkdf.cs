@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace NoiseProtocol
 {
-   public class OldHkdf : IHkdf, IDisposable
+   public class Hkdf : IHkdf, IDisposable
    {
       static readonly byte[] _one = {1};
       private static readonly byte[] _two = { 2 };
@@ -12,7 +12,7 @@ namespace NoiseProtocol
       private readonly IHashWithState _outer;
       private bool _disposed;
 
-      public OldHkdf(IHashWithState inner, IHashWithState outer)
+      public Hkdf(IHashWithState inner, IHashWithState outer)
       {
          _inner = inner;
          _outer = outer;

@@ -34,7 +34,7 @@ namespace NoiseProtocol.Test
 
       internal static HandshakeProcessor InitiateNoiseProtocol(IKeyGenerator keyGenerator, byte[] s)
       {
-         var hkdf = new OldHkdf(new OldHash(), new OldHash());
+         var hkdf = new Hkdf(new HashWithState(), new HashWithState());
          
          return new HandshakeProcessor(new EllipticCurveActions(), hkdf, new ChaCha20Poly1305CipherFunction(
                new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object), keyGenerator, 
