@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Buffers;
-using Network.Protocol.TlvStreams.TlvRecords;
+using Network.Protocol;
+using Network.Protocol.TlvStreams;
 
-namespace Network.Protocol.TlvStreams.Serializers
+namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
 {
    /// <summary>
    /// A dummy tlv serializer for unknown tlv types
