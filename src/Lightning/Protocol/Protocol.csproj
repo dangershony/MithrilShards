@@ -8,4 +8,8 @@
    <ItemGroup>
       <PackageReference Include="NBitcoin" Version="5.0.67" />
    </ItemGroup>
+
+   <ItemGroup>
+     <ProjectReference Include="..\Bitcoin.Primitives\Bitcoin.Primitives.csproj" />
+   </ItemGroup>
 </Project>
