@@ -5,7 +5,7 @@ namespace NoiseProtocol
 {
    public interface IHandshakeProcessor
    {
-      void InitHandShake(byte[] privateKey);
+      void InitiateHandShake(byte[] privateKey);
 
       void StartNewInitiatorHandshake(byte[] remotePublicKey, IBufferWriter<byte> output);
 

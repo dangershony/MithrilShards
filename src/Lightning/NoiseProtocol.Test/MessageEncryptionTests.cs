@@ -27,7 +27,7 @@ namespace NoiseProtocol.Test
                   Bolt8TestVectorParameters.Initiator.PublicKey),
             Bolt8TestVectorParameters.Initiator.PrivateKey);
          
-         _initiatorHandshakeState.InitHandShake(Bolt8TestVectorParameters.Initiator.PrivateKey);;
+         _initiatorHandshakeState.InitiateHandShake(Bolt8TestVectorParameters.Initiator.PrivateKey);;
       }
 
       private new void WithResponderHandshakeInitiatedToKnownLocalKeys()
@@ -39,7 +39,7 @@ namespace NoiseProtocol.Test
                   Bolt8TestVectorParameters.Responder.PublicKey),
             Bolt8TestVectorParameters.Responder.PrivateKey);
          
-         _responderHandshakeState.InitHandShake(Bolt8TestVectorParameters.Responder.PrivateKey);
+         _responderHandshakeState.InitiateHandShake(Bolt8TestVectorParameters.Responder.PrivateKey);
       }
 
       [Theory]

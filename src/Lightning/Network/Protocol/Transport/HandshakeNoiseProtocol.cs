@@ -32,7 +32,7 @@ namespace Network.Protocol.Transport
          }
 
          _noiseProtocol = noiseProtocol;
-         _noiseProtocol.InitHandShake(PrivateKey);
+         _noiseProtocol.InitiateHandShake(PrivateKey);
       }
 
       public int HeaderLength { get { return HEADER_LENGTH; } }

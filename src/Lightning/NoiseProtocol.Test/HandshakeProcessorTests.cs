@@ -22,9 +22,9 @@ namespace NoiseProtocol.Test
       public void FullHandshakeAndSendingMessageTest()
       {
          var initiator = NewNoiseProtocol();
-         initiator.InitHandShake(Bolt8TestVectorParameters.Initiator.PrivateKey);
+         initiator.InitiateHandShake(Bolt8TestVectorParameters.Initiator.PrivateKey);
          var responder = NewNoiseProtocol();
-         responder.InitHandShake(Bolt8TestVectorParameters.Responder.PrivateKey);
+         responder.InitiateHandShake(Bolt8TestVectorParameters.Responder.PrivateKey);
    
          //  act one initiator
          var input = new ReadOnlySequence<byte>();

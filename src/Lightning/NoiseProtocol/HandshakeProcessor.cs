@@ -8,16 +8,16 @@ namespace NoiseProtocol
    {
       private readonly ILogger<HandshakeProcessor> _logger;
       
-      readonly IEllipticCurveActions _curveActions;
-      readonly IHkdf _hkdf;
-      readonly ICipherFunction _aeadConstruction;
-      readonly INoiseHashFunction _hasher;
-      readonly INoiseMessageTransformer _messageTransformer;
-      readonly IKeyGenerator _keyGenerator;
+      private readonly IEllipticCurveActions _curveActions;
+      private readonly IHkdf _hkdf;
+      private readonly ICipherFunction _aeadConstruction;
+      private readonly INoiseHashFunction _hasher;
+      private readonly INoiseMessageTransformer _messageTransformer;
+      private readonly IKeyGenerator _keyGenerator;
 
       public HandshakeContext HandshakeContext { get; set; }
 
-      int _sessionId;
+      private int _sessionId;
 
       public HandshakeProcessor(IEllipticCurveActions curveActions, IHkdf hkdf, 
          ICipherFunction aeadConstruction, IKeyGenerator keyGenerator, INoiseHashFunction hasher,
@@ -32,9 +32,7 @@ namespace NoiseProtocol
          _logger = logger;
       }
       
-      
-      
-      public void InitHandShake(byte[] privateKey)
+      public void InitiateHandShake(byte[] privateKey)
       {
          HandshakeContext = new HandshakeContext(privateKey);
 
@@ -107,14 +105,13 @@ namespace NoiseProtocol
          
          _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, cipher.FirstSpan, HandshakeContext.RemotePublicKey);
          
-         _hasher.Hash(HandshakeContext.Hash,cipher.ToArray(),HandshakeContext.Hash);
+         _hasher.Hash(HandshakeContext.Hash,cipher.FirstSpan,HandshakeContext.Hash);
          
          var se = _curveActions.Multiply(HandshakeContext.EphemeralPrivateKey, HandshakeContext.RemotePublicKey);
          
          ExtractNextKeys(se);
          
-         var plainText = new byte[16];
-         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, handshakeRequest.FirstSpan.Slice(50), plainText);
+         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, handshakeRequest.FirstSpan.Slice(50), stackalloc byte[16]);
          
          ExtractFinalChannelKeysForResponder();
 
@@ -130,24 +127,24 @@ namespace NoiseProtocol
          return _messageTransformer;
       }
 
-      void ExtractFinalChannelKeysForInitiator()
+      private void ExtractFinalChannelKeysForInitiator()
       {
-         var skAndRk = new byte[64];
+         Span<byte> skAndRk = stackalloc byte[64];
          
          _hkdf.ExtractAndExpand(HandshakeContext.ChainingKey, new byte[0].AsSpan(), skAndRk);
 
-         _messageTransformer.SetKeys(HandshakeContext.ChainingKey,skAndRk.AsSpan(0, 32),
-            skAndRk.AsSpan(32));
+         _messageTransformer.SetKeys(HandshakeContext.ChainingKey,skAndRk.Slice(0, 32),
+            skAndRk.Slice(32));
       }
       
-      void ExtractFinalChannelKeysForResponder()
+      private void ExtractFinalChannelKeysForResponder()
       {
-         var rkAndSk = new byte[64];
+         Span<byte> rkAndSk = stackalloc byte[64];
          
          _hkdf.ExtractAndExpand(HandshakeContext.ChainingKey, new byte[0].AsSpan(), rkAndSk);
 
-         _messageTransformer.SetKeys(HandshakeContext.ChainingKey,rkAndSk.AsSpan(32),
-            rkAndSk.AsSpan(0, 32));
+         _messageTransformer.SetKeys(HandshakeContext.ChainingKey,rkAndSk.Slice(32),
+            rkAndSk.Slice(0, 32));
       }
 
       private void CompleteInitiatorHandshake(ReadOnlySpan<byte> re, IBufferWriter<byte> output)
@@ -189,8 +186,8 @@ namespace NoiseProtocol
          ExtractNextKeys(secret);
 
          var c = handshakeRequest.Slice(34, 16);
-         var plainText = new byte[16];//TODO David move to cache on class
-         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, c.FirstSpan, plainText);
+         
+         _aeadConstruction.DecryptWithAd(HandshakeContext.Hash, c.FirstSpan, stackalloc byte[16]);
 
          _hasher.Hash(HandshakeContext.Hash, c.ToArray(), HandshakeContext.Hash);
          
@@ -224,14 +221,13 @@ namespace NoiseProtocol
       
       private void ExtractNextKeys(ReadOnlySpan<byte> se)
       {
-         var ckAndTempKey = new byte[64]; //TODO David move to cache on class
+         Span<byte> ckAndTempKey = stackalloc byte[64];
       
          _hkdf.ExtractAndExpand(HandshakeContext.ChainingKey, se, ckAndTempKey);
       
-         ckAndTempKey.AsSpan(0, 32)
-            .CopyTo(HandshakeContext.ChainingKey);
+         ckAndTempKey.Slice(0, 32).CopyTo(HandshakeContext.ChainingKey);
       
-         _aeadConstruction.SetKey(ckAndTempKey.AsSpan(32));
+         _aeadConstruction.SetKey(ckAndTempKey.Slice(32));
       }
    }
 }
