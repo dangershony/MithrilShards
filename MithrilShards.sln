@@ -81,7 +81,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node", "src\Lightning\Node\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Network.Test", "src\Lightning\Network.Test\Network.Test.csproj", "{21424F71-F2E7-4E2F-9791-3D3A372F8566}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protocol.Test", "src\Lightning\Protocol.Test\Protocol.Test.csproj", "{DD338359-EA98-4F10-BE5D-94F02F5884B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Protocol.Test", "src\Lightning\Protocol.Test\Protocol.Test.csproj", "{DD338359-EA98-4F10-BE5D-94F02F5884B5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bitcoin.Primitives", "src\Lightning\Bitcoin.Primitives\Bitcoin.Primitives.csproj", "{DF98E5FE-19B1-4177-A2C6-9F75CF888421}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -173,6 +175,10 @@ Global
 		{DD338359-EA98-4F10-BE5D-94F02F5884B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD338359-EA98-4F10-BE5D-94F02F5884B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD338359-EA98-4F10-BE5D-94F02F5884B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF98E5FE-19B1-4177-A2C6-9F75CF888421}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF98E5FE-19B1-4177-A2C6-9F75CF888421}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF98E5FE-19B1-4177-A2C6-9F75CF888421}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF98E5FE-19B1-4177-A2C6-9F75CF888421}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -197,6 +203,7 @@ Global
 		{FCD96FB6-3118-42FA-9675-17021C1FFF8B} = {F51BD2C5-C053-4F4D-9B39-8565C112C989}
 		{21424F71-F2E7-4E2F-9791-3D3A372F8566} = {F51BD2C5-C053-4F4D-9B39-8565C112C989}
 		{DD338359-EA98-4F10-BE5D-94F02F5884B5} = {F51BD2C5-C053-4F4D-9B39-8565C112C989}
+		{DF98E5FE-19B1-4177-A2C6-9F75CF888421} = {F51BD2C5-C053-4F4D-9B39-8565C112C989}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5624037D-68BC-4AD5-8802-500F2ADE8DED}
