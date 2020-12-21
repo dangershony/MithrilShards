@@ -5,7 +5,7 @@ namespace Network.Protocol.Transport.Noise
    /// <summary>
    /// Hash functions (and associated constants).
    /// </summary>
-   internal interface IHash : IDisposable
+   public interface IHash : IDisposable
    {
       /// <summary>
       /// A constant specifying the size in bytes of the hash output.

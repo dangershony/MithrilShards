@@ -13,6 +13,7 @@
       <ProjectReference Include="..\..\MithrilShards.Core\MithrilShards.Core.csproj" />
       <ProjectReference Include="..\..\MithrilShards.Dev.Controller\MithrilShards.Dev.Controller.csproj" />
       <ProjectReference Include="..\..\MithrilShards.Network.Bedrock\MithrilShards.Network.Bedrock.csproj" />
+      <ProjectReference Include="..\NoiseProtocol\NoiseProtocol.csproj" />
    </ItemGroup>
 
    <ItemGroup>

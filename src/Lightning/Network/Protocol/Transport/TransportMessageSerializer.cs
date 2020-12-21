@@ -9,6 +9,7 @@ using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Network.Bedrock;
 using Network.Protocol.Messages;
 using Network.Protocol.Transport.Noise;
+using NoiseProtocol;
 
 namespace Network.Protocol.Transport
 {
@@ -20,7 +21,7 @@ namespace Network.Protocol.Transport
    {
       private readonly ILogger<TransportMessageSerializer> _logger;
       private readonly INetworkMessageSerializerManager _networkMessageSerializerManager;
-      private readonly IHandshakeStateFactory _handshakeStateFactory;
+      private readonly IHandshakeProcessor _handshakeProcessor;
       private readonly NodeContext _nodeContext;
 
       private NetworkPeerContext _networkPeerContext;
@@ -31,12 +32,12 @@ namespace Network.Protocol.Transport
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
          NodeContext nodeContext,
-         IHandshakeStateFactory handshakeStateFactory)
+         IHandshakeProcessor handshakeProcessor)
       {
          _logger = logger;
          _networkMessageSerializerManager = networkMessageSerializerManager;
          _nodeContext = nodeContext;
-         _handshakeStateFactory = handshakeStateFactory;
+         _handshakeProcessor = handshakeProcessor;
          _deserializationContext = new DeserializationContext();
 
          //initialized by SetPeerContext
@@ -69,7 +70,7 @@ namespace Network.Protocol.Transport
             lightningEndpoint = (LightningEndpoint)res;
          }
 
-         _handshakeProtocol = new HandshakeNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey, _handshakeStateFactory);
+         _handshakeProtocol = new HandshakeWithNoiseProtocol(_nodeContext, lightningEndpoint?.NodePubKey, _handshakeProcessor);
          _networkPeerContext.SetHandshakeProtocol(_handshakeProtocol);
       }
 
@@ -90,7 +91,7 @@ namespace Network.Protocol.Transport
                   return false;
                }
 
-               ReadOnlySpan<byte> encryptedHeader = reader.CurrentSpan.Slice(reader.Position.GetInteger(), _handshakeProtocol.HeaderLength);
+               ReadOnlySequence<byte> encryptedHeader = reader.Sequence.Slice(reader.Position.GetInteger(), _handshakeProtocol.HeaderLength);
                
                // decrypt the message length
                _deserializationContext.MessageLength = _handshakeProtocol.ReadMessageLength(encryptedHeader);

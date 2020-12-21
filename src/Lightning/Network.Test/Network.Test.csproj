@@ -23,6 +23,7 @@
    <ItemGroup>
       <ProjectReference Include="..\..\MithrilShards.Core\MithrilShards.Core.csproj" />
       <ProjectReference Include="..\Network\Network.csproj" />
+      <ProjectReference Include="..\NoiseProtocol\NoiseProtocol.csproj" />
    </ItemGroup>
 
    <ItemGroup>

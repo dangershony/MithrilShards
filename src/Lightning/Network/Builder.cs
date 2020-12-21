@@ -15,6 +15,7 @@ using Network.Protocol.TlvStreams;
 using Network.Protocol.Transport;
 using Network.Protocol.Transport.Noise;
 using Network.Settings;
+using NoiseProtocol;
 
 namespace Network
 {
@@ -43,7 +44,15 @@ namespace Network
 
       private static IServiceCollection AddNoiseComponents(this IServiceCollection services)
       {
-         services.AddSingleton<IHandshakeStateFactory, HandshakeStateFactory>();
+         //services.AddSingleton<IHandshakeStateFactory, HandshakeStateFactory>();
+         services.AddSingleton<IEllipticCurveActions,EllipticCurveActions>();
+         services.AddTransient<IHashWithState,HashWithState>();
+         services.AddSingleton<NoiseProtocol.IHkdf,Hkdf>();
+         services.AddTransient<ICipherFunction,ChaCha20Poly1305CipherFunction>();
+         services.AddSingleton<INoiseHashFunction,NoiseProtocol.Sha256>();
+         services.AddTransient<INoiseMessageTransformer,NoiseMessageTransformer>();
+         services.AddSingleton<IKeyGenerator,KeyGenerator>();
+         services.AddSingleton<IHandshakeProcessor, NoiseProtocol.HandshakeProcessor>();
          return services;
       }
 

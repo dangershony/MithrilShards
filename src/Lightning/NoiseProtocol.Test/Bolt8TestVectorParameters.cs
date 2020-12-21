@@ -1,6 +1,6 @@
-using Network.Protocol.Transport.Noise;
+using Network.Test.Protocol.Transport.Noise;
 
-namespace Network.Test.Protocol.Transport.Noise
+namespace NoiseProtocol.Test
 {
     public static class Bolt8TestVectorParameters
     {

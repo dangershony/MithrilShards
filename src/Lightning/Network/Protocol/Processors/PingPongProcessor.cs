@@ -68,7 +68,7 @@ namespace Network.Protocol.Processors
          if(_lastSentPingMessages.ContainsKey(message.BytesLen) && 
             _lastSentPingMessages.Remove(message.BytesLen,out var trackedPingMessage))
          {
-            logger.LogDebug($"Pong received for ping after {_dateTimeProvider.GetUtcNow() - trackedPingMessage.dateTimeSent} on" +
+            logger.LogDebug($"Pong received for ping after {_dateTimeProvider.GetUtcNow() - trackedPingMessage.dateTimeSent} on " +
                             $"{PeerContext.PeerId}");
          }
 

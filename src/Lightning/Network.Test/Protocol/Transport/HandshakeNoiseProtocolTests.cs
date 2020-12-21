@@ -1,89 +1,48 @@
 #nullable enable
 using System;
 using System.Buffers;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using MithrilShards.Core;
+using Moq;
 using Network.Protocol.Transport;
-using Network.Protocol.Transport.Noise;
+// using Network.Protocol.Transport.Noise;
 using Network.Test.Protocol.Transport.Noise;
+using NoiseProtocol;
 using Xunit;
 
 namespace Network.Test.Protocol.Transport
 {
    public class HandshakeNoiseProtocolTests
    {
-      private HandshakeNoiseProtocol? _noiseProtocol;
+      private HandshakeWithNoiseProtocol? _noiseProtocol;
 
-      private static HandshakeNoiseProtocol GetInitiatorNoiseProtocol() =>
-         new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(
+      private static HandshakeWithNoiseProtocol GetInitiatorNoiseProtocol() =>
+         new HandshakeWithNoiseProtocol(new PredefinedKeysNodeContext(
                new DefaultRandomNumberGenerator(), Bolt8TestVectorParameters.Initiator.PrivateKey)
-            , Bolt8TestVectorParameters.Responder.PublicKey, new InitiatorTestHandshakeStateFactory());
+            , Bolt8TestVectorParameters.Responder.PublicKey, NewNoiseProtocol(new FixedKeysGenerator(
+                  Bolt8TestVectorParameters.InitiatorEphemeralKeyPair.PrivateKey,
+                  Bolt8TestVectorParameters.InitiatorEphemeralKeyPair.PublicKey)
+               .AddKeys(Bolt8TestVectorParameters.Initiator.PrivateKey,
+                  Bolt8TestVectorParameters.Initiator.PublicKey)));
 
-      private static HandshakeNoiseProtocol GetResponderNoiseProtocol() =>
-         new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(
+      private static HandshakeWithNoiseProtocol GetResponderNoiseProtocol() =>
+         new HandshakeWithNoiseProtocol(new PredefinedKeysNodeContext(
                new DefaultRandomNumberGenerator(), Bolt8TestVectorParameters.Responder.PrivateKey)
-            , null, new ResponderTestHandshakeStateFactory());
+            , null, NewNoiseProtocol(new FixedKeysGenerator(
+                  Bolt8TestVectorParameters.ResponderEphemeralKeyPair.PrivateKey,
+                  Bolt8TestVectorParameters.ResponderEphemeralKeyPair.PublicKey)
+               .AddKeys(Bolt8TestVectorParameters.Responder.PrivateKey,
+                  Bolt8TestVectorParameters.Responder.PublicKey)));
 
-      [Fact]
-      public void FullHandshakeAndSendingMessageTest()
-      {
-         const string message = "0x68656c6c6f";
-
-         var initiator = new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(new DefaultRandomNumberGenerator(),
-            Bolt8TestVectorParameters.Initiator.PrivateKey), Bolt8TestVectorParameters.Responder.PublicKey,
-            new HandshakeStateFactory());
-
-         var responder = new HandshakeNoiseProtocol(new PredefinedKeysNodeContext(new DefaultRandomNumberGenerator()
-         , Bolt8TestVectorParameters.Responder.PrivateKey), null,
-            new HandshakeStateFactory());
-
-         //  act one initiator
-         var input = new ReadOnlySequence<byte>();
-         var output = new ArrayBufferWriter<byte>();
-         initiator.Handshake(input, output);
-
-         // act one & two responder
-         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
-         output = new ArrayBufferWriter<byte>();
-         responder.Handshake(input, output);
-
-         // act two & three initiator
-         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
-         output = new ArrayBufferWriter<byte>();
-         initiator.Handshake(input, output);
-
-         // act three responder
-         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
-         output = new ArrayBufferWriter<byte>();
-         responder.Handshake(input, output);
-
-         // sending a message across initiator to responder
-         input = new ReadOnlySequence<byte>(message.ToByteArray());
-         output = new ArrayBufferWriter<byte>();
-         initiator.WriteMessage(input, output);
-
-         // responder receives the message
-         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
-         output = new ArrayBufferWriter<byte>();
-         int length = responder.ReadMessageLength(input.Slice(0, responder.HeaderLength).ToArray());
-         responder.ReadMessage(input.Slice(initiator.HeaderLength, length), output);
-
-         // check message decrypted are correctly
-         Assert.Equal(output.WrittenSpan.ToArray(), message.ToByteArray());
-
-         // sending a message across responder to initiator
-         input = new ReadOnlySequence<byte>(message.ToByteArray());
-         output = new ArrayBufferWriter<byte>();
-         responder.WriteMessage(input, output);
-
-         // initiator receives the message
-         input = new ReadOnlySequence<byte>(output.WrittenMemory.ToArray());
-         output = new ArrayBufferWriter<byte>();
-         length = initiator.ReadMessageLength(input.Slice(0, initiator.HeaderLength).ToArray());
-         initiator.ReadMessage(input.Slice(initiator.HeaderLength, length), output);
-
-         // check message decrypted are correctly
-         Assert.Equal(output.WrittenSpan.ToArray(), message.ToByteArray());
-      }
+      static HandshakeProcessor NewNoiseProtocol(IKeyGenerator keyGenerator) =>
+         new HandshakeProcessor(new EllipticCurveActions(), new Hkdf(new HashWithState(), new HashWithState()), 
+            new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object)
+            , keyGenerator, new NoiseProtocol.Sha256(new Mock<ILogger<NoiseProtocol.Sha256>>().Object),
+            new NoiseMessageTransformer(new Hkdf(new HashWithState(), new HashWithState()),
+               new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
+               new ChaCha20Poly1305CipherFunction(new Mock<ILogger<ChaCha20Poly1305CipherFunction>>().Object),
+               new Mock<ILogger<NoiseMessageTransformer>>().Object),new Mock<ILogger<HandshakeProcessor>>().Object);
 
       [Theory]
       [InlineData(Bolt8TestVectorParameters.ActOne.INITIATOR_OUTPUT)]
@@ -191,47 +150,28 @@ namespace Network.Test.Protocol.Transport
             PrivateKey = privateKey;
          }
       }
-
-      private class InitiatorTestHandshakeStateFactory : IHandshakeStateFactory
+      
+      private class FixedKeysGenerator : IKeyGenerator
       {
-         public IHandshakeState CreateLightningNetworkHandshakeState(byte[] privateKey, byte[]? remotePublicKey)
+         readonly byte[] _privateKey;
+         readonly Dictionary<string, byte[]> _keys;
+
+         public FixedKeysGenerator(byte[] privateKey, byte[] publicKey)
          {
-            var protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
-
-            protocol.VersionPrefix = LightningNetworkConfig.NoiseProtocolVersionPrefix;
-
-            var handshake = protocol.Create(remotePublicKey != null,
-                  LightningNetworkConfig.ProlugeByteArray(),
-                  privateKey,
-                  remotePublicKey!)
-
-               as HandshakeState<ChaCha20Poly1305, CurveSecp256K1, Sha256>;
-
-            handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.InitiatorEphemeralKeyPair));
-
-            return handshake ?? throw new ArgumentNullException();
+            _privateKey = privateKey;
+            _keys = new Dictionary<string, byte[]> {{privateKey.ToHexString(), publicKey}};
          }
-      }
 
-      private class ResponderTestHandshakeStateFactory : IHandshakeStateFactory
-      {
-         public IHandshakeState CreateLightningNetworkHandshakeState(byte[] privateKey, byte[]? remotePublicKey)
+         public FixedKeysGenerator AddKeys(byte[] privateKey, byte[] publicKey)
          {
-            var protocol = Network.Protocol.Transport.Noise.Protocol.Parse(LightningNetworkConfig.PROTOCOL_NAME);
-
-            protocol.VersionPrefix = LightningNetworkConfig.NoiseProtocolVersionPrefix;
-
-            var handshake = protocol.Create(remotePublicKey != null,
-                  LightningNetworkConfig.ProlugeByteArray(),
-                  privateKey,
-                  remotePublicKey!)
-
-               as HandshakeState<ChaCha20Poly1305, CurveSecp256K1, Sha256>;
-
-            handshake?.SetDh(new DhWrapperWithDefinedEphemeralKey(Bolt8TestVectorParameters.ResponderEphemeralKeyPair));
-
-            return handshake ?? throw new ArgumentNullException();
+            _keys.Add(privateKey.ToHexString(),publicKey);
+            return this;
          }
+
+         public byte[] GenerateKey() => _privateKey;
+
+         public ReadOnlySpan<byte> GetPublicKey(byte[] privateKey) =>
+            _keys[privateKey.ToHexString()];
       }
    }
 }
