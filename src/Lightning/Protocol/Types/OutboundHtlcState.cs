@@ -1,6 +1,6 @@
 ﻿namespace Protocol.Channels
 {
-   internal enum OutboundHtlcState
+   public enum OutboundHtlcState
    {
       /// Added by us and included in a commitment_signed (if we were AwaitingRemoteRevoke when we
       /// created it we would have put it in the holding cell instead). When they next revoke_and_ack

@@ -1,6 +1,6 @@
 ﻿namespace Protocol.Channels
 {
-   internal struct OutboundHtlcOutput
+   public struct OutboundHtlcOutput
    {
       public HtlcOutput Htlc { get; set; }
 
