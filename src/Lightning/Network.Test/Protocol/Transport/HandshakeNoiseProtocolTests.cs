@@ -4,10 +4,9 @@ using System.Buffers;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core;
+using MithrilShards.Core.Utils;
 using Moq;
 using Network.Protocol.Transport;
-// using Network.Protocol.Transport.Noise;
-using Network.Test.Protocol.Transport.Noise;
 using NoiseProtocol;
 using Xunit;
 

@@ -1,4 +1,4 @@
-using Network.Test.Protocol.Transport.Noise;
+using MithrilShards.Core.Utils;
 
 namespace NoiseProtocol.Test
 {

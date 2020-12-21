@@ -8,12 +8,9 @@ using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Client;
 using MithrilShards.Core.Network.Protocol.Processors;
 using MithrilShards.Core.Network.Protocol.Serialization;
-using MithrilShards.Core.Network.Server.Guards;
 using Network.Protocol;
-using Network.Protocol.Serialization;
 using Network.Protocol.TlvStreams;
 using Network.Protocol.Transport;
-using Network.Protocol.Transport.Noise;
 using Network.Settings;
 using NoiseProtocol;
 

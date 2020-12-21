@@ -1,6 +1,6 @@
-using Network.Protocol.Transport.Noise;
+using MithrilShards.Core.Utils;
 
-namespace Network.Test.Protocol.Transport.Noise
+namespace Network.Test.Protocol
 {
     public static class Bolt8TestVectorParameters
     {

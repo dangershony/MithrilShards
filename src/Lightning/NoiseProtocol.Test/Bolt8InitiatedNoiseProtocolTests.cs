@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using Network.Test.Protocol.Transport.Noise;
 
 namespace NoiseProtocol.Test
 {

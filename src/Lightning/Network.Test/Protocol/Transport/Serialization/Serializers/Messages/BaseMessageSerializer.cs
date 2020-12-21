@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Protocol;
+using MithrilShards.Core.Utils;
 using Moq;
-using Network.Test.Protocol.Transport.Noise;
 using Xunit;
 
 namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages

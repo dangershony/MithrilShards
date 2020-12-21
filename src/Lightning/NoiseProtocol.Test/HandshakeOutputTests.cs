@@ -1,6 +1,6 @@
 using System;
 using System.Buffers;
-using Network.Test.Protocol.Transport.Noise;
+using MithrilShards.Core.Utils;
 using Xunit;
 
 namespace NoiseProtocol.Test

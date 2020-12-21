@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Buffers;
 using System.Buffers.Binary;
-using Network.Protocol.Transport.Noise;
 using NoiseProtocol;
-using LightningNetworkConfig = Network.Protocol.Transport.Noise.LightningNetworkConfig;
 
 namespace Network.Protocol.Transport
 {
    public class HandshakeWithNoiseProtocol : IHandshakeProtocol
    {
       private const int HEADER_LENGTH = 18;
+      private const int AEAD_TAG_SIZE = 16;
 
       public byte[]? RemotePubKey { get; set; }
 
@@ -59,7 +58,7 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         int bytesRead = _transport.ReadMessage(message, output); // TODO check what if buffer is very big
+         _transport.ReadMessage(message, output); // TODO check what if buffer is very big
       }
 
       public int ReadMessageLength(ReadOnlySequence<byte> encryptedHeader) //TODO David add tests
@@ -75,7 +74,7 @@ namespace Network.Protocol.Transport
 
          // Return the message length plus the 16 byte mac data
          // the caller does not need to know the message has mac data
-         return messageLengthDecrypted + Aead.TAG_SIZE;
+         return messageLengthDecrypted + AEAD_TAG_SIZE;
       }
 
       public void Handshake(ReadOnlySequence<byte> message, IBufferWriter<byte> output)

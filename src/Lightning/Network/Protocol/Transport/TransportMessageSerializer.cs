@@ -8,7 +8,6 @@ using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Network.Bedrock;
 using Network.Protocol.Messages;
-using Network.Protocol.Transport.Noise;
 using NoiseProtocol;
 
 namespace Network.Protocol.Transport

@@ -4,11 +4,9 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Network.Protocol.Messages;
-using Network.Protocol.Serialization;
 using Network.Protocol.Serialization.Serializers.Messages;
 using Network.Protocol.TlvStreams;
 using Network.Protocol.TlvStreams.Serializers;
-using Network.Test.Protocol.Transport.Noise;
 using Xunit;
 
 namespace Network.Test.Protocol.Transport.Serialization.Serializers.Messages
