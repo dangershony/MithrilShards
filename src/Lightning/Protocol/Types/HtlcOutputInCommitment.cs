@@ -11,15 +11,7 @@ namespace Protocol.Channels
       /// the counterparty or our own.
       public bool Offered { get; set; }
 
-      /// The value, in msat, of the HTLC. The value as it appears in the commitment transaction is
-      /// this divided by 1000.
-      public ulong AmountMsat { get; set; }
-
-      /// The CLTV lock-time at which this HTLC expires.
-      public uint CltvExpiry { get; set; }
-
-      /// The hash of the preimage which unlocks this HTLC.
-      public UInt256 PaymentHash { get; set; }
+      public HtlcOutput HtlcOutput { get; set; }
 
       /// The position within the commitment transactions' outputs. This may be None if the value is
       /// below the dust limit (in which case no output appears in the commitment transaction and the
