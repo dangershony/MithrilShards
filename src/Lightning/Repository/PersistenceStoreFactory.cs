@@ -8,23 +8,23 @@ namespace Repository
    {
       readonly IStorageConfiguration _configuration;
 
-      IList<IDisposable> stores = new List<IDisposable>();
+      readonly IList<IDisposable> _stores = new List<IDisposable>();
 
       public PersistenceStoreFactory(IStorageConfiguration configuration)
       {
          _configuration = configuration;
       }
 
-      public IPersistenceStore CreateUlongKeyStore()
+      public IPersistenceSession CreateUlongKeyStore()
       {
-         var log = Devices.CreateLogDevice( _configuration.StoragePath, recoverDevice: true);
+         var log = Devices.CreateLogDevice( _configuration.LogStoragePath, recoverDevice: true);
+         
+         var objectLog = Devices.CreateLogDevice( _configuration.ObjectLogStoragePath, recoverDevice: true);
 
-         var store = new FasterKV<ulong, string>(1L << 20, new LogSettings
-         {
-            LogDevice = log
-         });
+         var store = new FasterKV<ulong, string>(1L << 20,
+            new LogSettings {LogDevice = log, ObjectLogDevice = objectLog});
 
-         stores.Add(store);
+         _stores.Add(store);
          
          return new UlongStringPersistenceStore(store.For(new SimpleFunctions<ulong, string>())
             .NewSession<SimpleFunctions<ulong, string>>());
@@ -32,10 +32,10 @@ namespace Repository
 
       public void Dispose()
       {
-         if (stores.Count <= 0) 
+         if (_stores.Count <= 0) 
             return;
          
-         foreach (IDisposable disposable in stores)
+         foreach (IDisposable disposable in _stores)
          {
             disposable.Dispose();
          }

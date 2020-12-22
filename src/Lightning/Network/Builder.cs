@@ -13,6 +13,7 @@ using Network.Protocol.TlvStreams;
 using Network.Protocol.Transport;
 using Network.Settings;
 using NoiseProtocol;
+using Repository.IoC;
 
 namespace Network
 {
@@ -33,7 +34,8 @@ namespace Network
                   .AddMessageProcessors()
                   .AddTlvComponents()
                   .ReplaceServices()
-                  .AddNoiseComponents();
+                  .AddNoiseComponents()
+                  .AddRepositoryRegistrations();
             });
 
          return forgeBuilder;

@@ -5,20 +5,21 @@ namespace Repository
    internal class Repository<T> : IRepository<T> , IDisposable
       where T : class
    {
-      readonly IPersistenceStore _store;
+      readonly IPersistenceSession _session;
 
       public Repository(IPersistenceStoreFactory storeFactory)
       {
-         _store = storeFactory.CreateUlongKeyStore();
+         _session = storeFactory.CreateUlongKeyStore();
       }
 
-      public void Add(ulong key, T item) => _store.Add(key, item);
+      public void Add(ulong key, T item) => _session.Add(key, item);
 
-      public T Get(ulong key) => _store.GetById<T>(key);
+      public T Get(ulong key) => _session.GetById<T>(key);
+      public void SaveChanges() => _session.SaveChanges();
 
       public void Dispose()
       {
-         var disposable = _store as IDisposable;
+         var disposable = _session as IDisposable;
          
          disposable?.Dispose();
       }

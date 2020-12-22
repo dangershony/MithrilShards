@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Repository
 {
-   internal class UlongStringPersistenceStore : IPersistenceStore, IDisposable
+   internal class UlongStringPersistenceStore : IPersistenceSession, IDisposable
    {
       readonly ClientSession<ulong, string, string, string, Empty, SimpleFunctions<ulong, string>> _session;
       
@@ -32,6 +32,8 @@ namespace Repository
 
          _session.RMW(id, data);
       }
+
+      public void SaveChanges() => _session.WaitForCommitAsync();
 
       public void Dispose() => _session?.Dispose();
    }

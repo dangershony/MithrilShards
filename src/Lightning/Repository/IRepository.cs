@@ -5,5 +5,7 @@ namespace Repository
       void Add(ulong key, T item);
 
       T Get(ulong key);
+
+      void SaveChanges();
    }
 }

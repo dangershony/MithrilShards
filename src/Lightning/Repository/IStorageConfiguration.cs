@@ -2,6 +2,8 @@ namespace Repository
 {
    public interface IStorageConfiguration
    {
-      string StoragePath { get; }
+      string LogStoragePath { get; }
+      
+      string ObjectLogStoragePath { get; }
    }
 }

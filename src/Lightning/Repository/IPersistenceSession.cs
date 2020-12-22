@@ -1,6 +1,6 @@
 namespace Repository
 {
-   internal interface IPersistenceStore
+   internal interface IPersistenceSession
    {
       T GetById<T>(ulong id);
 

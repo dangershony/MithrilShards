@@ -6,7 +6,7 @@ namespace Repository.IoC
    {
       public static IServiceCollection AddRepositoryRegistrations(this IServiceCollection serviceCollection)
       {
-         serviceCollection.AddTransient<IPersistenceStore, UlongStringPersistenceStore>();
+         //serviceCollection.AddTransient<IPersistenceStore, UlongStringPersistenceStore>();
          serviceCollection.AddSingleton<IPersistenceStoreFactory, PersistenceStoreFactory>();
          serviceCollection.AddSingleton<IStorageConfiguration, NodeListStorageConfiguration>();
          serviceCollection.AddScoped(typeof(IRepository<>),typeof(Repository<>));

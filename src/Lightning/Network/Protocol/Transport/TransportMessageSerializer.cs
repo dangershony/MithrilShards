@@ -9,6 +9,7 @@ using MithrilShards.Core.Network.Protocol.Serialization;
 using MithrilShards.Network.Bedrock;
 using Network.Protocol.Messages;
 using NoiseProtocol;
+using Repository;
 
 namespace Network.Protocol.Transport
 {
@@ -27,16 +28,19 @@ namespace Network.Protocol.Transport
       private IHandshakeProtocol _handshakeProtocol;
       private readonly DeserializationContext _deserializationContext;
 
+      private readonly IRepository<UnknownMessage> _repository;
+
       public TransportMessageSerializer(
          ILogger<TransportMessageSerializer> logger,
          INetworkMessageSerializerManager networkMessageSerializerManager,
          NodeContext nodeContext,
-         IHandshakeProcessor handshakeProcessor)
+         IHandshakeProcessor handshakeProcessor, IRepository<UnknownMessage> repository)
       {
          _logger = logger;
          _networkMessageSerializerManager = networkMessageSerializerManager;
          _nodeContext = nodeContext;
          _handshakeProcessor = handshakeProcessor;
+         _repository = repository;
          _deserializationContext = new DeserializationContext();
 
          //initialized by SetPeerContext
@@ -135,6 +139,10 @@ namespace Network.Protocol.Transport
                _networkPeerContext.NegotiatedProtocolVersion.Version,
                _networkPeerContext, out message!))
             {
+               _repository.Add((ulong)_deserializationContext.MessageLength, new UnknownMessage(commandName, innerPayload.ToArray()));
+               
+               Console.WriteLine(_repository.Get((ulong)_deserializationContext.MessageLength).Command);
+               
                return true;
             }
             else
