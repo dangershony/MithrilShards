@@ -41,15 +41,14 @@ namespace Network
 
       private static IServiceCollection AddNoiseComponents(this IServiceCollection services)
       {
-         //services.AddSingleton<IHandshakeStateFactory, HandshakeStateFactory>();
          services.AddSingleton<IEllipticCurveActions,EllipticCurveActions>();
          services.AddTransient<IHashWithState,HashWithState>();
-         services.AddSingleton<NoiseProtocol.IHkdf,Hkdf>();
+         services.AddSingleton<IHkdf,Hkdf>();
          services.AddTransient<ICipherFunction,ChaCha20Poly1305CipherFunction>();
-         services.AddSingleton<INoiseHashFunction,NoiseProtocol.Sha256>();
+         services.AddSingleton<INoiseHashFunction,Sha256>();
          services.AddTransient<INoiseMessageTransformer,NoiseMessageTransformer>();
          services.AddSingleton<IKeyGenerator,KeyGenerator>();
-         services.AddSingleton<IHandshakeProcessor, NoiseProtocol.HandshakeProcessor>();
+         services.AddSingleton<IHandshakeProcessor, HandshakeProcessor>();
          return services;
       }
 
