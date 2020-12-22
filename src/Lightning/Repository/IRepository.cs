@@ -1,11 +1,14 @@
+using System.Threading.Tasks;
+
 namespace Repository
 {
-   public interface IRepository<T> where T : class
+   public interface IRepository<in TKey> 
+      where TKey : struct
    {
-      void Add(ulong key, T item);
+      void Add<T>(TKey key, T item) where T : class;
 
-      T Get(ulong key);
+      T Get<T>(TKey key) where T : class;
 
-      void SaveChanges();
+      ValueTask SaveChangesAsync();
    }
 }

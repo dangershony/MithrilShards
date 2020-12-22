@@ -1,25 +1,25 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Repository
 {
-   internal class Repository<T> : IRepository<T> , IDisposable
-      where T : class
+   internal class Repository : IRepository<ulong> , IDisposable
    {
-      readonly IPersistenceSession _session;
+      private readonly IPersistenceStore<ulong> _store;
 
-      public Repository(IPersistenceStoreFactory storeFactory)
+      public Repository(IPersistenceStoreFactory<ulong> storeFactory)
       {
-         _session = storeFactory.CreateUlongKeyStore();
+         _store = storeFactory.CreateKeyStore();
       }
 
-      public void Add(ulong key, T item) => _session.Add(key, item);
+      public void Add<T>(ulong key, T item) where T : class => _store.Add(key, item);
 
-      public T Get(ulong key) => _session.GetById<T>(key);
-      public void SaveChanges() => _session.SaveChanges();
+      public T Get<T>(ulong key) where T : class => _store.GetById<T>(key);
+      public ValueTask SaveChangesAsync() => _store.SaveChangesAsync();
 
       public void Dispose()
       {
-         var disposable = _session as IDisposable;
+         var disposable = _store as IDisposable;
          
          disposable?.Dispose();
       }
