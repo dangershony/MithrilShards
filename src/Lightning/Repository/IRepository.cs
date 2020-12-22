@@ -2,12 +2,11 @@ using System.Threading.Tasks;
 
 namespace Repository
 {
-   public interface IRepository<in TKey> 
-      where TKey : struct
+   public interface IRepository<T> where T : class
    {
-      void Add<T>(TKey key, T item) where T : class;
+      void Add(byte[] key, T item);
 
-      T Get<T>(TKey key) where T : class;
+      T Get(byte[] key);
 
       ValueTask SaveChangesAsync();
    }

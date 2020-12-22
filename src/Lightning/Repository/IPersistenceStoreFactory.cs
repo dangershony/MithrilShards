@@ -1,7 +1,7 @@
 namespace Repository
 {
-   internal interface IPersistenceStoreFactory <in TKey> where TKey : struct
+   internal interface IPersistenceStoreFactory
    {
-      IPersistenceStore<TKey> CreateKeyStore();
+      IPersistenceStore CreateKeyStore();
    }
 }

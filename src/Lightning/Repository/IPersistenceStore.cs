@@ -1,13 +1,12 @@
-using System;
 using System.Threading.Tasks;
 
 namespace Repository
 {
-   internal interface IPersistenceStore<in TKey> where TKey : struct
+   internal interface IPersistenceStore
    {
-      T GetById<T>(TKey id) ;
+      T GetById<T>(byte[] id) ;
 
-      void Add<T>(TKey id, T item)
+      void Add<T>(byte[] id, T item)
          where T : class;
       
       ValueTask SaveChangesAsync();

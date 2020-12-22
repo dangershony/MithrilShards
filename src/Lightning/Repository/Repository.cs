@@ -3,18 +3,18 @@ using System.Threading.Tasks;
 
 namespace Repository
 {
-   internal class Repository : IRepository<ulong> , IDisposable
+   internal class Repository<T> : IRepository<T> , IDisposable where T : class
    {
-      private readonly IPersistenceStore<ulong> _store;
+      private readonly IPersistenceStore _store;
 
-      public Repository(IPersistenceStoreFactory<ulong> storeFactory)
+      public Repository(IPersistenceStoreFactory storeFactory)
       {
          _store = storeFactory.CreateKeyStore();
       }
 
-      public void Add<T>(ulong key, T item) where T : class => _store.Add(key, item);
+      public void Add(byte[] key, T item) => _store.Add(key, item);
 
-      public T Get<T>(ulong key) where T : class => _store.GetById<T>(key);
+      public T Get(byte[] key) => _store.GetById<T>(key);
       public ValueTask SaveChangesAsync() => _store.SaveChangesAsync();
 
       public void Dispose()

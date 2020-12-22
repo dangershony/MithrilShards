@@ -2,7 +2,7 @@ using FASTER.core;
 
 namespace Repository
 {
-   internal class PersistenceStoreFactory : IPersistenceStoreFactory<ulong>
+   internal class PersistenceStoreFactory : IPersistenceStoreFactory
    {
       readonly IStorageConfiguration _configuration;
 
@@ -11,16 +11,16 @@ namespace Repository
          _configuration = configuration;
       }
 
-      public IPersistenceStore<ulong> CreateKeyStore() 
+      public IPersistenceStore CreateKeyStore() 
       {
          var log = Devices.CreateLogDevice( _configuration.LogStoragePath, recoverDevice: true);
          
          var objectLog = Devices.CreateLogDevice( _configuration.ObjectLogStoragePath, recoverDevice: true);
 
-         var store = new FasterKV<ulong, string>(1L << 20,
+         var store = new FasterKV<SpanByte, string>(1L << 20,
             new LogSettings {LogDevice = log, ObjectLogDevice = objectLog});
 
-         return new UlongStringPersistenceStore(store);
+         return new SpanByteStringPersistenceStore(store);
       }
    }
 }
