@@ -20,14 +20,11 @@ namespace Repository.Test
 
          _factory = builder.GetService(typeof(IPersistenceStoreFactory)) as PersistenceStoreFactory;
 
-         var store = _factory?.CreateKeyStore();
+         var store = _factory?.CreatePersistenceStore();
          
-         store.Should()
-            .NotBeNull();
+         store.Should().NotBeNull();
          
          (store as IDisposable)?.Dispose();
       }
-      
-      
    }
 }

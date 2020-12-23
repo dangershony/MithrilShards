@@ -9,7 +9,7 @@ namespace Repository
 
       public Repository(IPersistenceStoreFactory storeFactory)
       {
-         _store = storeFactory.CreateKeyStore();
+         _store = storeFactory.CreatePersistenceStore();
       }
 
       public void Add(byte[] key, T item) => _store.Add(key, item);

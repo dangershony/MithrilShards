@@ -11,7 +11,7 @@ namespace Repository
          _configuration = configuration;
       }
 
-      public IPersistenceStore CreateKeyStore() 
+      public IPersistenceStore CreatePersistenceStore() 
       {
          var log = Devices.CreateLogDevice( _configuration.LogStoragePath, recoverDevice: true);
          
@@ -24,7 +24,7 @@ namespace Repository
                ObjectLogDevice = objectLog
             });
 
-         return new SpanByteStringPersistenceStore(store);
+         return new SpanByteStringPersistenceStore(store); //Can be extended to 
       }
    }
 }
