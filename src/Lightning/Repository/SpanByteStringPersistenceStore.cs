@@ -49,8 +49,8 @@ namespace Repository
 
       public void Dispose()
       {
-         _fasterKv?.Dispose();
          _session?.Dispose();
+         _fasterKv?.Dispose();
       } 
    }
 }

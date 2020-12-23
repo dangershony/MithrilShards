@@ -17,8 +17,12 @@ namespace Repository
          
          var objectLog = Devices.CreateLogDevice( _configuration.ObjectLogStoragePath, recoverDevice: true);
 
-         var store = new FasterKV<SpanByte, string>(1L << 20,
-            new LogSettings {LogDevice = log, ObjectLogDevice = objectLog});
+         var store = new FasterKV<SpanByte, string>(1L << 5, 
+            new LogSettings
+            {
+               LogDevice = log, 
+               ObjectLogDevice = objectLog
+            });
 
          return new SpanByteStringPersistenceStore(store);
       }
