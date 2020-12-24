@@ -1,15 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network.PeerBehaviorManager;
 using MithrilShards.Core.Network.Protocol.Processors;
-using NBitcoin;
 using Network.Protocol.Messages.Gossip;
-using Network.Protocol.Messages.Types;
 using Network.Protocol.Validators;
+using Network.Storage.Gossip;
 
 namespace Network.Protocol.Processors.Gossip
 {
@@ -18,19 +16,20 @@ namespace Network.Protocol.Processors.Gossip
    {
       readonly IMessageValidator<NodeAnnouncement> _messageValidator;
 
-      readonly IDictionary<PublicKey, NodeAnnouncement> _dictionary;
-      
+      readonly IGossipRepository _gossipRepository;
+
       public NodeAnnouncementMessageProcessor(ILogger<BaseProcessor> logger, IEventBus eventBus, 
-         IPeerBehaviorManager peerBehaviorManager, IMessageValidator<NodeAnnouncement> messageValidator) 
+         IPeerBehaviorManager peerBehaviorManager, IMessageValidator<NodeAnnouncement> messageValidator, IGossipRepository gossipRepository) 
          : base(logger, eventBus, peerBehaviorManager, true)
       {
          _messageValidator = messageValidator;
-         _dictionary = new Dictionary<PublicKey, NodeAnnouncement>();
+         _gossipRepository = gossipRepository;
       }
 
       public async ValueTask<bool> ProcessMessageAsync(NodeAnnouncement message, CancellationToken cancellation)
       {
          var (isValid, errorMessage) = _messageValidator.ValidateMessage(message);
+         
          if (!isValid)
          {
             if (errorMessage == null)
@@ -40,8 +39,20 @@ namespace Network.Protocol.Processors.Gossip
                .ConfigureAwait(false);
          }
 
-         //TODO David extend this after defined storage and operations
-         _dictionary.AddOrReplace(message.NodeId,message);
+         var node = new GossipNode
+         {
+            Addresses = message.Addresses,
+            Addrlen = message.Addrlen,
+            Alias = message.Alias,
+            Features = message.Features,
+            Timestamp = message.Timestamp,
+            NodeId = message.NodeId,
+            RgbColor = message.RgbColor
+         };
+         
+         _gossipRepository.AddNode(node);
+ 
+         eventBus.Publish(node);
          
          return await new ValueTask<bool>(false)
             .ConfigureAwait(false);;
