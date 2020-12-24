@@ -9,9 +9,6 @@ namespace Network.Protocol.Messages.Types
       
       public ChainHash(byte[] value)
       {
-         // if (value.Length > 32)
-         //    throw new ArgumentOutOfRangeException(nameof(value));
-         //    
          _value = new UInt256(value);
       }
 

@@ -12,7 +12,8 @@ using Network.Storage.Gossip;
 namespace Network.Protocol.Processors.Gossip
 {
    public class NodeAnnouncementMessageProcessor : BaseProcessor,
-      INetworkMessageHandler<NodeAnnouncement>
+      INetworkMessageHandler<NodeAnnouncement>,
+      INetworkMessageHandler<GossipTimestampFilter>
    {
       readonly IMessageValidator<NodeAnnouncement> _messageValidator;
 
@@ -39,15 +40,10 @@ namespace Network.Protocol.Processors.Gossip
                .ConfigureAwait(false);
          }
 
-         var node = new GossipNode
+         var node = new GossipNode(message.NodeId,message.Features,message.RgbColor,message.Alias,message.Addresses)
          {
-            Addresses = message.Addresses,
             Addrlen = message.Addrlen,
-            Alias = message.Alias,
-            Features = message.Features,
-            Timestamp = message.Timestamp,
-            NodeId = message.NodeId,
-            RgbColor = message.RgbColor
+            Timestamp = message.Timestamp
          };
          
          _gossipRepository.AddNode(node);
@@ -56,6 +52,11 @@ namespace Network.Protocol.Processors.Gossip
          
          return await new ValueTask<bool>(false)
             .ConfigureAwait(false);;
+      }
+
+      public ValueTask<bool> ProcessMessageAsync(GossipTimestampFilter message, CancellationToken cancellation)
+      {
+         throw new NotImplementedException();
       }
    }
 }

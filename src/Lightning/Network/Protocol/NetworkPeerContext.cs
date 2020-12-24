@@ -6,6 +6,7 @@ using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Events;
 using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Processors;
+using Network.Protocol.Messages.Types;
 using Network.Protocol.Transport;
 
 namespace Network.Protocol
@@ -15,7 +16,7 @@ namespace Network.Protocol
       public bool HandshakeComplete { get; set; }
 
       public bool InitComplete { get; set; }
-
+      
       public IHandshakeProtocol? HandshakeProtocol { get; set; }
 
       public NetworkPeerContext(ILogger logger,
