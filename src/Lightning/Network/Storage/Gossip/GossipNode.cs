@@ -1,3 +1,4 @@
+using Bitcoin.Primitives.Fundamental;
 using MithrilShards.Core.EventBus;
 using Network.Protocol.Messages.Types;
 

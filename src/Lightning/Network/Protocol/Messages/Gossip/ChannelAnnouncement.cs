@@ -1,8 +1,6 @@
 using Bitcoin.Primitives.Fundamental;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using Network.Protocol.Messages.Types;
-using CompressedSignature = Network.Protocol.Messages.Types.CompressedSignature;
-using PublicKey = Bitcoin.Primitives.Fundamental.PublicKey;
 
 namespace Network.Protocol.Messages.Gossip
 {

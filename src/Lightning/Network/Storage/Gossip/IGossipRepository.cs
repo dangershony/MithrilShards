@@ -1,4 +1,4 @@
-using Network.Protocol.Messages.Types;
+using Bitcoin.Primitives.Fundamental;
 
 namespace Network.Storage.Gossip
 {
@@ -7,5 +7,7 @@ namespace Network.Storage.Gossip
       GossipNode AddNode(GossipNode node);
 
       GossipNode? GetNode(PublicKey nodeId);
+
+      bool IsNodeInBlacklistedList(PublicKey nodeId);
    }
 }

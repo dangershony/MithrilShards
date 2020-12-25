@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using Bitcoin.Primitives.Fundamental;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network;

@@ -1,4 +1,5 @@
 using System.Buffers;
+using Bitcoin.Primitives.Fundamental;
 using Network.Protocol.Messages.Gossip;
 using Network.Protocol.Messages.Types;
 using Network.Protocol.TlvStreams;

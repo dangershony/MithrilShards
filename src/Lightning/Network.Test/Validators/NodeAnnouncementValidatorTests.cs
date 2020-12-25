@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Security.Cryptography;
+using Bitcoin.Primitives.Fundamental;
 using Moq;
 using NBitcoin;
 using Network.Protocol;

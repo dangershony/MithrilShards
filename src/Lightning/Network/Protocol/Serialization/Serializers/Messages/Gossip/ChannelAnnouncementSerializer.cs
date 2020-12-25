@@ -3,16 +3,13 @@ using Bitcoin.Primitives.Fundamental;
 using Network.Protocol.Messages.Gossip;
 using Network.Protocol.Messages.Types;
 using Network.Protocol.TlvStreams;
-using CompressedSignature = Network.Protocol.Messages.Types.CompressedSignature;
-using PublicKey = Bitcoin.Primitives.Fundamental.PublicKey;
 
 namespace Network.Protocol.Serialization.Serializers.Messages.Gossip
 {
    public class ChannelAnnouncementSerializer : BaseMessageSerializer<ChannelAnnouncement>
    {
       public ChannelAnnouncementSerializer(ITlvStreamSerializer tlvStreamSerializer) : base(tlvStreamSerializer)
-      {
-      }
+      { }
 
       public override void SerializeMessage(ChannelAnnouncement message, int protocolVersion,
          NetworkPeerContext peerContext,

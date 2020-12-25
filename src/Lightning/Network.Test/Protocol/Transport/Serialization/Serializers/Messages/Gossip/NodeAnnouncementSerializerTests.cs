@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using Bitcoin.Primitives.Fundamental;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.Utils;
 using Moq;
