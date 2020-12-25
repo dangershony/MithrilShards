@@ -47,8 +47,7 @@ namespace Network.Protocol.Transport
 
          _messageHeaderCache.Advance(2);
          
-         _transport.WriteMessage(new ReadOnlySequence<byte>(_messageHeaderCache.WrittenMemory),
-            output);
+         _transport.WriteMessage(new ReadOnlySequence<byte>(_messageHeaderCache.WrittenMemory), output);
 
          _transport.WriteMessage(message, output);
       }
