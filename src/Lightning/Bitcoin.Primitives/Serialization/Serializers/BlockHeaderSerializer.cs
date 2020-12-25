@@ -1,9 +1,7 @@
 ﻿using System.Buffers;
-using MithrilShards.Chain.Bitcoin.Protocol.Types;
-using MithrilShards.Core.DataTypes;
-using MithrilShards.Core.Network.Protocol.Serialization;
+using Bitcoin.Primitives.Types;
 
-namespace MithrilShards.Chain.Bitcoin.Protocol.Serialization.Serializers.Types
+namespace Bitcoin.Primitives.Serialization.Serializers
 {
    public class BlockHeaderSerializer : IProtocolTypeSerializer<BlockHeader>
    {

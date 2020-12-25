@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace MithrilShards.Core.Network.Protocol.Serialization
+namespace Bitcoin.Primitives.Serialization
 {
    public class ProtocolTypeSerializerOptions
    {

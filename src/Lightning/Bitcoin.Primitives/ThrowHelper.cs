@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
-using MithrilShards.Core.Network.Protocol.Serialization;
+using Bitcoin.Primitives.Serialization;
 
-namespace MithrilShards.Core
+namespace Bitcoin.Primitives
 {
    /// <summary>
    /// Helper to throw exception, allowing caller to have a higher chance to be inlined.

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MithrilShards.Core.Network.Protocol.Serialization
+namespace Bitcoin.Primitives.Serialization
 {
    [Serializable]
    public class MessageSerializationException : Exception

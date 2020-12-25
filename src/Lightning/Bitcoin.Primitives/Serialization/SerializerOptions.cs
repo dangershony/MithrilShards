@@ -1,4 +1,4 @@
-﻿namespace MithrilShards.Chain.Bitcoin.Protocol.Serialization.Serializers
+﻿namespace Bitcoin.Primitives.Serialization
 {
    public class SerializerOptions
    {

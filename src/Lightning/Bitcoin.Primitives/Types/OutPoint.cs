@@ -1,6 +1,4 @@
-﻿using MithrilShards.Core.DataTypes;
-
-namespace MithrilShards.Chain.Bitcoin.Protocol.Types
+﻿namespace Bitcoin.Primitives.Types
 {
    /// <summary>
    /// Point to a specific transaction output.

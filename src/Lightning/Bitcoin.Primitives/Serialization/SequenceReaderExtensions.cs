@@ -2,10 +2,8 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text;
-using MithrilShards.Core;
-using MithrilShards.Core.Network.Protocol.Serialization;
 
-namespace MithrilShards.Chain.Bitcoin.Protocol.Serialization
+namespace Bitcoin.Primitives.Serialization
 {
    public static class SequenceReaderExtensions
    {

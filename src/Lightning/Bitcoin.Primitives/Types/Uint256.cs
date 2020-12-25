@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace MithrilShards.Core.DataTypes
+namespace Bitcoin.Primitives.Types
 {
    [StructLayout(LayoutKind.Sequential)]
    public partial class UInt256 : IEquatable<UInt256>

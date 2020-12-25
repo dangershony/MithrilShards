@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MithrilShards.Chain.Bitcoin.Protocol.Types
+namespace Bitcoin.Primitives.Types
 {
    /// <summary>
    /// Network address (net_addr).

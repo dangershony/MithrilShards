@@ -1,7 +1,6 @@
 ﻿using System;
-using MithrilShards.Core.DataTypes;
 
-namespace MithrilShards.Chain.Bitcoin.Protocol.Types
+namespace Bitcoin.Primitives.Types
 {
    public class BlockLocator
    {

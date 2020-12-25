@@ -1,6 +1,6 @@
 ﻿using System.Buffers;
 
-namespace MithrilShards.Core.Network.Protocol.Serialization
+namespace Bitcoin.Primitives.Serialization
 {
    public interface IProtocolTypeSerializer<TProtocolType>
    {

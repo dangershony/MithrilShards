@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MithrilShards.Core.DataTypes
+namespace Bitcoin.Primitives.Types
 {
    public partial class UInt256 : IEquatable<UInt256>
    {
