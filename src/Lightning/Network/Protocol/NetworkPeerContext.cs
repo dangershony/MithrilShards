@@ -6,6 +6,7 @@ using MithrilShards.Core.Network;
 using MithrilShards.Core.Network.Events;
 using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Processors;
+using MithrilShards.Core.Utils;
 using Network.Protocol.Messages.Types;
 using Network.Protocol.Transport;
 
@@ -19,6 +20,8 @@ namespace Network.Protocol
       
       public IHandshakeProtocol? HandshakeProtocol { get; set; }
 
+      public PublicKey NodeId  => (PublicKey) PeerId.ToByteArray();
+      
       public NetworkPeerContext(ILogger logger,
          IEventBus eventBus,
          PeerConnectionDirection direction,
