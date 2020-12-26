@@ -8,6 +8,14 @@ namespace Network.Protocol.Messages.Gossip
    public class QueryShortChannelIds : BaseMessage
    {
       private const string COMMAND = "261";
+
+      public QueryShortChannelIds(ChainHash chainHash, ushort len, byte[] encodedShortIds)
+      {
+         ChainHash = chainHash;
+         Len = len;
+         EncodedShortIds = encodedShortIds;
+      }
+
       public override string Command => COMMAND;
       
       public ChainHash ChainHash { get; set; }

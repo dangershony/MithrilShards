@@ -1,6 +1,5 @@
 using Bitcoin.Primitives.Fundamental;
 using MithrilShards.Core.EventBus;
-using Network.Protocol.Messages.Types;
 
 namespace Network.Storage.Gossip
 {
@@ -14,6 +13,7 @@ namespace Network.Storage.Gossip
          Alias = alias;
          Addresses = addresses;
          BlockchainTimeFilters = new GossipNodeTimestampFilter[0];
+         Channels = new GossipChannel[0];
       }
 
       public PublicKey NodeId { get; set; }
@@ -31,5 +31,6 @@ namespace Network.Storage.Gossip
       public byte[] Addresses { get; set; }
 
       public GossipNodeTimestampFilter[] BlockchainTimeFilters { get; set; }
+      public GossipChannel[] Channels { get; set; }
    }
 }

@@ -14,6 +14,7 @@ using Network.Protocol.Messages;
 using Network.Protocol.TlvStreams;
 using Network.Protocol.TlvStreams.TlvRecords;
 using Network.Protocol.Transport;
+using Network.Storage.Gossip;
 
 namespace Network.Protocol.Processors
 {
@@ -22,25 +23,18 @@ namespace Network.Protocol.Processors
       INetworkMessageHandler<InitMessage>
    {
       private const int HANDSHAKE_TIMEOUT_SECONDS = 500; //5;
-      private readonly IDateTimeProvider _dateTimeProvider;
-      private readonly IRandomNumberGenerator _randomNumberGenerator;
-      private readonly IUserAgentBuilder _userAgentBuilder;
+      readonly IGossipRepository _gossipRepository;
 
       private IHandshakeProtocol _handshakeProtocol;
       private int _handshakeActNumber;
-      private bool _handshakeInitiator;
 
       public HandshakeProcessor(ILogger<HandshakeProcessor> logger,
                                 IEventBus eventBus,
-                                IDateTimeProvider dateTimeProvider,
-                                IRandomNumberGenerator randomNumberGenerator,
                                 IPeerBehaviorManager peerBehaviorManager,
-                                IUserAgentBuilder userAgentBuilder
-                                ) : base(logger, eventBus, peerBehaviorManager, isHandshakeAware: true)
+                                IGossipRepository gossipRepository) 
+         : base(logger, eventBus, peerBehaviorManager, isHandshakeAware: true)
       {
-         _dateTimeProvider = dateTimeProvider;
-         _randomNumberGenerator = randomNumberGenerator;
-         _userAgentBuilder = userAgentBuilder;
+         _gossipRepository = gossipRepository;
       }
 
       public override bool CanReceiveMessages { get { return true; } }
@@ -48,10 +42,10 @@ namespace Network.Protocol.Processors
       protected override async ValueTask OnPeerAttachedAsync()
       {
          _handshakeActNumber = 1;
-         _handshakeInitiator = PeerContext.Direction == PeerConnectionDirection.Outbound;
 
          //add the status to the PeerContext, this way other processors may query the status
-         _handshakeProtocol = PeerContext.HandshakeProtocol;
+         _handshakeProtocol = PeerContext.HandshakeProtocol 
+                              ?? throw new ArgumentNullException(nameof(PeerContext.HandshakeProtocol));
 
          // ensures the handshake is performed timely
          _ = DisconnectIfAsync(() =>
@@ -126,8 +120,11 @@ namespace Network.Protocol.Processors
          PeerContext.OnInitMessageCompleted();
          
          await SendMessageAsync(CreateInitMessage(), cancellation).ConfigureAwait(false);
+
+         _gossipRepository.AddNode(new GossipNode(PeerContext.NodeId, 
+            message.Features, new byte[0], new byte[0],new byte[0]));
          
-         return true;// new ValueTask<bool>(true);
+         return true;
       }
 
       private InitMessage CreateInitMessage()

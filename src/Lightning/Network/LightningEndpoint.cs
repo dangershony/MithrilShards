@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using MithrilShards.Core.DataTypes;
+using MithrilShards.Core.Utils;
 
 namespace Network
 {
@@ -10,7 +11,7 @@ namespace Network
       public EndPoint? EndPoint { get; set; }
       public string? NodeId { get; set; }
 
-      public byte[] NodePubKey { get; set; }
+      public byte[] NodePubKey { get; set; } = new byte[0];
 
       public override string ToString()
       {
@@ -29,12 +30,11 @@ namespace Network
             result = Parse(span);
             return true;
          }
-         catch (Exception e)
+         catch
          {
+            result = null!;
+            return false;
          }
-
-         result = null;
-         return false;
       }
 
       public static LightningEndpoint Parse(string s)
@@ -54,24 +54,10 @@ namespace Network
          
          return new LightningEndpoint
          {
-            NodeId = nodeId, // todo: do validation on this
-            NodePubKey = ParseNodeId(nodeId), 
+            NodeId = nodeId, // todo: add validation on this
+            NodePubKey = nodeId.ToByteArray(), 
             EndPoint = IPEndPoint.Parse(span.Slice(span.IndexOf("@") + 1))
          };
-      }
-      
-      //TODO David move logic to utilities
-      private static byte[] ParseNodeId(string nodeId)
-      {
-         if (string.IsNullOrEmpty(nodeId)) 
-            throw new ArgumentException(nameof(nodeId));
-			
-         int startIndex = nodeId.ToLower().StartsWith("0x") ? 2 : 0;
-			
-         return Enumerable.Range(startIndex, nodeId.Length - startIndex)
-            .Where(x => x % 2 == 0)
-            .Select(x => Convert.ToByte(nodeId.Substring(x, 2), 16))
-            .ToArray();
       }
    }
 }

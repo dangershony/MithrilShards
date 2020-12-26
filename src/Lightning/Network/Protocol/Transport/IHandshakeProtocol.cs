@@ -1,16 +1,11 @@
 using System;
 using System.Buffers;
+using Bitcoin.Primitives.Fundamental;
 
 namespace Network.Protocol.Transport
 {
    public interface IHandshakeProtocol
    {
-      public byte[] RemotePubKey { get; set; }
-
-      public bool Initiator { get; set; }
-
-      public byte[]? PrivateKey { get; set; }
-
       public int HeaderLength { get; }
 
       public void WriteMessage(ReadOnlySequence<byte> message, IBufferWriter<byte> output);

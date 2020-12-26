@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Buffers.Binary;
+using Bitcoin.Primitives.Fundamental;
 using NoiseProtocol;
 
 namespace Network.Protocol.Transport
@@ -10,26 +11,22 @@ namespace Network.Protocol.Transport
       private const int HEADER_LENGTH = 18;
       private const int AEAD_TAG_SIZE = 16;
 
-      public byte[]? RemotePubKey { get; set; }
+      public byte[]? RemotePubKey { get; }
 
-      public bool Initiator { get; set; }
+      public bool Initiator => RemotePubKey != null;
 
-      public byte[] PrivateKey { get; set; } // TODO: David replace with fundamental type when integrated
+      public PrivateKey PrivateKey { get; }
 
-      private readonly ArrayBufferWriter<byte> _messageHeaderCache = new ArrayBufferWriter<byte>(2);
+      private readonly ArrayBufferWriter<byte> _messageHeaderCache;
       private readonly IHandshakeProcessor _noiseProtocol;
       private INoiseMessageTransformer? _transport;
 
       public HandshakeWithNoiseProtocol(NodeContext nodeContext, byte[]? remotePubKey,
          IHandshakeProcessor noiseProtocol)
       {
+         _messageHeaderCache = new ArrayBufferWriter<byte>(2);
          PrivateKey = nodeContext.PrivateKey;
-         if (remotePubKey != null)
-         {
-            RemotePubKey = remotePubKey;
-            Initiator = true;
-         }
-
+         RemotePubKey = remotePubKey;
          _noiseProtocol = noiseProtocol;
          _noiseProtocol.InitiateHandShake(PrivateKey);
       }

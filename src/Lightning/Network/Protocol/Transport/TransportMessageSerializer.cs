@@ -86,7 +86,7 @@ namespace Network.Protocol.Transport
                   // the payload header is 18 bytes (2 byte payload length and 16 byte MAC)
                   // if the buffer does not have that amount of bytes we wait for more
                   // bytes to arrive in the stream before parsing the header
-                  message = default;
+                  message = default!;
                   return false;
                }
 
@@ -102,7 +102,7 @@ namespace Network.Protocol.Transport
             {
                // if the reader does not have the entire length of the header
                // and message we wait for more data from the stream
-               message = default;
+               message = default!;
                return false;
             }
 
@@ -163,7 +163,7 @@ namespace Network.Protocol.Transport
                return true;
             }
 
-            message = default;
+            message = default!;
             return false;
          }
       }

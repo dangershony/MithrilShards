@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,8 +59,11 @@ namespace Network.Protocol.Transport
       /// <returns><see langword="true"/> if the endpoint has been added, <see langword="false"/> if the endpoint was already listed.</returns>
       public bool TryAddLightningEndPoint(LightningEndpoint endPoint)
       {
+         if (endPoint.EndPoint == null)
+            throw new ArgumentNullException(nameof(endPoint.EndPoint));
+         
          endPoint.EndPoint = endPoint.EndPoint.AsIPEndPoint().EnsureIPv6();
-         if (connectionsToAttempt.Exists(ip => ip.Equals(endPoint)))
+         if (connectionsToAttempt.Exists(ip => ip.EndPoint.Equals(endPoint.EndPoint)))
          {
             logger.LogDebug("EndPoint {RemoteEndPoint} already in the list of connections attempt.", endPoint);
             return false;

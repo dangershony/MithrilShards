@@ -60,7 +60,7 @@ namespace Network.Api.Controllers
             return BadRequest("Incorrect endpoint");
          }
 
-         _requiredConnection.TryRemoveEndPoint(ipEndPoint);
+         _requiredConnection?.TryRemoveEndPoint(ipEndPoint);
          _eventBus.Publish(new PeerDisconnectionRequired(ipEndPoint, request.Reason));
 
          return true;

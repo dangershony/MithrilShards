@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using Bitcoin.Primitives.Fundamental;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core;
 using MithrilShards.Core.Utils;
@@ -146,7 +147,7 @@ namespace Network.Test.Protocol.Transport
             byte[] privateKey)
             : base(randomNumberGenerator)
          {
-            PrivateKey = privateKey;
+            PrivateKey = (PrivateKey) privateKey;
          }
       }
       
