@@ -478,7 +478,7 @@ namespace Protocol.Channels
                      Value = (long)amount,
                      PublicKeyScript = p2wsh.ToBytes()
                   },
-                  CltvExpirey = 0
+                  CltvExpirey = htlc.expiry
                });
             }
          }
@@ -504,7 +504,7 @@ namespace Protocol.Channels
                      Value = (long)amount,
                      PublicKeyScript = p2wsh.ToBytes()
                   },
-                  CltvExpirey = 0
+                  CltvExpirey = htlc.expiry
                });
             }
          }
@@ -529,7 +529,7 @@ namespace Protocol.Channels
                   Value = (long)amount,
                   PublicKeyScript = p2wsh.ToBytes()
                },
-               CltvExpirey = 0
+               CltvExpirey = to_self_delay
             });
 
             to_local = true;
@@ -626,11 +626,11 @@ namespace Protocol.Channels
          // BOLT3 Commitment Transaction Construction
          // 10. Sort the outputs into BIP 69+CLTV order.
 
-         var sorter = new HtlcLexicographicOrdering();
+         var sorter = new HtlcLexicographicComparer(new LexicographicByteComparer());
 
          outputs.Sort(sorter);
 
-         return null;
+         return transaction;
       }
    }
 
@@ -640,10 +640,58 @@ namespace Protocol.Channels
       public ulong CltvExpirey { get; set; }
    }
 
-   public class HtlcLexicographicOrdering : IComparer<HtlcOutputsInfo>
+   public class HtlcLexicographicComparer : IComparer<HtlcOutputsInfo>
    {
+      private readonly LexicographicByteComparer _lexicographicByteComparer;
+
+      public HtlcLexicographicComparer(LexicographicByteComparer lexicographicByteComparer)
+      {
+         _lexicographicByteComparer = lexicographicByteComparer;
+      }
+
       public int Compare(HtlcOutputsInfo x, HtlcOutputsInfo y)
       {
+         if (x?.TransactionOutput?.PublicKeyScript == null) return 1;
+         if (y?.TransactionOutput?.PublicKeyScript == null) return -1;
+
+         if (x.TransactionOutput.Value > y.TransactionOutput.Value)
+         {
+            return 1;
+         }
+
+         if (x.TransactionOutput.Value < y.TransactionOutput.Value)
+         {
+            return -1;
+         }
+
+         if (x.TransactionOutput.PublicKeyScript != y.TransactionOutput.PublicKeyScript)
+         {
+            return _lexicographicByteComparer.Compare(x.TransactionOutput.PublicKeyScript, y.TransactionOutput.PublicKeyScript);
+         }
+
+         return x.CltvExpirey < y.CltvExpirey ? 1 : -1;
+      }
+   }
+
+   public class LexicographicByteComparer : IComparer<byte[]>
+   {
+      public int Compare(byte[] x, byte[] y)
+      {
+         int lenRet = x.Length.CompareTo(y.Length);
+
+         if (lenRet != 0) return lenRet;
+
+         int len = Math.Min(x.Length, y.Length);
+         for (int i = 0; i < len; i++)
+         {
+            int c = x[i].CompareTo(y[i]);
+            if (c != 0)
+            {
+               return c;
+            }
+         }
+
+         return 0;
       }
    }
 }
