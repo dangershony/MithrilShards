@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using MithrilShards.Chain.Bitcoin.Protocol.Types;
+using MithrilShards.Core.DataTypes;
 using NBitcoin;
+using NBitcoin.Crypto;
 using Network.Protocol.Messages.Types;
 using OutPoint = MithrilShards.Chain.Bitcoin.Protocol.Types.OutPoint;
 using Transaction = MithrilShards.Chain.Bitcoin.Protocol.Types.Transaction;
@@ -46,13 +51,47 @@ namespace Protocol.Channels
          return script.ToBytes();
       }
 
+      public byte[] AnchorToRemoteRedeem(PublicKey remoteKey)
+      {
+         var script = new Script(
+            Op.GetPushOp(remoteKey),
+            OpcodeType.OP_CHECKSIGVERIFY,
+            Op.GetPushOp(1),
+            OpcodeType.OP_CHECKSEQUENCEVERIFY);
+
+         return script.ToBytes();
+      }
+
+      public byte[] bitcoin_wscript_anchor(PublicKey fundingPubkey)
+      {
+         // BOLT3:
+         // `to_local_anchor` and `to_remote_anchor` Output (option_anchor_outputs):
+         //    <local_funding_pubkey/remote_funding_pubkey> OP_CHECKSIG OP_IFDUP
+         //    OP_NOTIF
+         //        OP_16 OP_CHECKSEQUENCEVERIFY
+         //    OP_ENDIF
+
+         var script = new Script(
+            Op.GetPushOp(fundingPubkey),
+            OpcodeType.OP_CHECKSIG,
+            OpcodeType.OP_IFDUP,
+            OpcodeType.OP_NOTIF,
+            Op.GetPushOp(16),
+            OpcodeType.OP_CHECKSEQUENCEVERIFY,
+            OpcodeType.OP_ENDIF);
+
+         return script.ToBytes();
+      }
+
       public byte[] GetHtlcRedeemscript(
          HtlcOutputInCommitment htlc,
          PublicKey broadcasterHtlcKey,
          PublicKey countersignatoryHtlcKey,
-         PublicKey revocationKey)
+         PublicKey revocationKey,
+         bool optionAnchorOutputs)
       {
-         var paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(htlc.HtlcOutput.PaymentHash.GetBytes().ToArray());
+         // todo: dan - move this to a hashing interface
+         var paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(htlc.HtlcOutput.rhash.GetBytes().ToArray());
          var revocationKey256 = NBitcoin.Crypto.Hashes.SHA256(revocationKey);
          var revocationKey160 = NBitcoin.Crypto.Hashes.RIPEMD160(revocationKey256);
 
@@ -60,37 +99,111 @@ namespace Protocol.Channels
 
          if (htlc.Offered)
          {
-            script = new Script(
-               OpcodeType.OP_DUP,
-               OpcodeType.OP_HASH160,
-               Op.GetPushOp(revocationKey160),
-               OpcodeType.OP_EQUAL,
-               OpcodeType.OP_IF,
-               OpcodeType.OP_CHECKSIG,
-               OpcodeType.OP_ELSE,
-               Op.GetPushOp(countersignatoryHtlcKey),
-               OpcodeType.OP_SWAP,
-               OpcodeType.OP_SIZE,
-               Op.GetPushOp(32),
-               OpcodeType.OP_EQUAL,
-               OpcodeType.OP_NOTIF,
-               OpcodeType.OP_DROP,
-               Op.GetPushOp(2),
-               OpcodeType.OP_SWAP,
-               Op.GetPushOp(broadcasterHtlcKey),
-               Op.GetPushOp(2),
-               OpcodeType.OP_CHECKMULTISIG,
-               OpcodeType.OP_ELSE,
-               OpcodeType.OP_HASH160,
-               Op.GetPushOp(paymentHash160),
-               OpcodeType.OP_EQUALVERIFY,
-               OpcodeType.OP_CHECKSIG,
-               OpcodeType.OP_ENDIF,
-               OpcodeType.OP_ENDIF);
+            if (optionAnchorOutputs)
+            {
+               script = new Script(
+                  OpcodeType.OP_DUP,
+                  OpcodeType.OP_HASH160,
+                  Op.GetPushOp(revocationKey160),
+                  OpcodeType.OP_EQUAL,
+                  OpcodeType.OP_IF,
+                  OpcodeType.OP_CHECKSIG,
+                  OpcodeType.OP_ELSE,
+                  Op.GetPushOp(countersignatoryHtlcKey),
+                  OpcodeType.OP_SWAP,
+                  OpcodeType.OP_SIZE,
+                  Op.GetPushOp(32),
+                  OpcodeType.OP_EQUAL,
+                  OpcodeType.OP_NOTIF,
+                  OpcodeType.OP_DROP,
+                  Op.GetPushOp(2),
+                  OpcodeType.OP_SWAP,
+                  Op.GetPushOp(broadcasterHtlcKey),
+                  Op.GetPushOp(2),
+                  OpcodeType.OP_CHECKMULTISIG,
+                  OpcodeType.OP_ELSE,
+                  OpcodeType.OP_HASH160,
+                  Op.GetPushOp(paymentHash160),
+                  OpcodeType.OP_EQUALVERIFY,
+                  OpcodeType.OP_CHECKSIG,
+                  OpcodeType.OP_ENDIF,
+                  Op.GetPushOp(1),
+                  OpcodeType.OP_CHECKSEQUENCEVERIFY,
+                  OpcodeType.OP_DROP,
+                  OpcodeType.OP_ENDIF);
+            }
+            else
+            {
+               script = new Script(
+                  OpcodeType.OP_DUP,
+                  OpcodeType.OP_HASH160,
+                  Op.GetPushOp(revocationKey160),
+                  OpcodeType.OP_EQUAL,
+                  OpcodeType.OP_IF,
+                  OpcodeType.OP_CHECKSIG,
+                  OpcodeType.OP_ELSE,
+                  Op.GetPushOp(countersignatoryHtlcKey),
+                  OpcodeType.OP_SWAP,
+                  OpcodeType.OP_SIZE,
+                  Op.GetPushOp(32),
+                  OpcodeType.OP_EQUAL,
+                  OpcodeType.OP_NOTIF,
+                  OpcodeType.OP_DROP,
+                  Op.GetPushOp(2),
+                  OpcodeType.OP_SWAP,
+                  Op.GetPushOp(broadcasterHtlcKey),
+                  Op.GetPushOp(2),
+                  OpcodeType.OP_CHECKMULTISIG,
+                  OpcodeType.OP_ELSE,
+                  OpcodeType.OP_HASH160,
+                  Op.GetPushOp(paymentHash160),
+                  OpcodeType.OP_EQUALVERIFY,
+                  OpcodeType.OP_CHECKSIG,
+                  OpcodeType.OP_ENDIF,
+                  OpcodeType.OP_ENDIF);
+            }
          }
          else
          {
-            script = new Script(
+            if (optionAnchorOutputs)
+            {
+               script = new Script(
+                  OpcodeType.OP_DUP,
+                  OpcodeType.OP_HASH160,
+                  Op.GetPushOp(revocationKey160),
+                  OpcodeType.OP_EQUAL,
+                  OpcodeType.OP_IF,
+                  OpcodeType.OP_CHECKSIG,
+                  OpcodeType.OP_ELSE,
+                  Op.GetPushOp(countersignatoryHtlcKey),
+                  OpcodeType.OP_SWAP,
+                  OpcodeType.OP_SIZE,
+                  Op.GetPushOp(32),
+                  OpcodeType.OP_EQUAL,
+                  OpcodeType.OP_IF,
+                  OpcodeType.OP_HASH160,
+                  Op.GetPushOp(paymentHash160),
+                  OpcodeType.OP_EQUALVERIFY,
+                  Op.GetPushOp(2),
+                  OpcodeType.OP_SWAP,
+                  Op.GetPushOp(broadcasterHtlcKey),
+                  Op.GetPushOp(2),
+                  OpcodeType.OP_CHECKMULTISIG,
+                  OpcodeType.OP_ELSE,
+                  OpcodeType.OP_DROP,
+                  Op.GetPushOp((long)htlc.HtlcOutput.expiry),
+                  OpcodeType.OP_CHECKLOCKTIMEVERIFY,
+                  OpcodeType.OP_DROP,
+                  OpcodeType.OP_CHECKSIG,
+                  OpcodeType.OP_ENDIF,
+                  Op.GetPushOp(1),
+                  OpcodeType.OP_CHECKSEQUENCEVERIFY,
+                  OpcodeType.OP_DROP,
+                  OpcodeType.OP_ENDIF);
+            }
+            else
+            {
+               script = new Script(
                OpcodeType.OP_DUP,
                OpcodeType.OP_HASH160,
                Op.GetPushOp(revocationKey160),
@@ -114,310 +227,423 @@ namespace Protocol.Channels
                OpcodeType.OP_CHECKMULTISIG,
                OpcodeType.OP_ELSE,
                OpcodeType.OP_DROP,
-               Op.GetPushOp(htlc.HtlcOutput.CltvExpiry),
+               Op.GetPushOp((long)htlc.HtlcOutput.expiry),
                OpcodeType.OP_CHECKLOCKTIMEVERIFY,
                OpcodeType.OP_DROP,
                OpcodeType.OP_CHECKSIG,
                OpcodeType.OP_ENDIF,
                OpcodeType.OP_ENDIF);
+            }
          }
 
          return script.ToBytes();
       }
 
-      public (Transaction Trx, int non_dust_htlc_count, List<HtlcOutputInCommitment> htlcs_included) BuildCommitmentTransaction(
-         ulong commitmentNumber,
-         TxCreationKeys keys,
-         bool local,
-         bool generatedByLocal,
-         uint feeratePerKw,
-         OutPoint fundingTxo,
-         ulong holderDustLimitSatoshis,
-         ulong counterpartyDustLimitSatoshis,
-         ulong valueToSelfMsatInput,
-         ulong channelValueSatoshis,
-         bool channelOutbound,
-         ushort counterpartySelectedContestDelay,
-         ushort holderSelectedContestDelay,
-         ChannelPublicKeys counterpartyPubkeys,
-         ChannelPublicKeys holderKeys,
-         List<InboundHtlcOutput> inboundHtlcs,
-         List<OutboundHtlcOutput> outboundHtlcs)
+      private ulong get_commitment_transaction_number_obscure_factor(
+         PublicKey openerPaymentBasepoint,
+         PublicKey accepterPaymentBasepoint)
       {
-         ulong obscuredCommitmentTransactionNumber = get_commitment_transaction_number_obscure_factor() ^ (INITIAL_COMMITMENT_NUMBER - commitmentNumber);
+         var bytes = new List<byte>();
+         bytes.AddRange((byte[])openerPaymentBasepoint);
+         bytes.AddRange((byte[])accepterPaymentBasepoint);
+
+         byte[] res = Hashes.SHA256(bytes.ToArray());
+
+         var ret = MemoryMarshal.Cast<byte, ulong>(res.AsSpan().Slice(0, 6));
+
+         return ret[0];
+      }
+
+      public enum Side
+      {
+         LOCAL,
+         REMOTE,
+      };
+
+      public ulong amount_tx_fee(uint fee_per_kw, ulong weight)
+      {
+         ulong fee = fee_per_kw * weight / 1000;
+
+         return fee;
+      }
+
+      private ulong HtlcTimeoutFee(uint feerate_per_kw, bool option_anchor_outputs)
+      {
+         /* BOLT #3:
+          *
+          * The fee for an HTLC-timeout transaction:
+          * - MUST BE calculated to match:
+          *   1. Multiply `feerate_per_kw` by 663 (666 if `option_anchor_outputs`
+          *      applies) and divide by 1000 (rounding down).
+          */
+
+         uint baseAmount = option_anchor_outputs ? (uint)666 : (uint)663;
+
+         return baseAmount * feerate_per_kw / 1000;
+      }
+
+      private ulong HtlcSuccessFee(uint feerate_per_kw, bool option_anchor_outputs)
+      {
+         /* BOLT #3:
+          *
+          * The fee for an HTLC-success transaction:
+          * - MUST BE calculated to match:
+          *   1. Multiply `feerate_per_kw` by 703 (706 if `option_anchor_outputs`
+          *      applies) and divide by 1000 (rounding down).
+          */
+
+         uint baseAmount = option_anchor_outputs ? (uint)706 : (uint)703;
+
+         return baseAmount * feerate_per_kw / 1000;
+      }
+
+      public Transaction CreateCommitmenTransaction(
+         UInt256 funding_txid,
+         OutPoint funding_txout,
+         ulong funding,
+         PublicKey local_funding_key,
+         PublicKey remote_funding_key,
+         Side opener,
+         ushort to_self_delay,
+         Keyset Keyset,
+         uint feerate_per_kw,
+         ulong dust_limit_satoshis,
+         ulong self_pay,
+         ulong other_pay,
+         List<Htlc> htlcs,
+         List<Htlc> htlcmap,
+         //wally_tx_output *direct_outputs[NUM_SIDES],
+         ulong obscured_commitment_number,
+         bool option_anchor_outputs,
+         Side side)
+      {
+         // TODO: ADD TRACE LOGS
+
+         // BOLT3 Commitment Transaction Construction
+         // 1. Initialize the commitment transaction input and locktime
 
          var transaction = new Transaction
          {
             Version = 2,
-            LockTime = (((uint)0x20) << 8 * 3) | ((uint)(obscuredCommitmentTransactionNumber & 0xffffff)),
+            LockTime = (((uint)0x20) << 8 * 3) | ((uint)(obscured_commitment_number & 0xffffff)),
             Inputs = new[]
             {
                new TransactionInput
                {
-                  PreviousOutput = fundingTxo,
-                  Sequence = (((uint)0x80) << 8 * 3) |
-                             ((uint)(obscuredCommitmentTransactionNumber >> 3 * 8)),
+                  PreviousOutput = funding_txout,
+                  Sequence = (((uint)0x80) << 8 * 3) | ((uint)(obscured_commitment_number >> 3 * 8)),
+                  ScriptWitness = new TransactionWitness() // todo: dan - bring signatures
                }
             }
          };
 
-         var txouts = new List<(TransactionOutput Trx, HtlcOutputInCommitment? Htlc)>();
-         var includedDustHtlcs = new List<HtlcOutputInCommitment>();
-
-         ulong broadcasterDustLimitSatoshis = local ? holderDustLimitSatoshis : counterpartyDustLimitSatoshis;
-         ulong remoteHtlcTotalMsat = 0;
-         ulong localHtlcTotalMsat = 0;
-         ulong valueToSelfMsatOffset = 0;
-
-         // log_trace
-
-         foreach (InboundHtlcOutput inboundHtlc in inboundHtlcs)
+         // BOLT3 Commitment Transaction Construction
+         // 1. Calculate which committed HTLCs need to be trimmed
+         var htlcsUntrimmed = new List<Htlc>();
+         foreach (Htlc htlc in htlcs)
          {
-            bool include = false;
+            /* BOLT #3:
+             *
+             *   - for every offered HTLC:
+             *    - if the HTLC amount minus the HTLC-timeout fee would be less than
+             *    `dust_limit_satoshis` set by the transaction owner:
+             *      - MUST NOT contain that output.
+             *    - otherwise:
+             *      - MUST be generated as specified in
+             *      [Offered HTLC Outputs](#offered-htlc-outputs).
+             */
 
-            switch (inboundHtlc.State)
-            {
-               case InboundHtlcState.LocalRemoved:
-               case InboundHtlcState.RemoteAnnounced:
-               case InboundHtlcState.AwaitingRemoteRevokeToAnnounce:
-                  {
-                     include = !generatedByLocal;
-                     break;
-                  }
-
-               case InboundHtlcState.Committed:
-               case InboundHtlcState.AwaitingAnnouncedRemoteRevoke:
-                  {
-                     include = true;
-                     break;
-                  }
-            }
-
-            if (include)
-            {
-               bool outbound = false;
-               bool offerd = outbound == local ? true : false;
-               ulong txWeight = outbound == local ? HTLC_TIMEOUT_TX_WEIGHT : HTLC_SUCCESS_TX_WEIGHT;
-
-               var htlcInTx = new HtlcOutputInCommitment { Offered = offerd, HtlcOutput = inboundHtlc.Htlc };
-
-               if (inboundHtlc.Htlc.AmountMsat / 1000 >=
-                   broadcasterDustLimitSatoshis + (feeratePerKw * txWeight / 1000))
-               {
-                  //log_trace!(logger,
-                  txouts.Add((new TransactionOutput
-                  {
-                     PublicKeyScript = GetHtlcRedeemscript(
-                        htlcInTx,
-                        keys.BroadcasterHtlcKey,
-                        keys.CountersignatoryHtlcKey,
-                        keys.RevocationKey),
-                     Value = (long)inboundHtlc.Htlc.AmountMsat / 1000
-                  }, htlcInTx));
-               }
-               else
-               {
-                  // log_trace!(
-                  includedDustHtlcs.Add(htlcInTx);
-               }
-
-               remoteHtlcTotalMsat += inboundHtlc.Htlc.AmountMsat;
-            }
+            ulong htlc_fee;
+            if (htlc.Side == side)
+               htlc_fee = HtlcTimeoutFee(feerate_per_kw, option_anchor_outputs);
+            /* BOLT #3:
+             *
+             *  - for every received HTLC:
+             *    - if the HTLC amount minus the HTLC-success fee would be less than
+             *    `dust_limit_satoshis` set by the transaction owner:
+             *      - MUST NOT contain that output.
+             *    - otherwise:
+             *      - MUST be generated as specified in
+             */
             else
+               htlc_fee = HtlcSuccessFee(feerate_per_kw, option_anchor_outputs);
+
+            if (htlc.amount >= htlc_fee + dust_limit_satoshis)
             {
-               // log_trace!(
-               if (inboundHtlc.State == InboundHtlcState.LocalRemoved)
-               {
-                  if (generatedByLocal)
-                  {
-                     valueToSelfMsatOffset += inboundHtlc.Htlc.AmountMsat;
-                  }
-               }
+               htlcsUntrimmed.Add(htlc);
             }
          }
 
-         foreach (OutboundHtlcOutput outboundHtlc in outboundHtlcs)
+         // BOLT3 Commitment Transaction Construction
+         // 1. Calculate the base commitment transaction fee.
+
+         ulong weight;
+         ulong base_fee;
+         ulong num_untrimmed_htlcs = (ulong)htlcsUntrimmed.Count;
+         /* BOLT #3:
+          *
+          * The base fee for a commitment transaction:
+          *  - MUST be calculated to match:
+          *    1. Start with `weight` = 724 (1124 if `option_anchor_outputs` applies).
+          */
+         if (option_anchor_outputs)
+            weight = 1124;
+         else
+            weight = 724;
+
+         /* BOLT #3:
+          *
+          *    2. For each committed HTLC, if that output is not trimmed as
+          *       specified in [Trimmed Outputs](#trimmed-outputs), add 172
+          *       to `weight`.
+          */
+         weight += 172 * num_untrimmed_htlcs;
+
+         base_fee = weight;
+
+         // todo log base fee
+
+         // BOLT3 Commitment Transaction Construction
+         // 4. Subtract this base fee from the funder (either to_local or to_remote).
+         // If option_anchor_outputs applies to the commitment transaction,
+         // also subtract two times the fixed anchor size of 330 sats from the funder (either to_local or to_remote).
+
+         if (opener == side)
          {
-            bool include = false;
+            self_pay -= base_fee;
 
-            switch (outboundHtlc.State)
+            if (option_anchor_outputs)
             {
-               case OutboundHtlcState.RemoteRemoved:
-               case OutboundHtlcState.LocalAnnounced:
-               case OutboundHtlcState.AwaitingRemoteRevokeToRemove:
-                  {
-                     include = generatedByLocal;
-                     break;
-                  }
-
-               case OutboundHtlcState.Committed:
-                  {
-                     include = true;
-                     break;
-                  }
-               case OutboundHtlcState.AwaitingRemovedRemoteRevoke:
-                  {
-                     include = false;
-                     break;
-                  }
+               self_pay -= 660;
             }
-
-            if (include)
-            {
-               bool outbound = true;
-               bool offerd = outbound == local ? true : false;
-               ulong txWeight = outbound == local ? HTLC_TIMEOUT_TX_WEIGHT : HTLC_SUCCESS_TX_WEIGHT;
-
-               var htlcInTx = new HtlcOutputInCommitment { Offered = offerd, HtlcOutput = outboundHtlc.Htlc };
-
-               if (outboundHtlc.Htlc.AmountMsat / 1000 >=
-                   broadcasterDustLimitSatoshis + (feeratePerKw * txWeight / 1000))
-               {
-                  //log_trace!(logger,
-                  txouts.Add((new TransactionOutput
-                  {
-                     PublicKeyScript = GetHtlcRedeemscript(
-                        htlcInTx,
-                        keys.BroadcasterHtlcKey,
-                        keys.CountersignatoryHtlcKey,
-                        keys.RevocationKey),
-                     Value = (long)outboundHtlc.Htlc.AmountMsat / 1000
-                  }, htlcInTx));
-               }
-               else
-               {
-                  // log_trace!(
-                  includedDustHtlcs.Add(htlcInTx);
-               }
-
-               remoteHtlcTotalMsat += outboundHtlc.Htlc.AmountMsat;
-            }
-            else
-            {
-               // log_trace!(
-               if (outboundHtlc.State == OutboundHtlcState.AwaitingRemoteRevokeToRemove ||
-                   outboundHtlc.State == OutboundHtlcState.AwaitingRemovedRemoteRevoke)
-               {
-                  valueToSelfMsatOffset -= outboundHtlc.Htlc.AmountMsat;
-               }
-
-               if (outboundHtlc.State == OutboundHtlcState.RemoteRemoved)
-               {
-                  if (!generatedByLocal)
-                  {
-                     valueToSelfMsatOffset += outboundHtlc.Htlc.AmountMsat;
-                  }
-               }
-            }
-         }
-
-         ulong valueToSelfMsat = (valueToSelfMsatInput - localHtlcTotalMsat) + valueToSelfMsatOffset;
-
-         if (valueToSelfMsat >= 0) throw new ApplicationException();
-
-         // Note that in case they have several just-awaiting-last-RAA fulfills in-progress (ie
-         // AwaitingRemoteRevokeToRemove or AwaitingRemovedRemoteRevoke) we may have allowed them to
-         // "violate" their reserve value by couting those against it. Thus, we have to convert
-         // everything to i64 before subtracting as otherwise we can overflow.
-         ulong valueToRemoteMsat = (channelValueSatoshis * 1000) - (valueToSelfMsatInput) - remoteHtlcTotalMsat - valueToSelfMsatOffset;
-
-         if (valueToRemoteMsat >= 0) throw new ApplicationException();
-
-         ulong totalFee = feeratePerKw * (COMMITMENT_TX_BASE_WEIGHT + (ulong)txouts.Count * COMMITMENT_TX_WEIGHT_PER_HTLC) / 1000;
-
-         ulong valueToSelf;
-         ulong valueToRemote;
-
-         if (channelOutbound)
-         {
-            valueToSelf = valueToSelfMsat / 1000 - totalFee;
-            valueToRemote = valueToRemoteMsat / 1000;
          }
          else
          {
-            valueToSelf = valueToSelfMsat / 1000;
-            valueToRemote = valueToRemoteMsat / 1000 - totalFee;
-         };
+            other_pay -= base_fee;
 
-         ulong valueToA = local ? valueToSelf : valueToRemote;
-         ulong valueToB = local ? valueToRemote : valueToSelf;
-
-         if (valueToA >= broadcasterDustLimitSatoshis)
-         {
-            // log_trace!
-            txouts.Add((new TransactionOutput
+            if (option_anchor_outputs)
             {
-               PublicKeyScript = GetRevokeableRedeemscript(
-                  keys.RevocationKey,
-                  local ? counterpartySelectedContestDelay : holderSelectedContestDelay,
-                  keys.BroadcasterDelayedPaymentKey),
-               Value = (long)valueToA
-            }, null));
-         }
-
-         if (valueToB >= broadcasterDustLimitSatoshis)
-         {
-            //log_trace!(
-
-            PublicKey staticPaymentPk = local ? counterpartyPubkeys.PaymentPoint : holderKeys.PaymentPoint;
-
-            txouts.Add((new TransactionOutput
-            {
-               PublicKeyScript = new Script(Op.GetPushOp(staticPaymentPk)).ToBytes(),
-               Value = (long)valueToB
-            }, null));
-         }
-
-         txouts = txouts.OrderBy(o => o.Htlc?.HtlcOutput.CltvExpiry).ThenBy(o => o.Htlc?.HtlcOutput.PaymentHash).ToList();
-
-         var htlcsIncluded = new List<HtlcOutputInCommitment>();
-
-         uint index = 0;
-         foreach ((TransactionOutput Trx, HtlcOutputInCommitment? Htlc) txout in txouts)
-         {
-            if (txout.Htlc != null)
-            {
-               txout.Htlc.TransactionOutputIndex = index;
-               index++;
-
-               htlcsIncluded.Add(txout.Htlc);
+               other_pay -= 660;
             }
          }
 
-         int nonDustHtlcCount = htlcsIncluded.Count;
-         htlcsIncluded.AddRange(includedDustHtlcs);
+         //#ifdef PRINT_ACTUAL_FEE
+         //	{
+         //		 amount_sat out = private AMOUNT_SAT(0);
 
-         return (transaction, nonDustHtlcCount, htlcsIncluded);
-      }
+         //      private bool ok = true;
+         //		for (i = 0; i<tal_count(htlcs); i++) {
+         //			if (!private trim(htlcs[i], feerate_per_kw, dust_limit,
+         //              option_anchor_outputs, side))
 
-      private const ulong INITIAL_COMMITMENT_NUMBER = 0;
-      private const ulong HTLC_TIMEOUT_TX_WEIGHT = 0;
-      private const ulong HTLC_SUCCESS_TX_WEIGHT = 0;
-      private const ulong COMMITMENT_TX_BASE_WEIGHT = 0;
-      private const ulong COMMITMENT_TX_WEIGHT_PER_HTLC = 0;
+         //				ok &= private amount_sat_add(&out, out, amount_msat_to_sat_round_down(htlcs[i]->amount));
+         //		}
 
-      private ulong get_commitment_transaction_number_obscure_factor()
-      {
-         //let mut sha = Sha256::engine();
-
-         //let counterparty_payment_point = &self.counterparty_pubkeys.as_ref().unwrap().payment_point.serialize();
-         //if self.channel_outbound {
-         //   sha.input(&self.holder_keys.pubkeys().payment_point.serialize());
-         //   sha.input(counterparty_payment_point);
-         //} else {
-         //   sha.input(counterparty_payment_point);
-         //   sha.input(&self.holder_keys.pubkeys().payment_point.serialize());
+         //		if (amount_msat_greater_sat(self_pay, dust_limit))
+         //			ok &= amount_sat_add(&out, out, amount_msat_to_sat_round_down(self_pay));
+         //		if (amount_msat_greater_sat(other_pay, dust_limit))
+         //			ok &= amount_sat_add(&out, out, amount_msat_to_sat_round_down(other_pay));
+         //   assert(ok);
+         //   SUPERVERBOSE("# actual commitment transaction fee = %"PRIu64"\n",
+         //           funding.satoshis - out.satoshis);  /* Raw: test output */
          //}
-         //let res = Sha256::from_engine(sha).into_inner();
 
-         //((res[26] as u64) << 5*8) |
-         //   ((res[27] as u64) << 4*8) |
-         //   ((res[28] as u64) << 3*8) |
-         //   ((res[29] as u64) << 2*8) |
-         //   ((res[30] as u64) << 1*8) |
-         //   ((res[31] as u64) << 0*8)
+         //#endif
 
-         return 0;
+         ///* We keep cltvs for tie-breaking HTLC outputs; we use the same order
+         // * for sending the htlc txs, so it may matter. */
+         //cltvs = tal_arr(tmpctx, u32, tx->wtx->outputs_allocation_len);
+
+         var outputs = new List<HtlcOutputsInfo>();
+
+         // BOLT3 Commitment Transaction Construction
+         // 5. For every offered HTLC, if it is not trimmed, add an offered HTLC output.
+
+         foreach (Htlc htlc in htlcsUntrimmed)
+         {
+            if (htlc.Side == side)
+            {
+               // todo round down msat to sat in s common method
+               ulong amount = htlc.amount / 1000;
+
+               var wscript = GetHtlcRedeemscript(new HtlcOutputInCommitment { HtlcOutput = htlc, Offered = true },
+                  Keyset.self_htlc_key, Keyset.other_htlc_key, Keyset.self_revocation_key, option_anchor_outputs);
+
+               var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+
+               outputs.Add(new HtlcOutputsInfo
+               {
+                  TransactionOutput = new TransactionOutput
+                  {
+                     Value = (long)amount,
+                     PublicKeyScript = p2wsh.ToBytes()
+                  },
+                  CltvExpirey = 0
+               });
+            }
+         }
+
+         // BOLT3 Commitment Transaction Construction
+         // 6. For every offered HTLC, if it is not trimmed, add an offered HTLC output.
+
+         foreach (Htlc htlc in htlcsUntrimmed)
+         {
+            if (htlc.Side != side)
+            {
+               // todo round down msat to sat in s common method
+               ulong amount = htlc.amount / 1000;
+
+               var wscript = GetHtlcRedeemscript(new HtlcOutputInCommitment { HtlcOutput = htlc, Offered = false }, Keyset.self_htlc_key, Keyset.other_htlc_key, Keyset.self_revocation_key, option_anchor_outputs);
+
+               var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+
+               outputs.Add(new HtlcOutputsInfo
+               {
+                  TransactionOutput = new TransactionOutput
+                  {
+                     Value = (long)amount,
+                     PublicKeyScript = p2wsh.ToBytes()
+                  },
+                  CltvExpirey = 0
+               });
+            }
+         }
+
+         // BOLT3 Commitment Transaction Construction
+         // 7. If the to_local amount is greater or equal to dust_limit_satoshis, add a to_local output.
+
+         bool to_local = false;
+         if (self_pay >= dust_limit_satoshis)
+         {
+            // todo round down msat to sat in s common method
+            ulong amount = self_pay / 1000;
+
+            var wscript = GetRevokeableRedeemscript(Keyset.self_revocation_key, to_self_delay, Keyset.self_delayed_payment_key);
+
+            var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+
+            outputs.Add(new HtlcOutputsInfo
+            {
+               TransactionOutput = new TransactionOutput
+               {
+                  Value = (long)amount,
+                  PublicKeyScript = p2wsh.ToBytes()
+               },
+               CltvExpirey = 0
+            });
+
+            to_local = true;
+         }
+
+         // BOLT3 Commitment Transaction Construction
+         // 8. If the to_remote amount is greater or equal to dust_limit_satoshis, add a to_remote output.
+
+         bool to_remote = false;
+         if (other_pay >= dust_limit_satoshis)
+         {
+            // todo round down msat to sat in s common method
+            ulong amount = other_pay / 1000;
+
+            // BOLT3:
+            // If option_anchor_outputs applies to the commitment transaction,
+            // the to_remote output is encumbered by a one block csv lock.
+            // <remote_pubkey> OP_CHECKSIGVERIFY 1 OP_CHECKSEQUENCEVERIFY
+            // Otherwise, this output is a simple P2WPKH to `remotepubkey`.
+
+            Script p2wsh;
+            if (option_anchor_outputs)
+            {
+               var wscript = AnchorToRemoteRedeem(Keyset.other_payment_key);
+
+               p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)).ScriptPubKey; // todo: dan - move this to interface
+            }
+            else
+            {
+               p2wsh = PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey(new PubKey(Keyset.other_payment_key)); // todo: dan - move this to interface
+            }
+
+            outputs.Add(new HtlcOutputsInfo
+            {
+               TransactionOutput = new TransactionOutput
+               {
+                  Value = (long)amount,
+                  PublicKeyScript = p2wsh.ToBytes()
+               },
+               CltvExpirey = 0
+            });
+
+            to_remote = true;
+         }
+
+         // BOLT3 Commitment Transaction Construction
+         // 9. If option_anchor_outputs applies to the commitment transaction:
+         //   if to_local exists or there are untrimmed HTLCs, add a to_local_anchor output
+         //   if to_remote exists or there are untrimmed HTLCs, add a to_remote_anchor output
+
+         if (option_anchor_outputs)
+         {
+            if (to_local || htlcsUntrimmed.Count != 0)
+            {
+               // todo round down msat to sat in s common method
+               ulong amount = 330;
+
+               var wscript = bitcoin_wscript_anchor(local_funding_key);
+
+               var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+
+               outputs.Add(new HtlcOutputsInfo
+               {
+                  TransactionOutput = new TransactionOutput
+                  {
+                     Value = (long)amount,
+                     PublicKeyScript = p2wsh.ToBytes()
+                  },
+                  CltvExpirey = 0
+               });
+            }
+
+            if (to_remote || htlcsUntrimmed.Count != 0)
+            {
+               // todo round down msat to sat in s common method
+               ulong amount = 330;
+
+               var wscript = bitcoin_wscript_anchor(remote_funding_key);
+
+               var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+
+               outputs.Add(new HtlcOutputsInfo
+               {
+                  TransactionOutput = new TransactionOutput
+                  {
+                     Value = (long)amount,
+                     PublicKeyScript = p2wsh.ToBytes()
+                  },
+                  CltvExpirey = 0
+               });
+            }
+         }
+
+         // BOLT3 Commitment Transaction Construction
+         // 10. Sort the outputs into BIP 69+CLTV order.
+
+         var sorter = new HtlcLexicographicOrdering();
+
+         outputs.Sort(sorter);
+
+         return null;
+      }
+   }
+
+   public class HtlcOutputsInfo
+   {
+      public TransactionOutput TransactionOutput { get; set; }
+      public ulong CltvExpirey { get; set; }
+   }
+
+   public class HtlcLexicographicOrdering : IComparer<HtlcOutputsInfo>
+   {
+      public int Compare(HtlcOutputsInfo x, HtlcOutputsInfo y)
+      {
       }
    }
 }

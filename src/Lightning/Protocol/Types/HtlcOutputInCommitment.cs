@@ -11,7 +11,7 @@ namespace Protocol.Channels
       /// the counterparty or our own.
       public bool Offered { get; set; }
 
-      public HtlcOutput HtlcOutput { get; set; }
+      public Htlc HtlcOutput { get; set; }
 
       /// The position within the commitment transactions' outputs. This may be None if the value is
       /// below the dust limit (in which case no output appears in the commitment transaction and the
