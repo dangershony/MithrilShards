@@ -19,7 +19,7 @@ namespace Protocol.Channels
          _logger = logger;
       }
 
-      public PublicKey DerivePublicKeyFromPrivateKey(PrivateKey privateKey)
+      public PublicKey PublicKeyFromPrivateKey(PrivateKey privateKey)
       {
          if (ECPrivKey.TryCreate(privateKey, Context.Instance, out ECPrivKey? ecprvkey))
          {
