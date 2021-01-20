@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Secp256k1;
 using Network.Protocol.Messages.Types;
@@ -11,6 +12,29 @@ namespace Protocol.Channels
 {
    public class KeyDerivation
    {
+      private readonly ILogger<KeyDerivation> _logger;
+
+      public KeyDerivation(ILogger<KeyDerivation> logger)
+      {
+         _logger = logger;
+      }
+
+      public PublicKey DerivePublicKeyFromPrivateKey(PrivateKey privateKey)
+      {
+         if (ECPrivKey.TryCreate(privateKey, Context.Instance, out ECPrivKey? ecprvkey))
+         {
+            if (ecprvkey != null)
+            {
+               ECPubKey ecpubkey = ecprvkey.CreatePubKey();
+               Span<byte> pub = stackalloc byte[33];
+               ecpubkey.WriteToSpan(true, pub, out _);
+               return new PublicKey(pub.ToArray());
+            }
+         }
+
+         return null;
+      }
+
       public PublicKey DerivePublickey(PublicKey basepoint, PublicKey perCommitmentPoint)
       {
          // TODO: pubkey = basepoint + SHA256(per_commitment_point || basepoint) * G
@@ -107,7 +131,7 @@ namespace Protocol.Channels
             {
                if (revocationpubkey != null)
                {
-                  Span<byte> pub = stackalloc byte[32];
+                  Span<byte> pub = stackalloc byte[33];
                   revocationpubkey.WriteToSpan(true, pub, out _);
                   return new PublicKey(pub.ToArray());
                }

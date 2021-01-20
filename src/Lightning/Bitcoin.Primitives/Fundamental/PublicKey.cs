@@ -1,4 +1,5 @@
 using System;
+using Bitcoin.Primitives;
 
 namespace Bitcoin.Primitives.Fundamental
 {
@@ -33,5 +34,10 @@ namespace Bitcoin.Primitives.Fundamental
       public static explicit operator PublicKey(byte[] bytes) => new PublicKey(bytes);
 
       public static explicit operator PublicKey(ReadOnlySpan<byte> bytes) => new PublicKey(bytes.ToArray());
+
+      public override string ToString()
+      {
+         return _value.AsSpan().ToHexString();
+      }
    }
 }

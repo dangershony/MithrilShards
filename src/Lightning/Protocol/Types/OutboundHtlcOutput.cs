@@ -2,7 +2,7 @@
 {
    public struct OutboundHtlcOutput
    {
-      public HtlcOutput Htlc { get; set; }
+      public Htlc Htlc { get; set; }
 
       public OutboundHtlcState State { get; set; }
 
