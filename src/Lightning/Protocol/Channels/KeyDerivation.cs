@@ -181,8 +181,6 @@ namespace Protocol.Channels
 
          if (revocationBasepointSecretTweaked != null && perCommitmentSecretTweaked != null)
          {
-            var keys = new ECPrivKey[] { revocationBasepointSecretTweaked, perCommitmentSecretTweaked };
-
             Span<byte> prvtpadd = stackalloc byte[32];
             perCommitmentSecretTweaked.WriteToSpan(prvtpadd);
 
