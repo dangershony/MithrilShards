@@ -1,6 +1,4 @@
-﻿using MithrilShards.Core.DataTypes;
-
-namespace Protocol.Channels
+﻿namespace Protocol.Channels
 {
    /// Information about an HTLC as it appears in a commitment transaction
    public class HtlcOutputInCommitment

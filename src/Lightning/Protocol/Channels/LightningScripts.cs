@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using MithrilShards.Chain.Bitcoin.Protocol.Types;
-using MithrilShards.Core.DataTypes;
+using Bitcoin.Primitives.Fundamental;
+using Bitcoin.Primitives.Types;
 using NBitcoin;
 using NBitcoin.Crypto;
-using Network.Protocol.Messages.Types;
-using OutPoint = MithrilShards.Chain.Bitcoin.Protocol.Types.OutPoint;
-using Transaction = MithrilShards.Chain.Bitcoin.Protocol.Types.Transaction;
+using OutPoint = Bitcoin.Primitives.Types.OutPoint;
+using Transaction = Bitcoin.Primitives.Types.Transaction;
 
 namespace Protocol.Channels
 {

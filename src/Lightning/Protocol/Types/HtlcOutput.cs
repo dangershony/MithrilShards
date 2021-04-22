@@ -1,5 +1,5 @@
-﻿using MithrilShards.Core.DataTypes;
-using Network.Protocol.Messages.Types;
+﻿using Bitcoin.Primitives.Fundamental;
+using Bitcoin.Primitives.Types;
 
 namespace Protocol.Channels
 {

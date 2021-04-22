@@ -1,6 +1,6 @@
 using System;
 
-namespace Network.Protocol.Messages.Types
+namespace Bitcoin.Primitives.Fundamental
 {
    public class ShortChannelId
    {

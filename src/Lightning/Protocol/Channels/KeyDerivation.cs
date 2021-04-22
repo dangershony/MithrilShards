@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Bitcoin.Primitives.Fundamental;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Secp256k1;
-using Network.Protocol.Messages.Types;
 
 namespace Protocol.Channels
 {

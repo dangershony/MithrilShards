@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
+using Bitcoin.Primitives.Fundamental;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Network.Protocol.Messages.Types;
 using Protocol.Channels;
 using Xunit;
 

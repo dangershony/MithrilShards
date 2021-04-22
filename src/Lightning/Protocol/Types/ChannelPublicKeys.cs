@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Network.Protocol.Messages.Types;
+using Bitcoin.Primitives.Fundamental;
 
 namespace Protocol.Channels
 {
