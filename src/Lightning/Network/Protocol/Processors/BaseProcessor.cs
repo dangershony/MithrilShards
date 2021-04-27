@@ -18,8 +18,8 @@ namespace Network.Protocol.Processors
    /// <seealso cref="INetworkMessageProcessor" />
    public abstract class BaseProcessor : INetworkMessageProcessor
    {
-      protected readonly ILogger<BaseProcessor> logger;
-      protected readonly IEventBus eventBus;
+      protected readonly ILogger<BaseProcessor> Logger;
+      protected readonly IEventBus EventBus;
       private readonly IPeerBehaviorManager _peerBehaviorManager;
       private readonly bool _isHandshakeAware;
       private INetworkMessageWriter _messageWriter;
@@ -48,8 +48,8 @@ namespace Network.Protocol.Processors
       /// <param name="isHandshakeAware">If set to <c>true</c> register the instance to be handshake aware: when the peer is handshaked, OnPeerHandshaked method will be invoked.</param>
       public BaseProcessor(ILogger<BaseProcessor> logger, IEventBus eventBus, IPeerBehaviorManager peerBehaviorManager, bool isHandshakeAware)
       {
-         this.logger = logger;
-         this.eventBus = eventBus;
+         this.Logger = logger;
+         this.EventBus = eventBus;
          _peerBehaviorManager = peerBehaviorManager;
          _isHandshakeAware = isHandshakeAware;
 
@@ -93,7 +93,7 @@ namespace Network.Protocol.Processors
       /// </summary>
       protected void RegisterLifeTimeEventHandler<TEventBase>(Func<TEventBase, ValueTask> handler, Func<TEventBase, bool>? clause = null) where TEventBase : EventBase
       {
-         _eventSubscriptionManager.RegisterSubscriptions(eventBus.Subscribe<TEventBase>(async (message) =>
+         _eventSubscriptionManager.RegisterSubscriptions(EventBus.Subscribe<TEventBase>(async (message) =>
          {
             // ensure we listen only to events we are interested into
             if (clause != null && !clause(message)) return;
@@ -111,7 +111,7 @@ namespace Network.Protocol.Processors
       {
          if (PeerContext.NegotiatedProtocolVersion.Version < minVersion)
          {
-            logger.LogDebug("Can't send message, negotiated protocol version is below required protocol.");
+            Logger.LogDebug("Can't send message, negotiated protocol version is below required protocol.");
             return false;
          }
 
@@ -181,7 +181,7 @@ namespace Network.Protocol.Processors
             // if cancellation was requested, return without doing anything
             if (!cancellation.IsCancellationRequested && !PeerContext.ConnectionCancellationTokenSource.Token.IsCancellationRequested && await condition().ConfigureAwait(false))
             {
-               logger.LogDebug("Condition met, trigger action.");
+               Logger.LogDebug("Condition met, trigger action.");
                await action().ConfigureAwait(false);
             }
          });

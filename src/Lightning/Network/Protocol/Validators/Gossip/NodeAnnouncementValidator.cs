@@ -7,7 +7,7 @@ using Network.Protocol.TlvStreams;
 
 namespace Network.Protocol.Validators.Gossip
 {
-   public class NodeAnnouncementValidator : GossipValidationBase<NodeAnnouncement>,IMessageValidator<NodeAnnouncement>
+   public class NodeAnnouncementValidator : GossipValidationBase ,IMessageValidator<NodeAnnouncement>
    {
       readonly ITlvStreamSerializer _tlvStreamSerializer;
 
@@ -19,11 +19,11 @@ namespace Network.Protocol.Validators.Gossip
 
       public (bool, ErrorMessage?) ValidateMessage(NodeAnnouncement networkMessage)
       {
-         if (VerifyPublicKey(networkMessage.NodeId))
+         if (!VerifyPublicKey(networkMessage.NodeId))
             return (false, null);
 
          var output = GetMessageByteArray(new NodeAnnouncementSerializer(_tlvStreamSerializer),
-            networkMessage,CompressedSignature.SIGNATURE_LENGTH);
+            networkMessage, CompressedSignature.SIGNATURE_LENGTH);
 
          byte[]? doubleHash = Hashes.DoubleSHA256RawBytes(output.ToArray(), 0, output.Length);
 

@@ -18,8 +18,8 @@ namespace Network.Protocol.Processors
 
       public ValueTask<bool> ProcessMessageAsync(ErrorMessage message, CancellationToken cancellation)
       {
-         logger.LogDebug($"Received error message from {PeerContext.PeerId}");
-         if (message.Data != null) logger.LogDebug($"{Encoding.ASCII.GetString(message.Data)}");
+         Logger.LogDebug($"Received error message from {PeerContext.PeerId}");
+         if (message.Data != null) Logger.LogDebug($"{Encoding.ASCII.GetString(message.Data)}");
 
          return new ValueTask<bool>(false);
       }

@@ -40,7 +40,7 @@ namespace Network.Protocol.Processors
 
       public async ValueTask<bool> ProcessMessageAsync(PingMessage message, CancellationToken cancellation) //TODO David add tests
       {
-         logger.LogDebug($"Processing ping from {PeerContext.PeerId}");
+         Logger.LogDebug($"Processing ping from {PeerContext.PeerId}");
          
          if(_lastPingReceivedDateTime > _dateTimeProvider.GetUtcNow()
             .AddSeconds(-30))
@@ -55,7 +55,7 @@ namespace Network.Protocol.Processors
             Ignored = new byte[message.NumPongBytes]}, cancellation)
             .ConfigureAwait(false);
 
-         logger.LogDebug($"Send pong to {PeerContext.PeerId} with length {message.NumPongBytes}");
+         Logger.LogDebug($"Send pong to {PeerContext.PeerId} with length {message.NumPongBytes}");
          
          // will prevent to handle noise messages to other Processors
          return false;
@@ -63,12 +63,12 @@ namespace Network.Protocol.Processors
 
       public ValueTask<bool> ProcessMessageAsync(PongMessage message, CancellationToken cancellation)
       {
-         logger.LogDebug($"Processing pong from {PeerContext.PeerId} with length {message.BytesLen}");
+         Logger.LogDebug($"Processing pong from {PeerContext.PeerId} with length {message.BytesLen}");
          
          if(_lastSentPingMessages.ContainsKey(message.BytesLen) && 
             _lastSentPingMessages.Remove(message.BytesLen,out var trackedPingMessage))
          {
-            logger.LogDebug($"Pong received for ping after {_dateTimeProvider.GetUtcNow() - trackedPingMessage.dateTimeSent} on " +
+            Logger.LogDebug($"Pong received for ping after {_dateTimeProvider.GetUtcNow() - trackedPingMessage.dateTimeSent} on " +
                             $"{PeerContext.PeerId}");
          }
 
@@ -90,7 +90,7 @@ namespace Network.Protocol.Processors
          _lastSentPingMessages.GetOrAdd(pingMessage.NumPongBytes, _
             => new TrackedPingMessage(pingMessage, _dateTimeProvider.GetUtcNow()));
 
-         logger.LogDebug($"Sending ping to {PeerContext.PeerId} with pong length of {pingMessage.NumPongBytes}");
+         Logger.LogDebug($"Sending ping to {PeerContext.PeerId} with pong length of {pingMessage.NumPongBytes}");
          
          await SendMessageAsync(pingMessage, cancellationToken).ConfigureAwait(false);
       }

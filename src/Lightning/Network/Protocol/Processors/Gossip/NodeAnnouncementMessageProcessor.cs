@@ -47,7 +47,7 @@ namespace Network.Protocol.Processors.Gossip
          
          _gossipRepository.AddNode(node);
  
-         eventBus.Publish(node);
+         EventBus.Publish(node);
          
          return await new ValueTask<bool>(false)
             .ConfigureAwait(false);;

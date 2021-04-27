@@ -9,7 +9,7 @@ using Network.Storage.Gossip;
 
 namespace Network.Protocol.Validators.Gossip
 {
-   public class ChannelAnnouncementValidator : GossipValidationBase <ChannelAnnouncement>,IMessageValidator<ChannelAnnouncement>
+   public class ChannelAnnouncementValidator : GossipValidationBase ,IMessageValidator<ChannelAnnouncement>
    {
       readonly ITlvStreamSerializer _tlvStreamSerializer;
       readonly IGossipRepository _gossipRepository;

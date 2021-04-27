@@ -55,7 +55,7 @@ namespace Network.Protocol.Processors
 
          if (PeerContext.Direction == PeerConnectionDirection.Outbound)
          {
-            logger.LogDebug("Handshake ActOne sent.", ++_handshakeActNumber);
+            Logger.LogDebug("Handshake ActOne sent.", ++_handshakeActNumber);
             await SendMessageAsync(Handshake(new ReadOnlySequence<byte>())).ConfigureAwait(false);
          }
       }
@@ -64,7 +64,7 @@ namespace Network.Protocol.Processors
       {
          if (PeerContext.HandshakeComplete)
          {
-            logger.LogDebug("Receiving version while already handshaked, disconnect.");
+            Logger.LogDebug("Receiving version while already handshaked, disconnect.");
             throw new ProtocolViolationException("Peer already handshaked, disconnecting because of protocol violation.");
          }
 
@@ -72,27 +72,27 @@ namespace Network.Protocol.Processors
          {
             case 1: // ActOne responder
                {
-                  logger.LogDebug("Handshake ActOne received.");
+                  Logger.LogDebug("Handshake ActOne received.");
                   await SendMessageAsync(Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
                   _handshakeActNumber += 2; // jump to act3
-                  logger.LogDebug("Handshake ActTwo sent.");
+                  Logger.LogDebug("Handshake ActTwo sent.");
                   break;
                }
             case 2: // ActTwo both
                {
-                  logger.LogDebug("Handshake ActTwo received.");
+                  Logger.LogDebug("Handshake ActTwo received.");
                   await SendMessageAsync(Handshake(noiseMessage.Payload), cancellation).ConfigureAwait(false);
                   PeerContext.OnHandshakeCompleted();
                   _handshakeActNumber++;
-                  logger.LogDebug("Handshake ActThree sent.");
+                  Logger.LogDebug("Handshake ActThree sent.");
                   break;
                }
             case 3: // ActThree Responder
                {
-                  logger.LogDebug("Handshake ActThree received.");
+                  Logger.LogDebug("Handshake ActThree received.");
                   _ = Handshake(noiseMessage.Payload);
                   _handshakeActNumber++;
-                  logger.LogDebug("Handshake Init sent.");
+                  Logger.LogDebug("Handshake Init sent.");
                   PeerContext.OnHandshakeCompleted();
                   await SendMessageAsync(CreateInitMessage(), cancellation).ConfigureAwait(false);
                   PeerContext.OnInitMessageCompleted();
@@ -113,7 +113,7 @@ namespace Network.Protocol.Processors
 
       public async ValueTask<bool> ProcessMessageAsync(InitMessage message, CancellationToken cancellation)
       {
-         logger.LogDebug("Handshake Init received.");
+         Logger.LogDebug("Handshake Init received.");
 
          // validate init message
 

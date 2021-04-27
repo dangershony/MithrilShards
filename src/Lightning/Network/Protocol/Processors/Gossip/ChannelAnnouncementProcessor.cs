@@ -19,7 +19,7 @@ namespace Network.Protocol.Processors.Gossip
       readonly IMessageValidator<ChannelAnnouncement> _messageValidator;
       readonly IGossipRepository _gossipRepository;
       
-      public ChannelAnnouncementProcessor(ILogger<BaseProcessor> logger, IEventBus eventBus, 
+      public ChannelAnnouncementProcessor(ILogger<ChannelAnnouncementProcessor> logger, IEventBus eventBus, 
          IPeerBehaviorManager peerBehaviorManager, IMessageValidator<ChannelAnnouncement> messageValidator, IGossipRepository gossipRepository) 
          : base(logger, eventBus, peerBehaviorManager, true)
       {
@@ -45,20 +45,7 @@ namespace Network.Protocol.Processors.Gossip
          {
             if (existingChannel.NodeId1 != message.NodeId1 || existingChannel.NodeId2 != message.NodeId2)
             {
-               var nodes = _gossipRepository.GetNodes(existingChannel.NodeId1, existingChannel.NodeId2,
-                  message.NodeId1, message.NodeId2);
-
-               var nodeIds = nodes.Select(_ => _.NodeId).ToArray()
-                  .Union(new[] {message.NodeId1, message.NodeId2, existingChannel.NodeId1, existingChannel.NodeId2})
-                  .ToArray();
-
-               _gossipRepository.AddNodeToBlacklist(nodeIds);
-
-               var channelsToForget = nodes.SelectMany(_ => _.Channels);
-
-               _gossipRepository.RemoveGossipChannels(channelsToForget
-                  .Select(_ => _.ShortChannelId).ToArray());
-
+               BlacklistNodesAndForgetChannels(message, existingChannel);
             }
          }
             
@@ -67,12 +54,29 @@ namespace Network.Protocol.Processors.Gossip
          
          
          
-       eventBus.Publish(new ChannelAnnouncementEvent
+       EventBus.Publish(new ChannelAnnouncementEvent
        {
           ChannelAnnouncement = message
        });
 
        return true;
+      }
+
+      void BlacklistNodesAndForgetChannels(ChannelAnnouncement message, GossipChannel existingChannel)
+      {
+         var nodes = _gossipRepository.GetNodes(existingChannel.NodeId1, existingChannel.NodeId2,
+            message.NodeId1, message.NodeId2);
+
+         var nodeIds = nodes.Select(_ => _.NodeId).ToArray()
+            .Union(new[] {message.NodeId1, message.NodeId2, existingChannel.NodeId1, existingChannel.NodeId2})
+            .ToArray();
+
+         _gossipRepository.AddNodeToBlacklist(nodeIds);
+
+         var channelsToForget = nodes.SelectMany(_ => _.Channels);
+
+         _gossipRepository.RemoveGossipChannels(channelsToForget
+            .Select(_ => _.ShortChannelId).ToArray());
       }
    }
 

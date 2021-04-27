@@ -8,13 +8,13 @@ using Network.Protocol.TlvStreams;
 
 namespace Network.Protocol.Validators.Gossip
 {
-   public class GossipValidationBase <TMessageType>
+   public class GossipValidationBase
    {
-      readonly ITlvStreamSerializer _tlvStreamSerializer;
+      internal readonly ITlvStreamSerializer TlvStreamSerializer;
 
-      public GossipValidationBase(ITlvStreamSerializer tlvStreamSerializer)
+      protected GossipValidationBase(ITlvStreamSerializer tlvStreamSerializer)
       {
-         _tlvStreamSerializer = tlvStreamSerializer;
+         TlvStreamSerializer = tlvStreamSerializer;
       }
 
       internal static bool VerifySignature(PublicKey publicKey, CompressedSignature signature, byte[] doubleHash)
@@ -30,7 +30,7 @@ namespace Network.Protocol.Validators.Gossip
          return PubKey.Check(publicKey, true);
       }
       
-      internal ReadOnlySpan<byte> GetMessageByteArray<TSerializer,TMessage>(TSerializer serializer, TMessage networkMessage,
+      internal static ReadOnlySpan<byte> GetMessageByteArray<TSerializer,TMessage>(TSerializer serializer, TMessage networkMessage,
          ushort signaturePosition)
       where TSerializer : BaseMessageSerializer<TMessage>
       where TMessage : BaseMessage,new()
