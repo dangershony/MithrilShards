@@ -61,8 +61,9 @@ namespace ConnectionTest
                                     .UseBitcoinChain(networkName: network, minimumSupportedVersion: Math.Min(KnownVersion.V70012, protocolVersion), currentVersion: protocolVersion)
                                     .UseBitcoinDev()
                                     .UseSerilog(logSettings)
-                                    .UseBedrockForgeServer<BitcoinNetworkProtocolMessageSerializer>()
+                                    .UseBedrockNetwork<BitcoinNetworkProtocolMessageSerializer>()
                                     .UseStatisticsCollector(options => options.DumpOnConsoleOnKeyPress = true)
+                                    .UseApi()
                                     .UseDevController()
                                     .RunConsoleAsync()
                                     .ConfigureAwait(false);

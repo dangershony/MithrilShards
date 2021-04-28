@@ -1,6 +1,5 @@
-﻿using System;
-using Microsoft.Extensions.DependencyInjection;
-using MithrilShards.Core.Forge;
+﻿using MithrilShards.Core.Forge;
+using MithrilShards.WebApi;
 
 namespace MithrilShards.Dev.Controller
 {
@@ -10,20 +9,23 @@ namespace MithrilShards.Dev.Controller
       /// Uses the bitcoin chain.
       /// </summary>
       /// <param name="forgeBuilder">The forge builder.</param>
-      /// <param name="assemblyScaffoldEnabler">Action to wake up assembly that doesn't have an entry point, allowing to discover Dev Controllers in that assembly.
-      /// Useful to include these assemblies that didn't have an entry point and wouldn't be loaded.</param>
-      /// <param name="configurationFile">The configuration file.</param>
+      /// Useful to include these assemblies that didn't have an entry point and wouldn't be loaded.
       /// <returns></returns>
-      public static IForgeBuilder UseDevController(this IForgeBuilder forgeBuilder, Action<DevAssemblyScaffolder>? assemblyScaffoldEnabler = null)
+      public static IForgeBuilder UseDevController(this IForgeBuilder forgeBuilder)
       {
-         var scaffolder = new DevAssemblyScaffolder();
-         assemblyScaffoldEnabler?.Invoke(scaffolder);
-
-         forgeBuilder.AddShard<DevControllerShard, DevControllerSettings>(
-            (hostBuildContext, services) =>
+         forgeBuilder.AddShard<DevControllerShard, DevControllerSettings>((context, services) =>
+         {
+            if (context.GetShardSettings<DevControllerSettings>()!.Enabled)
             {
-               services.AddSingleton<DevAssemblyScaffolder>(scaffolder);
-            });
+               services.AddApiServiceDefinition(new ApiServiceDefinition
+               {
+                  Area = WebApiArea.AREA_DEV,
+                  Name = "Dev API",
+                  Description = "API useful for debug purpose.",
+                  Version = "v1",
+               });
+            }
+         });
 
          return forgeBuilder;
       }

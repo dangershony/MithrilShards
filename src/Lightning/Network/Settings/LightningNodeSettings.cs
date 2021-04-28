@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using MithrilShards.Core.MithrilShards;
+using MithrilShards.Core.Shards;
 
 namespace Network.Settings
 {

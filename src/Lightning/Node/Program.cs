@@ -20,8 +20,9 @@ namespace Node
          await new ForgeBuilder()
             .UseForge<DefaultForge>(args, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
-            .UseBedrockForgeServer<TransportMessageSerializer>()
-            .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
+            .UseBedrockNetwork<TransportMessageSerializer>()
+            .UseApi(options => options.ControllersSeeker = (seeker) => seeker.LoadAssemblyFromType<LightningNode>())
+            .UseDevController()
             .UseLightningNetwork()
             .RunConsoleAsync().ConfigureAwait(false);
       }
@@ -31,9 +32,9 @@ namespace Node
          Task node1 = new ForgeBuilder()
             .UseForge<DefaultForge>(args, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
-            .UseBedrockForgeServer<TransportMessageSerializer>()
-            .UseDevController(assemblyScaffoldEnabler =>
-               assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
+            .UseBedrockNetwork<TransportMessageSerializer>()
+            .UseApi(options => options.ControllersSeeker = (seeker) => seeker.LoadAssemblyFromType<LightningNode>())
+            .UseDevController()
             .UseLightningNetwork()
             .RunConsoleAsync();
 
@@ -44,9 +45,9 @@ namespace Node
          Task node2 = new ForgeBuilder()
             .UseForge<DefaultForge>(args1, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
-            .UseBedrockForgeServer<TransportMessageSerializer>()
-            .UseDevController(assemblyScaffoldEnabler =>
-               assemblyScaffoldEnabler.LoadAssemblyFromType<LightningNode>())
+            .UseBedrockNetwork<TransportMessageSerializer>()
+            .UseApi(options => options.ControllersSeeker = (seeker) => seeker.LoadAssemblyFromType<LightningNode>())
+            .UseDevController()
             .UseLightningNetwork()
             .RunConsoleAsync();
 

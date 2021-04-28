@@ -1,0 +1,153 @@
+name: Main Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      single-runner:
+        description: specify if it has to run on a single runner only (ubuntu-latest)
+        required: true
+        default: 'true'
+      run-test:
+        description: specify if test has to be run
+        required: true
+        default: 'true'
+      create-packages:
+        description: specify if packages have to be built
+        required: true
+        default: 'true'
+      publish-prerelease:
+        description: specify if nuget packages has to be published on github feed
+        required: true
+        default: 'true'
+  pull_request:
+    paths-ignore:
+      - 'docs/*' # Don't run workflow when files are only in the /Documentation directory
+      - '.github/workflows/*' # Don't run workflow when only workflow files updated
+      - 'mkdocs.yml'
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/*' # Don't run workflow when files are only in the /Documentation directory
+      - '.github/workflows/*' # Don't run workflow when only workflow files updated
+      - 'mkdocs.yml'
+
+
+env:
+  # Stop wasting time caching packages
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Disable sending usage data to Microsoft
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # GitHub Packages Feed settings
+  GITHUB_FEED: https://nuget.pkg.github.com/MithrilMan/
+  GITHUB_USER: MithrilMan
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Official NuGet Feed settings
+  NUGET_FEED: https://api.nuget.org/v3/index.json
+  NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
+
+jobs:
+  set_variables:
+    runs-on: 'ubuntu-latest'
+    env:
+      DEFAULT_DO_TEST: 'true'
+      DEFAULT_DO_PACK: 'true'
+    outputs:
+      DO_TEST: ${{ steps.DO_TEST.outputs.value }}
+      DO_PACK: ${{ steps.DO_PACK.outputs.value }}
+      RUNNERS: ${{ steps.RUNNERS.outputs.matrix }}
+    steps:
+    - name: Set DO_TEST
+      uses: haya14busa/action-cond@v1
+      id: DO_TEST
+      with:
+        cond: ${{ github.event_name == 'workflow_dispatch' }}
+        if_true: ${{ github.event.inputs.run-test }}
+        if_false: ${{ env.DEFAULT_DO_TEST }}
+
+    - name: Set DO_PACK
+      uses: haya14busa/action-cond@v1
+      id: DO_PACK
+      with:
+        cond: ${{ github.event_name == 'workflow_dispatch' }}
+        if_true: ${{ github.event.inputs.create-packages }}
+        if_false: ${{ env.DEFAULT_DO_PACK }}
+
+    - name: Set Runners OS Matrix
+      id: RUNNERS
+      run: |
+         if [ "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.single-runner == 'true' }}" = "true" ]
+         then
+            echo "::set-output name=matrix::{\"os\":[\"ubuntu-latest\"]}"
+         else
+            echo "::set-output name=matrix::{\"os\":[\"ubuntu-latest\",\"windows-latest\",\"macos-latest\"]}"
+         fi
+
+    - name: Dump Variables # for debug purpose
+      run: |
+         echo "DO_TEST = ${{ steps.DO_TEST.outputs.value }}"
+         echo "DO_PACK = ${{ steps.DO_PACK.outputs.value }}"
+         echo "RUNNERS = ${{ steps.RUNNERS.outputs.matrix }}"
+
+  build:
+    needs: set_variables
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{fromJSON(needs.set_variables.outputs.RUNNERS)}}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.201'
+
+    - name: dotnet Restore
+      run: dotnet restore -s "https://api.nuget.org/v3/index.json" -s "https://f.feedz.io/davidfowl/bedrockframework/nuget/index.json"
+
+    - name: Build with dotnet
+      run: dotnet build --configuration Release --no-restore /p:CI=true
+
+    - name: Perform Tests
+      if: needs.set_variables.outputs.DO_TEST == 'true'
+      run: dotnet test -c Release --no-build --logger GitHubActions /p:CI=true
+
+    - name: .NET Lib Pack
+      if: matrix.os == 'ubuntu-latest' && needs.set_variables.outputs.DO_PACK == 'true'
+      run: dotnet pack --no-build -c Release /p:PackageOutputPath=${{ github.workspace }}\.nupkgs /p:CI=true
+
+    - name: Upload Artifacts
+      if: matrix.os == 'ubuntu-latest' && needs.set_variables.outputs.DO_PACK == 'true'
+      uses: actions/upload-artifact@v2
+      with:
+         name: mithril-shards-nuget-package
+         path: ${{ github.workspace }}\.nupkgs
+         if-no-files-found: error
+
+
+
+  prerelease:
+    needs: build
+    if: needs.set_variables.outputs.DO_PACK && (github.ref == 'refs/heads/master' || github.event.inputs.publish-prerelease)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v1
+      with:
+         name: mithril-shards-nuget-package
+    - name: Push to GitHub Feed
+      # The github token is automatically being pulled from the workflow
+      run: dotnet nuget push './mithril-shards-nuget-package/*.nupkg' --source $GITHUB_FEED --skip-duplicate --api-key $GITHUB_TOKEN
+      #run: dotnet nuget push ./mithril-shards-nuget-package/*.nupkg --no-symbols --skip-duplicate --source "github"
+      #dotnet nuget push "bin/Release/OctocatApp.1.0.0.nupkg"  --api-key YOUR_GITHUB_PAT --source "github"
+      #run: |
+      #   for f in ./mithril-shards-nuget-package/*.nupkg
+      #   do
+      #      curl -vX PUT -u "$GITHUB_USER:$GITHUB_TOKEN" -F package=@$f $GITHUB_FEED
+      #   done
+#    - name: Push to NuGet Feed
+#      run: dotnet nuget push ./nupkg/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY

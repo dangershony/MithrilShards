@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+   <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+   </PropertyGroup>
+
+   <ItemGroup>
+      <Compile Remove="coreKey.cs" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <None Include="coreKey.cs" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+      <PackageReference Include="NBitcoin" Version="5.0.76" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <ProjectReference Include="..\..\src\MithrilShards.Chain.Bitcoin\MithrilShards.Chain.Bitcoin.csproj" />
+      <ProjectReference Include="..\..\src\MithrilShards.Core\MithrilShards.Core.csproj" />
+   </ItemGroup>
+
+</Project>

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
-using MithrilShards.Core.MithrilShards;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using MithrilShards.Core.Shards;
 using MithrilShards.Core.Network.Server;
 
 namespace MithrilShards.Core.Network
@@ -34,5 +36,43 @@ namespace MithrilShards.Core.Network
       public List<ServerPeerBinding> Listeners { get; } = new List<ServerPeerBinding>();
 
       public List<ClientPeerBinding> Connections { get; } = new List<ClientPeerBinding>();
+
+
+
+      /// <inheritdoc/>
+      public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+      {
+
+         for (int i = 0; i < Connections.Count; i++)
+         {
+            ClientPeerBinding connection = Connections[i];
+            List<ValidationResult> results = new List<ValidationResult>();
+            Validator.TryValidateObject(connection, new ValidationContext(connection), results, true);
+            foreach (var result in results)
+            {
+               if (result is not null)
+               {
+                  //result.MemberNames = result.MemberNames.Append(new string[] { $"{nameof(Connections)}[{i}]" })
+                  //yield return result;
+                  yield return new ValidationResult(result.ErrorMessage, new string[] { $"{nameof(Connections)}[{i}].{result.MemberNames.First()}" });
+               }
+            }
+         }
+
+         for (int i = 0; i < Listeners.Count; i++)
+         {
+            ServerPeerBinding listener = Listeners[i];
+            List<ValidationResult> results = new List<ValidationResult>();
+            Validator.TryValidateObject(listener, new ValidationContext(listener), results, true);
+            foreach (var result in results)
+            {
+               if (result is not null)
+               {
+                  //yield return result;
+                  yield return new ValidationResult(result.ErrorMessage, new string[] { $"{nameof(Listeners)}[{i}].{result.MemberNames.First()}" });
+               }
+            }
+         }
+      }
    }
 }
