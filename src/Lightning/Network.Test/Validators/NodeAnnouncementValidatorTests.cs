@@ -7,7 +7,6 @@ using NBitcoin;
 using Network.Protocol;
 using Network.Protocol.Messages;
 using Network.Protocol.Messages.Gossip;
-using Network.Protocol.Messages.Types;
 using Network.Protocol.TlvStreams;
 using Network.Protocol.Validators.Gossip;
 using Xunit;
@@ -38,7 +37,7 @@ namespace Network.Test.Validators
 
          var random = new Random();
 
-         var nodeId = new byte[33];
+         byte[] nodeId = new byte[33];
          
          random.NextBytes(nodeId);
 
@@ -57,7 +56,7 @@ namespace Network.Test.Validators
 
          var random = new Random();
 
-         var signature = new byte[CompressedSignature.SIGNATURE_LENGTH];
+         byte[] signature = new byte[CompressedSignature.SIGNATURE_LENGTH];
          
          random.NextBytes(signature);
 
@@ -96,7 +95,7 @@ namespace Network.Test.Validators
 
          using var sha256 = SHA256.Create();
          sha256.ComputeHash(output.WrittenMemory.ToArray());
-         var hash = sha256.ComputeHash(sha256.Hash);
+         byte[] hash = sha256.ComputeHash(sha256.Hash);
 
          var ecSig = key.Sign(new uint256(hash));
          

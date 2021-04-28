@@ -48,8 +48,8 @@ namespace Network.Protocol.Processors
       /// <param name="isHandshakeAware">If set to <c>true</c> register the instance to be handshake aware: when the peer is handshaked, OnPeerHandshaked method will be invoked.</param>
       public BaseProcessor(ILogger<BaseProcessor> logger, IEventBus eventBus, IPeerBehaviorManager peerBehaviorManager, bool isHandshakeAware)
       {
-         this.Logger = logger;
-         this.EventBus = eventBus;
+         Logger = logger;
+         EventBus = eventBus;
          _peerBehaviorManager = peerBehaviorManager;
          _isHandshakeAware = isHandshakeAware;
 
@@ -59,7 +59,7 @@ namespace Network.Protocol.Processors
 
       public async ValueTask AttachAsync(IPeerContext peerContext)
       {
-         PeerContext = peerContext as NetworkPeerContext ?? throw new ArgumentException("Expected ExamplePeerContext", nameof(peerContext));
+         PeerContext = peerContext as NetworkPeerContext ?? throw new ArgumentException("Expected NetworkPeerContext", nameof(peerContext));
          _messageWriter = PeerContext.GetMessageWriter();
 
          await OnPeerAttachedAsync().ConfigureAwait(false);
@@ -111,7 +111,7 @@ namespace Network.Protocol.Processors
       {
          if (PeerContext.NegotiatedProtocolVersion.Version < minVersion)
          {
-            Logger.LogDebug("Can't send message, negotiated protocol version is below required protocol.");
+            Logger.LogDebug("Can't send message, negotiated protocol version is below required protocol");
             return false;
          }
 
@@ -181,7 +181,7 @@ namespace Network.Protocol.Processors
             // if cancellation was requested, return without doing anything
             if (!cancellation.IsCancellationRequested && !PeerContext.ConnectionCancellationTokenSource.Token.IsCancellationRequested && await condition().ConfigureAwait(false))
             {
-               Logger.LogDebug("Condition met, trigger action.");
+               Logger.LogDebug("Condition met, trigger action");
                await action().ConfigureAwait(false);
             }
          });

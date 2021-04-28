@@ -9,7 +9,7 @@ using SequenceReaderExtensions = Network.Protocol.SequenceReaderExtensions;
 
 namespace Network.Test
 {
-   public class TlvBigSizeTest
+   public class TlvBigSizeTests
    {
       [Fact]
       public void BigSizeDecodingDataTest()
