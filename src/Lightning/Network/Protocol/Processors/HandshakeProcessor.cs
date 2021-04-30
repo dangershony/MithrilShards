@@ -121,12 +121,15 @@ namespace Network.Protocol.Processors
       {
          logger.LogDebug("Handshake Init received.");
 
+         if (PeerContext.InitComplete)
+            return true;
+
          // validate init message
 
          PeerContext.OnInitMessageCompleted();
-         
+
          await SendMessageAsync(CreateInitMessage(), cancellation).ConfigureAwait(false);
-         
+
          return true;// new ValueTask<bool>(true);
       }
 

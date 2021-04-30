@@ -3,13 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Dev.Controller.Models.Requests;
+using MithrilShards.WebApi;
 using Network.Api.Models.Responses;
 
 namespace Network.Api.Controllers
 {
-   [ApiController]
-   [Route("[controller]")]
-   public class NodeControllerDev : ControllerBase
+
+   [Area(WebApiArea.AREA_API)]
+   public class NodeControllerDev : MithrilControllerBase
    {
       private readonly ILogger<PeerControllerDev> _logger;
       private readonly IEventBus _eventBus;
