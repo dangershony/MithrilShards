@@ -7,5 +7,10 @@
 
    <ItemGroup>
       <PackageReference Include="NBitcoin" Version="5.0.67" />
+      <PackageReference Include="NBitcoin.Secp256k1" Version="1.0.8" />
+   </ItemGroup>
+
+   <ItemGroup>
+     <ProjectReference Include="..\Bitcoin.Primitives\Bitcoin.Primitives.csproj" />
    </ItemGroup>
 </Project>

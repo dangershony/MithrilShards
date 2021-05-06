@@ -12,7 +12,7 @@ namespace MithrilShards.Core.Network.Client
       protected ILogger logger;
       protected IEventBus eventBus;
       protected readonly IConnectivityPeerStats peerStats;
-      protected readonly IForgeConnectivity forgeConnectivity;
+      protected readonly IForgeClientConnectivity forgeConnectivity;
       protected readonly IPeriodicWork connectionLoop;
 
       protected IConnectionManager? connectionManager;
@@ -22,7 +22,7 @@ namespace MithrilShards.Core.Network.Client
       public ConnectorBase(ILogger logger,
                            IEventBus eventBus,
                            IConnectivityPeerStats serverPeerStats,
-                           IForgeConnectivity forgeConnectivity,
+                           IForgeClientConnectivity forgeConnectivity,
                            IPeriodicWork connectionLoop)
       {
          this.logger = logger;
@@ -44,9 +44,10 @@ namespace MithrilShards.Core.Network.Client
       /// <summary>
       /// Contains the logic to compute the delay adjustment.
       /// </summary>
-      /// <param name="hint">The hint.</param>
-      /// <remarks>Override this method to have a custom logic for delayed connection attempts.</remarks>
       /// <returns></returns>
+      /// <remarks>
+      /// Override this method to have a custom logic for delayed connection attempts.
+      /// </remarks>
       public virtual TimeSpan ComputeDelayAdjustment()
       {
          return DefaultDelayBetweenAttempts;

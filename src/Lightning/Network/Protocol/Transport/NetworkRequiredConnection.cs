@@ -27,7 +27,7 @@ namespace Network.Protocol.Transport
                                 IEventBus eventBus,
                                 IOptions<LightningNodeSettings> options,
                                 IConnectivityPeerStats serverPeerStats,
-                                IForgeConnectivity forgeConnectivity,
+                                IForgeClientConnectivity forgeConnectivity,
                                 IPeriodicWork connectionLoop) : base(logger, eventBus, serverPeerStats, forgeConnectivity, connectionLoop)
       {
          _settings = options.Value!;

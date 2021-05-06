@@ -17,7 +17,6 @@ namespace MithrilShards.Example.Node
    {
       static async Task Main(string[] args)
       {
-
          // Create a root command with some options
          var rootCommand = new RootCommand {
             new Option<string>(
@@ -43,13 +42,14 @@ namespace MithrilShards.Example.Node
             await new ForgeBuilder()
               .UseForge<DefaultForge>(args, settings)
               .UseSerilog(logSettings)
-              .UseBedrockForgeServer<ExampleNetworkProtocolMessageSerializer>()
+              .UseBedrockNetwork<ExampleNetworkProtocolMessageSerializer>()
               .UseStatisticsCollector(options => options.DumpOnConsoleOnKeyPress = true)
-              /// we are injecting ExampleDev type to allow devcontroller to find all the dev controllers defined there
-              /// because only controller in added shard assemblies are discovered automatically.
-              /// Passing ExampleDev will cause dotnet runtime to load the assembly where ExampleDev lies and will be
-              /// scaffolded later into the DevController initialization.
-              .UseDevController(assemblyScaffoldEnabler => assemblyScaffoldEnabler.LoadAssemblyFromType<ExampleDev>())
+              /// we are injecting ExampleDev type to allow <see cref="MithrilShards.WebApi.WebApiShard"/> to find all the controllers
+              /// defined there because only controllers defined in an included shard assemblies are discovered automatically.
+              /// Passing ExampleDev will cause dotnet runtime to load the assembly where ExampleDev Type is defined and every
+              /// controllers defined there will be found later during <see cref="MithrilShards.WebApi.WebApiShard"/> initialization.
+              .UseApi(options => options.ControllersSeeker = (seeker) => seeker.LoadAssemblyFromType<ExampleDev>())
+              .UseDevController()
               .UseExample(KnownVersion.V1, protocolVersion)
               .RunConsoleAsync()
               .ConfigureAwait(false);

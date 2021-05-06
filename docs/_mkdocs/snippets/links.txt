@@ -1,0 +1,26 @@
+[Serilog]: https://github.com/serilog/serilog-aspnetcore
+[Discussions]: https://github.com/MithrilMan/MithrilShards/discussions
+
+[mithrilshards]: https://github.com/MithrilMan/MithrilShards/
+[ForgeBuilder]: /mithril-shards/forge-builder
+[DefaultForge]: /mithril-shards/default-forge
+[shards]: /mithril-shards/shards
+
+[SerilogShard]: /shards/serilog
+
+[WebApiShard]: /shards/web-api
+[WebApiSettings]: /shards/web-api/using-webapishard#webapisettings
+[ApiServiceDefinition]: /shards/web-api/areas#apiservicedefinition
+[Web API Areas]: /shards/web-api/areas
+[Creating a Controller]: /shards/web-api/creating-a-controller
+[Using Swagger UI]: /shards/web-api/using-swagger-ui
+
+[DevControllerShard]: /shards/dev-controller/
+
+[BedrockNetworkShard]: /shards/bedrock-network/
+
+[example project]: /example-projects/
+[MithrilShards.Example]: /example-projects/mithril-shards-example
+[MithrilShards.Example.Network.Bedrock]: /example-projects/mithril-shards-example-network-bedrock
+[MithrilShards.Example.Dev]: /example-projects/mithril-shards-example-dev
+[MithrilShards.Example.Node]: /example-projects/mithril-shards-example-node

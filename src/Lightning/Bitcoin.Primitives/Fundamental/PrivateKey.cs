@@ -14,6 +14,8 @@ namespace Bitcoin.Primitives.Fundamental
          _value = value;
       }
 
+      public static implicit operator ReadOnlySpan<byte>(PrivateKey hash) => hash._value;
+
       public static implicit operator byte[](PrivateKey hash) => hash._value;
 
       public static explicit operator PrivateKey(byte[] bytes) => new PrivateKey(bytes);

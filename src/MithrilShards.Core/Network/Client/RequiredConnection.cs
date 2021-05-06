@@ -15,7 +15,7 @@ namespace MithrilShards.Core.Network.Client
    /// <summary>
    /// Tries to connect to peers configured to be connected.
    /// </summary>
-   /// <seealso cref="MithrilShards.Core.Network.Client.IConnector" />
+   /// <seealso cref="MithrilShards.Core.Network.Client.ConnectorBase" />
    public class RequiredConnection : ConnectorBase
    {
       private const int INNER_DELAY = 500;
@@ -31,16 +31,14 @@ namespace MithrilShards.Core.Network.Client
                                 IEventBus eventBus,
                                 IOptions<ForgeConnectivitySettings> options,
                                 IConnectivityPeerStats serverPeerStats,
-                                IForgeConnectivity forgeConnectivity,
+                                IForgeClientConnectivity forgeConnectivity,
                                 IPeriodicWork connectionLoop) : base(logger, eventBus, serverPeerStats, forgeConnectivity, connectionLoop)
       {
          _settings = options.Value!;
 
          connectionsToAttempt.AddRange(
             from connection in _settings.Connections
-            let endPoint = connection.TryGetIPEndPoint(out IPEndPoint? endPoint) ? endPoint : null
-            where endPoint != null
-            select new OutgoingConnectionEndPoint(endPoint)
+            select new OutgoingConnectionEndPoint(connection.GetIPEndPoint())
             );
       }
 

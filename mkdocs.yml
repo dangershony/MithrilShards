@@ -1,0 +1,134 @@
+site_name: Mithril Shards
+site_url: https://mithrilman.github.io/mithrilshards
+repo_name: mithrilshards
+repo_url: https://github.com/mithrilman/mithrilshards
+edit_uri: edit/master/docs/
+site_author: Mithril Man
+copyright: Mithril Man 2020
+
+extra_javascript:
+  - https://unpkg.com/mermaid@8.8.3/dist/mermaid.min.js
+  - _mkdocs/extra_js/custom.js
+extra_css:
+  - _mkdocs/extra_css/custom.css
+
+# change directory names here
+docs_dir: docs
+site_dir: ./docs_site
+
+theme:
+    name: material
+    custom_dir: docs/_mkdocs/overrides
+
+    icon:
+      repo: fontawesome/brands/github
+
+    features:
+      #- navigation.instant # problems with mermaid
+      #- navigation.sections
+      #- navigation.tabs
+      #- navigation.tabs.sticky # for insiders only
+      - navigation.indexes # for insiders only
+      - navigation.top
+      #- navigation.expand
+      #- header.autohide
+      #- toc.integrate
+
+    palette:
+      # Light mode
+      - media: "(prefers-color-scheme: light)"
+        scheme: default
+        primary: blue grey
+        accent: indigo
+        toggle:
+          icon: material/toggle-switch-off-outline
+          name: Switch to dark mode
+
+      # Dark mode
+      - media: "(prefers-color-scheme: dark)"
+        scheme: slate
+        primary: deep orange
+        accent: indigo
+        toggle:
+          icon: material/toggle-switch
+          name: Switch to light mode
+
+
+markdown_extensions:
+  - abbr
+  - def_list
+  - attr_list #needed to use {:target="_blank"} on links
+  - pymdownx.snippets:
+      base_path: docs/_mkdocs/snippets
+      check_paths: true
+  - toc:
+      permalink: false
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  #- meta
+  - admonition
+  - pymdownx.highlight:
+      use_pygments: true
+      linenums: true
+      noclasses: false #set to true to enable pygments_style option
+      pygments_style: 'vs'
+  - pymdownx.details
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
+
+plugins:
+  - search
+  - git-revision-date
+  - exclude-search:
+      exclude:
+        - _private/*.md
+        - _snippets/*.*
+        - extra_css/*.*
+  #- section-index
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/MithrilMan/MithrilShards
+  generator: false
+#  version:
+#    provider: mike
+
+nav:
+  - index.md
+  - Mithril Shards Core:
+    - mithril-shards/index.md
+    - mithril-shards/shards.md
+    - mithril-shards/forge-builder.md
+    - mithril-shards/default-forge.md
+  - Shards:
+    - BedrockNetwork:
+      -  shards/bedrock-network/index.md
+    - Serilog:
+      -  shards/serilog/index.md
+    - WebApi:
+      -  shards/web-api/index.md
+      -  shards/web-api/using-webapishard.md
+      -  shards/web-api/areas.md
+      -  shards/web-api/creating-a-controller.md
+      -  shards/web-api/swagger-ui.md
+    - DevController:
+      -  shards/dev-controller/index.md
+    - Bitcoin:
+      - shards/bitcoin/index.md
+      - shards/bitcoin/network.md
+      - shards/bitcoin/testing_node_communication.md
+  - Example Projects:
+      - example-projects/index.md
+      - example-projects/mithril-shards-example.md
+      - example-projects/mithril-shards-example-network-bedrock.md
+      - example-projects/mithril-shards-example-dev.md
+      - example-projects/mithril-shards-example-node.md
+      - example-projects/running-example.md
+  - Issue Tracker: 'https://github.com/MithrilMan/MithrilShards/issues'

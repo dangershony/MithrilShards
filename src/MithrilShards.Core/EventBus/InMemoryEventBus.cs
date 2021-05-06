@@ -26,9 +26,9 @@ namespace MithrilShards.Core.EventBus
       private readonly object _subscriptionsLock = new object();
 
       /// <summary>
-      /// Initializes a new instance of the <see cref="InMemoryEventBus"/> class.
+      /// Initializes a new instance of the <see cref="InMemoryEventBus" /> class.
       /// </summary>
-      /// <param name="loggerFactory">The logger factory.</param>
+      /// <param name="logger">The logger.</param>
       /// <param name="subscriptionErrorHandler">The subscription error handler. If null the default one will be used</param>
       public InMemoryEventBus(ILogger<InMemoryEventBus> logger, ISubscriptionErrorHandler subscriptionErrorHandler)
       {
@@ -78,7 +78,7 @@ namespace MithrilShards.Core.EventBus
             {
                List<ISubscription> allSubscriptions = _subscriptions[subscriptionToken.EventType];
 
-               ISubscription subscriptionToRemove = allSubscriptions.FirstOrDefault(sub => sub.SubscriptionToken.Token == subscriptionToken.Token);
+               ISubscription? subscriptionToRemove = allSubscriptions.FirstOrDefault(sub => sub.SubscriptionToken.Token == subscriptionToken.Token);
                if (subscriptionToRemove != null)
                {
                   _subscriptions[subscriptionToken.EventType].Remove(subscriptionToRemove);
