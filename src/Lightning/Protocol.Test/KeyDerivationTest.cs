@@ -24,7 +24,7 @@ namespace Protocol.Test
          PublicKey basePoint = keyDerivation.PublicKeyFromPrivateKey(baseSecret);
 
          PublicKey pubkey = keyDerivation.DerivePublickey(basePoint, perCommitmentPoint);
-         PrivateKey privkey = keyDerivation.DerivePrivatekey(basePoint, baseSecret, perCommitmentPoint);
+         PrivateKey privkey = keyDerivation.DerivePrivatekey(baseSecret, basePoint, perCommitmentPoint);
 
          PublicKey pubkey2 = keyDerivation.PublicKeyFromPrivateKey(privkey);
          Assert.Equal(pubkey.GetSpan().ToArray(), pubkey2.GetSpan().ToArray());

@@ -22,4 +22,11 @@ namespace Bitcoin.Primitives.Fundamental
 
       public static explicit operator PrivateKey(ReadOnlySpan<byte> bytes) => new PrivateKey(bytes.ToArray());
    }
+
+   public class Secret : PrivateKey
+   {
+      public Secret(byte[] value) : base(value)
+      {
+      }
+   }
 }

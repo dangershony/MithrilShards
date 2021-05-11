@@ -35,6 +35,9 @@ namespace Protocol.Channels
          return null;
       }
 
+      /// <summary>
+      /// derive_simple_key
+      /// </summary>
       public PublicKey DerivePublickey(PublicKey basepoint, PublicKey perCommitmentPoint)
       {
          // TODO: pubkey = basepoint + SHA256(per_commitment_point || basepoint) * G
@@ -60,7 +63,10 @@ namespace Protocol.Channels
          return null;
       }
 
-      public PrivateKey DerivePrivatekey(PublicKey basepoint, PrivateKey basepointSecret, PublicKey perCommitmentPoint)
+      /// <summary>
+      /// derive_simple_privkey
+      /// </summary>
+      public PrivateKey DerivePrivatekey(PrivateKey basepointSecret, PublicKey basepoint, PublicKey perCommitmentPoint)
       {
          // TODO: privkey = basepoint_secret + SHA256(per_commitment_point || basepoint)
 

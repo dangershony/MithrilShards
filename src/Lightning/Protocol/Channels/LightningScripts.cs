@@ -235,7 +235,7 @@ namespace Protocol.Channels
          return script.ToBytes();
       }
 
-      private ulong get_commitment_transaction_number_obscure_factor(
+      public ulong CommitNumberObscurer(
          PublicKey openerPaymentBasepoint,
          PublicKey accepterPaymentBasepoint)
       {
@@ -294,7 +294,6 @@ namespace Protocol.Channels
       }
 
       public Transaction CreateCommitmenTransaction(
-         UInt256 funding_txid,
          OutPoint funding_txout,
          ulong funding,
          PublicKey local_funding_key,
@@ -307,8 +306,6 @@ namespace Protocol.Channels
          ulong self_pay,
          ulong other_pay,
          List<Htlc> htlcs,
-         List<Htlc> htlcmap,
-         //wally_tx_output *direct_outputs[NUM_SIDES],
          ulong obscured_commitment_number,
          bool option_anchor_outputs,
          Side side)
@@ -690,4 +687,49 @@ namespace Protocol.Channels
          return 0;
       }
    }
+
+   public class ChannelConfig
+   {
+      /* Database ID */
+      public ulong Id { get; set; }
+
+      /* BOLT #2:
+       *
+       * `dust_limit_satoshis` is the threshold below which outputs should
+       * not be generated for this node's commitment or HTLC transaction */
+      public ulong dust_limit { get; set; }
+
+      /* BOLT #2:
+       *
+       * `max_htlc_value_in_flight_msat` is a cap on total value of
+       * outstanding HTLCs, which allows a node to limit its exposure to
+       * HTLCs */
+      public ulong max_htlc_value_in_flight { get; set; }
+
+      /* BOLT #2:
+       *
+       * `channel_reserve_satoshis` is the minimum amount that the other
+       * node is to keep as a direct payment. */
+      public ulong channel_reserve { get; set; }
+
+      /* BOLT #2:
+       *
+       * `htlc_minimum_msat` indicates the smallest value HTLC this node
+       * will accept.
+       */
+      public ulong htlc_minimum { get; set; }
+
+      /* BOLT #2:
+       *
+       * `to_self_delay` is the number of blocks that the other node's
+       * to-self outputs must be delayed, using `OP_CHECKSEQUENCEVERIFY`
+       * delays */
+      public ushort to_self_delay { get; set; }
+
+      /* BOLT #2:
+       *
+       * similarly, `max_accepted_htlcs` limits the number of outstanding
+       * HTLCs the other node can offer. */
+      public ushort max_accepted_htlcs { get; set; }
+   };
 }
