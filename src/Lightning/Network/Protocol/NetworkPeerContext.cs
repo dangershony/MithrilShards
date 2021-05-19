@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using Bitcoin.Primitives.Fundamental;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
@@ -8,7 +7,7 @@ using MithrilShards.Core.Network.Events;
 using MithrilShards.Core.Network.Protocol;
 using MithrilShards.Core.Network.Protocol.Processors;
 using MithrilShards.Core.Utils;
-using Network.Protocol.Messages.Types;
+using NBitcoin;
 using Network.Protocol.Transport;
 
 namespace Network.Protocol
@@ -22,6 +21,10 @@ namespace Network.Protocol
       public IHandshakeProtocol? HandshakeProtocol { get; set; }
 
       public PublicKey NodeId  => (PublicKey) PeerId.ToByteArray();
+
+      public PrivateKey? BitcoinAddressKey { get; set; } //TODO David gossip set up in a better place
+
+      public PublicKey BitcoinAddress => (PublicKey) new PubKey(BitcoinAddressKey!).ToBytes();
       
       public NetworkPeerContext(ILogger logger,
          IEventBus eventBus,

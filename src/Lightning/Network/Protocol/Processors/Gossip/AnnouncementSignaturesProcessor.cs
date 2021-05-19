@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Bitcoin.Primitives.Fundamental;
 using Microsoft.Extensions.Logging;
 using MithrilShards.Core.EventBus;
 using MithrilShards.Core.Network.PeerBehaviorManager;
@@ -16,22 +15,27 @@ namespace Network.Protocol.Processors.Gossip
       INetworkMessageHandler<AnnouncementSignatures>
    {
       readonly IMessageValidator<AnnouncementSignatureValidationWrapper> _messageValidator;
+      readonly NodeContext _nodeContext;
+      
       readonly ISignatureGenerator _signatureGenerator;
       const bool IS_HANDSHAKE_AWARE = true;
 
+      bool announcementSignatureReceived = false;
+      
       public AnnouncementSignaturesProcessor(ILogger<AnnouncementSignaturesProcessor> logger, IEventBus eventBus, 
          IPeerBehaviorManager peerBehaviorManager, ISignatureGenerator signatureGenerator, 
-         IMessageValidator<AnnouncementSignatures> messageValidator) 
+         IMessageValidator<AnnouncementSignatureValidationWrapper> messageValidator, NodeContext nodeContext) 
          : base(logger, eventBus, peerBehaviorManager, IS_HANDSHAKE_AWARE)
       {
          _signatureGenerator = signatureGenerator;
          _messageValidator = messageValidator;
+         _nodeContext = nodeContext;
       }
 
       public async ValueTask<bool> ProcessMessageAsync(AnnouncementSignatures message, CancellationToken cancellation)
       {
          (bool isValid, ErrorMessage? errorMessage) = _messageValidator.ValidateMessage(new AnnouncementSignatureValidationWrapper
-            (message,PeerContext.NodeId,null!));//TODO send in the bitcoin address to be validated
+            (message,PeerContext.NodeId,PeerContext.BitcoinAddress));//TODO send in the bitcoin address to be validated
          
          if (!isValid)
          {
@@ -41,33 +45,32 @@ namespace Network.Protocol.Processors.Gossip
             await SendMessageAsync(errorMessage, cancellation)
                .ConfigureAwait(false);
          }
+         //TODO David - need to verify the short channel id with the funding transaction  
          
-         byte[] messageByteArray = ParseMessageToByteArray(message);
+         //TODO David - add check for funding transaction announce channel bit, and received funding locked message with 6 confirmations before sending a response
 
-         var reply = new AnnouncementSignatures
-         {
-            ChannelId = message.ChannelId,
-            ShortChannelId = message.ShortChannelId,
-            NodeSignature = _signatureGenerator.Sign(PeerContext.NodeId, messageByteArray),
-            BitcoinSignature = _signatureGenerator.Sign(PeerContext.NodeId, messageByteArray)
-         };
+         announcementSignatureReceived = true;
+         
+         byte[] hashedChannelAnnouncement = ParseMessageToByteArray(message);
+
+         var reply = new AnnouncementSignatures(message.ChannelId,
+            message.ShortChannelId,
+            _signatureGenerator.Sign(_nodeContext.PrivateKey, hashedChannelAnnouncement),
+            _signatureGenerator.Sign(
+               PeerContext.BitcoinAddressKey ?? throw new ArgumentNullException(nameof(PeerContext.BitcoinAddressKey)),
+               hashedChannelAnnouncement));
 
          await SendMessageAsync(reply, cancellation).ConfigureAwait(false);
 
+         //TODO David - add gossip message broadcasting to all connected nodes
+         
          return true;
       }
 
       static byte[] ParseMessageToByteArray(AnnouncementSignatures message)
       {
-         byte[] messageByteArray = new byte[32 + 8];
-         ((byte[]) message.ChannelId).CopyTo(messageByteArray.AsSpan(0, 32));
-         ((byte[]) message.ShortChannelId).CopyTo(messageByteArray.AsSpan(32));
-         return messageByteArray;
+         // TODO return a hashed constructed announcement message
+         throw new NotImplementedException();
       }
-   }
-
-   public interface ISignatureGenerator
-   {
-      CompressedSignature Sign(byte[] secret, byte[] message);
    }
 }

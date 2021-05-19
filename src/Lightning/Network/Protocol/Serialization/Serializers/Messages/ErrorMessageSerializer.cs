@@ -21,7 +21,7 @@ namespace Network.Protocol.Serialization.Serializers.Messages
       public override ErrorMessage DeserializeMessage(ref SequenceReader<byte> reader, int protocolVersion,
          NetworkPeerContext peerContext)
       {
-         var channelId = reader.ReadBytes(32).ToArray();
+         byte[]? channelId = reader.ReadBytes(32).ToArray();
          ushort len = reader.ReadUShort(true);
 
          return new ErrorMessage

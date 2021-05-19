@@ -9,9 +9,12 @@ using MithrilShards.Core.Network.Client;
 using MithrilShards.Core.Network.Protocol.Processors;
 using MithrilShards.Core.Network.Protocol.Serialization;
 using Network.Protocol;
+using Network.Protocol.Processors.Gossip;
 using Network.Protocol.TlvStreams;
 using Network.Protocol.Transport;
+using Network.Protocol.Validators;
 using Network.Settings;
+using Network.Storage.Gossip;
 using NoiseProtocol;
 
 namespace Network
@@ -33,7 +36,9 @@ namespace Network
                   .AddMessageProcessors()
                   .AddTlvComponents()
                   .ReplaceServices()
-                  .AddNoiseComponents();
+                  .AddNoiseComponents()
+                  .AddMessageValidatorsComponents()
+                  .AddGossipComponents();
             });
 
          return forgeBuilder;
@@ -41,18 +46,27 @@ namespace Network
 
       private static IServiceCollection AddNoiseComponents(this IServiceCollection services)
       {
-         //services.AddSingleton<IHandshakeStateFactory, HandshakeStateFactory>();
          services.AddSingleton<IEllipticCurveActions,EllipticCurveActions>();
          services.AddTransient<IHashWithState,HashWithState>();
-         services.AddSingleton<NoiseProtocol.IHkdf,Hkdf>();
+         services.AddSingleton<IHkdf,Hkdf>();
          services.AddTransient<ICipherFunction,ChaCha20Poly1305CipherFunction>();
-         services.AddSingleton<INoiseHashFunction,NoiseProtocol.Sha256>();
+         services.AddSingleton<INoiseHashFunction,Sha256>();
          services.AddTransient<INoiseMessageTransformer,NoiseMessageTransformer>();
          services.AddSingleton<IKeyGenerator,KeyGenerator>();
-         services.AddSingleton<IHandshakeProcessor, NoiseProtocol.HandshakeProcessor>();
+         services.AddTransient<IHandshakeProcessor, HandshakeProcessor>();
          return services;
       }
 
+      private static IServiceCollection AddGossipComponents(this IServiceCollection services)
+      {
+         //services.AddSingleton<IHandshakeStateFactory, HandshakeStateFactory>();
+         services.AddTransient<IGossipRepository,GossipRepository>();
+         services.AddSingleton<ISignatureGenerator, SignatureGenerator>();
+
+         return services;
+      }
+      
+      
       private static IServiceCollection AddTlvComponents(this IServiceCollection services)
       {
          services.AddSingleton<ITlvStreamSerializer, TlvStreamSerializer>();
@@ -67,7 +81,23 @@ namespace Network
 
          return services;
       }
+      
+      private static IServiceCollection AddMessageValidatorsComponents(this IServiceCollection services)
+      {
+         System.Reflection.Assembly.GetExecutingAssembly()
+            .GetTypes()
+            .Where(item => item.GetInterfaces()
+               .Where(i => i.IsGenericType).Any(i => i.GetGenericTypeDefinition() == typeof(IMessageValidator<>)) && !item.IsAbstract && !item.IsInterface)
+            .ToList()
+            .ForEach(assignedTypes =>
+            {
+               var serviceType = assignedTypes.GetInterfaces().First(i => i.GetGenericTypeDefinition() == typeof(IMessageValidator<>));
+               services.AddScoped(serviceType, assignedTypes);
+            });
 
+         return services;
+      }
+      
       private static IServiceCollection AddMessageSerializers(this IServiceCollection services)
       {
          // Discovers and registers all message serializer in this assembly.

@@ -20,8 +20,8 @@ namespace Network.Protocol.Serialization.Serializers.Messages
       public override PingMessage DeserializeMessage(ref SequenceReader<byte> reader, int protocolVersion,
          NetworkPeerContext peerContext)
       {
-         var numPongBytes = reader.ReadUShort(true);
-         var bytesLen = reader.ReadUShort(true);
+         ushort numPongBytes = reader.ReadUShort(true);
+         ushort bytesLen = reader.ReadUShort(true);
 
          return new PingMessage
          {

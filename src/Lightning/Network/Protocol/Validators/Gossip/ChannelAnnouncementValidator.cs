@@ -43,12 +43,15 @@ namespace Network.Protocol.Validators.Gossip
             return (false, null);
          
          // TODO David add features validation
+         // (from lightning rfc) if there is an unknown even bit in the features field:
+         // MUST NOT attempt to route messages through the channel.
+
 
          if (_gossipRepository.IsNodeInBlacklistedList(networkMessage.NodeId1) ||
              _gossipRepository.IsNodeInBlacklistedList(networkMessage.NodeId2))
             return (false, null);
          
-         if (!ChainHashes.KnownChainHashes.ContainsValue(networkMessage.ChainHash))
+         if (!ChainHashes.SupportedChainHashes.ContainsValue(networkMessage.ChainHash))
             return (false, null);
          
          return (true, null);

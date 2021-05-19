@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace Network.Protocol.Processors
       private const int HANDSHAKE_TIMEOUT_SECONDS = 500; //5;
       readonly IGossipRepository _gossipRepository;
 
-      private IHandshakeProtocol _handshakeProtocol;
+      private IHandshakeProtocol? _handshakeProtocol;
       private int _handshakeActNumber;
 
       public HandshakeProcessor(ILogger<HandshakeProcessor> logger,
@@ -106,6 +107,9 @@ namespace Network.Protocol.Processors
 
       private HandshakeMessage Handshake(ReadOnlySequence<byte> input)
       {
+         if (_handshakeProtocol == null)
+            throw new InvalidOperationException();
+         
          var output = new ArrayBufferWriter<byte>();
          _handshakeProtocol.Handshake(input, output);
          return new HandshakeMessage { Payload = new ReadOnlySequence<byte>(output.WrittenMemory) };
@@ -113,7 +117,7 @@ namespace Network.Protocol.Processors
 
       public async ValueTask<bool> ProcessMessageAsync(InitMessage message, CancellationToken cancellation)
       {
-         Logger.LogDebug("Handshake Init received.");
+         Logger.LogDebug("Handshake Init received");
 
          // validate init message
 
