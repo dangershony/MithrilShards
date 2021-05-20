@@ -37,24 +37,24 @@ namespace NoiseProtocol
          if (message.Length + Aead.TAG_SIZE > LightningNetworkConfig.MAX_MESSAGE_LENGTH)
             throw new ArgumentException($"Noise message must be less than or equal to {LightningNetworkConfig.MAX_MESSAGE_LENGTH} bytes in length.");
          
-         _logger.LogDebug($"Transforming message to lightning output");
+         _logger.LogDebug($"Write message {message.Length} to encrypted");
          
-         int numOfBytesRead =  _writer.EncryptWithAd(null, message.ToArray(), // TODO David here we call to array should be replaced
-            output.GetSpan((int)message.Length));
+         int numOfBytesWritten =  _writer.EncryptWithAd(null, message.ToArray(), // TODO David here we call to array should be replaced
+            output.GetSpan((int)message.Length + Aead.TAG_SIZE));
          
-         output.Advance(numOfBytesRead);
+         output.Advance(numOfBytesWritten);
          
          KeyRecycle(_writer);
          
-         return numOfBytesRead;
+         return numOfBytesWritten;
       }
 
       public int ReadMessage(ReadOnlySequence<byte> message, IBufferWriter<byte> output)
       {
-         _logger.LogDebug($"Transforming lightning input to message");
-         
+         _logger.LogDebug($"Read message {message.Length} from encrypted");
+
          int numOfBytesRead = _reader.DecryptWithAd(null, message.ToArray(), // TODO David here we call to array should be replaced 
-            output.GetSpan((int)message.Length + Aead.TAG_SIZE));
+            output.GetSpan((int)message.Length));
 
          output.Advance(numOfBytesRead);
          

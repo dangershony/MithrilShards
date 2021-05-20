@@ -16,7 +16,8 @@ namespace Network.Protocol.Transport
 
       public byte[] PrivateKey { get; set; } // TODO: David replace with fundamental type when integrated
 
-      private readonly ArrayBufferWriter<byte> _messageHeaderCache = new ArrayBufferWriter<byte>(2);
+      private readonly ArrayBufferWriter<byte> _inputHeaderCache = new ArrayBufferWriter<byte>(2);
+      private readonly byte[] _outputHeaderCache = new byte[2];
       private readonly IHandshakeProcessor _noiseProtocol;
       private INoiseMessageTransformer? _transport;
 
@@ -41,14 +42,9 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         _messageHeaderCache.Clear();
-         
-         BinaryPrimitives.WriteUInt16BigEndian(_messageHeaderCache.GetSpan(), Convert.ToUInt16(message.Length));
+         BinaryPrimitives.WriteUInt16BigEndian(_outputHeaderCache.AsSpan(), Convert.ToUInt16(message.Length));
 
-         _messageHeaderCache.Advance(2);
-         
-         _transport.WriteMessage(new ReadOnlySequence<byte>(_messageHeaderCache.WrittenMemory),
-            output);
+         _transport.WriteMessage(new ReadOnlySequence<byte>(_outputHeaderCache), output);
 
          _transport.WriteMessage(message, output);
       }
@@ -66,11 +62,13 @@ namespace Network.Protocol.Transport
          if (_transport == null)
             throw new InvalidOperationException("Must complete handshake before reading messages");
 
-         _messageHeaderCache.Clear();
-         
-         _transport.ReadMessage(encryptedHeader, _messageHeaderCache);
+         _inputHeaderCache.Clear();
 
-         ushort messageLengthDecrypted = BinaryPrimitives.ReadUInt16BigEndian(_messageHeaderCache.WrittenSpan); // TODO Dan test header size bigger then 2 bytes
+         _transport.ReadMessage(encryptedHeader, _inputHeaderCache);
+
+         ushort messageLengthDecrypted =
+            BinaryPrimitives.ReadUInt16BigEndian(_inputHeaderCache
+               .WrittenSpan); // TODO Dan test header size bigger then 2 bytes
 
          // Return the message length plus the 16 byte mac data
          // the caller does not need to know the message has mac data
