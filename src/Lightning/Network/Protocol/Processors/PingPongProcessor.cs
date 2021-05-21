@@ -25,9 +25,7 @@ namespace Network.Protocol.Processors
       readonly IRandomNumberGenerator _numberGenerator;
       
       private DateTime? _lastPingReceivedDateTime;
-      //private ushort? _lastPingBytesLen = null;
-      private readonly ConcurrentDictionary<ushort,TrackedPingMessage> _lastSentPingMessages = 
-         new ConcurrentDictionary<ushort, TrackedPingMessage>();
+      readonly ConcurrentDictionary<ushort, TrackedPingMessage> _lastSentPingMessages = new();
       
       public PingPongProcessor(ILogger<BaseProcessor> logger, IEventBus eventBus, 
          IPeerBehaviorManager peerBehaviorManager, IDateTimeProvider dateTimeProvider, IPeriodicWork periodicWork, IRandomNumberGenerator numberGenerator) 
@@ -42,8 +40,7 @@ namespace Network.Protocol.Processors
       {
          logger.LogDebug($"Processing ping from {PeerContext.PeerId}");
          
-         if(_lastPingReceivedDateTime > _dateTimeProvider.GetUtcNow()
-            .AddSeconds(-30))
+         if(_lastPingReceivedDateTime > _dateTimeProvider.GetUtcNow().AddSeconds(-PING_INTERVAL_SECS)) 
             throw new ProtocolViolationException("TODO David check how we fail a channel from here");
 
          if (message.NumPongBytes > PingMessage.MAX_BYTES_LEN)
@@ -68,8 +65,7 @@ namespace Network.Protocol.Processors
          if(_lastSentPingMessages.ContainsKey(message.BytesLen) && 
             _lastSentPingMessages.Remove(message.BytesLen,out var trackedPingMessage))
          {
-            logger.LogDebug($"Pong received for ping after {_dateTimeProvider.GetUtcNow() - trackedPingMessage.dateTimeSent} on " +
-                            $"{PeerContext.PeerId}");
+            logger.LogDebug($"Pong received for ping after {_dateTimeProvider.GetUtcNow() - trackedPingMessage.dateTimeSent} on {PeerContext.PeerId}");
          }
 
          return new ValueTask<bool>(false);
@@ -80,7 +76,7 @@ namespace Network.Protocol.Processors
          if(!PeerContext.InitComplete || cancellationToken.IsCancellationRequested)
             return;
 
-         var bytesLength = _numberGenerator.GetUint32() % PingMessage.MAX_BYTES_LEN;
+         uint bytesLength = _numberGenerator.GetUint32() % PingMessage.MAX_BYTES_LEN;
          
          while(_lastSentPingMessages.ContainsKey((ushort)bytesLength))
             bytesLength = _numberGenerator.GetUint32() % PingMessage.MAX_BYTES_LEN;
@@ -90,7 +86,7 @@ namespace Network.Protocol.Processors
          _lastSentPingMessages.GetOrAdd(pingMessage.NumPongBytes, _
             => new TrackedPingMessage(pingMessage, _dateTimeProvider.GetUtcNow()));
 
-         logger.LogDebug($"Sending ping to {PeerContext.PeerId} with pong length of {pingMessage.NumPongBytes}");
+         logger.LogDebug($"Ping to {PeerContext.PeerId} ,pong length {pingMessage.NumPongBytes}");
          
          await SendMessageAsync(pingMessage, cancellationToken).ConfigureAwait(false);
       }
@@ -110,12 +106,12 @@ namespace Network.Protocol.Processors
 
       private class TrackedPingMessage
       {
-         public PingMessage pingMessage;
+         public PingMessage PingMessage;
          public DateTime dateTimeSent;
 
          public TrackedPingMessage(PingMessage pingMessage, DateTime dateTimeSent)
          {
-            this.pingMessage = pingMessage;
+            PingMessage = pingMessage;
             this.dateTimeSent = dateTimeSent;
          }
       }

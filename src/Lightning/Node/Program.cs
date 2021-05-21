@@ -17,6 +17,25 @@ namespace Node
       {
          if (args.Contains("test")) { await TestNodes(args).ConfigureAwait(false); return; }
 
+         if (args.Contains("2ndNode"))
+         {
+            string[] args1 = args.Append("--ForgeConnectivity:Listeners:0:Endpoint=127.0.0.1:9736")
+               .Append("--DevController:EndPoint=127.0.0.1:5001")
+               .Append("--WebApi:EndPoint=127.0.0.1:45021")
+               .ToArray();
+
+            await new ForgeBuilder()
+               .UseForge<DefaultForge>(args1, configurationFile: "lightning-settings.json")
+               .UseSerilog("log-settings-with-seq.json")
+               .UseBedrockNetwork<TransportMessageSerializer>()
+               .UseApi(options => options.ControllersSeeker = (seeker) => seeker.LoadAssemblyFromType<LightningNode>())
+               .UseDevController()
+               .UseLightningNetwork()
+               .RunConsoleAsync()
+               .ConfigureAwait(false);
+            return;
+         }
+         
          await new ForgeBuilder()
             .UseForge<DefaultForge>(args, configurationFile: "lightning-settings.json")
             .UseSerilog("log-settings-with-seq.json")
@@ -25,6 +44,8 @@ namespace Node
             .UseDevController()
             .UseLightningNetwork()
             .RunConsoleAsync().ConfigureAwait(false);
+         
+         
       }
 
       private static async Task TestNodes(string[] args)
@@ -45,7 +66,7 @@ namespace Node
 
          Task node2 = new ForgeBuilder()
             .UseForge<DefaultForge>(args1, configurationFile: "lightning-settings.json")
-            .UseSerilog("log-settings-with-seq.json")
+            //.UseSerilog("log-settings-with-seq.json")
             .UseBedrockNetwork<TransportMessageSerializer>()
             .UseApi(options => options.ControllersSeeker = (seeker) => seeker.LoadAssemblyFromType<LightningNode>())
             .UseDevController()
