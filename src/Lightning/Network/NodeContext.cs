@@ -10,13 +10,6 @@ namespace Network
       public PrivateKey PrivateKey { get; set; } // TODO: this can be private or even hidden behind an interface.
       public string LocalPubKey { get; set; }
 
-      public CompressedSignature Sign(byte[] secret, byte[] hash)
-      {
-         Key k = new Key(secret);
-
-          return (CompressedSignature) k.SignCompact(new uint256(hash));
-      }
-      
       public NodeContext(IRandomNumberGenerator randomNumberGenerator)
       {
          byte[] prv = new byte[32];
