@@ -49,5 +49,10 @@ namespace Protocol
 
          return sb.ToString().ToLower();
       }
+
+      public static ReadOnlySpan<byte> TrimEnd(this ReadOnlySpan<byte> trim, int count)
+      {
+         return trim.Slice(0, trim.Length - count);
+      }
    }
 }

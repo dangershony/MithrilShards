@@ -1,12 +1,20 @@
 ﻿using System;
+using System.Buffers;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Types;
 using NBitcoin;
 using NBitcoin.Crypto;
+using System.Linq;
+using Bitcoin.Primitives.Serialization;
+using Bitcoin.Primitives.Serialization.Serializers;
+using NBitcoin.Policy;
+using Newtonsoft.Json.Linq;
 using OutPoint = Bitcoin.Primitives.Types.OutPoint;
 using Transaction = Bitcoin.Primitives.Types.Transaction;
+using Protocol.Hashing;
 
 namespace Protocol.Channels
 {
@@ -79,127 +87,65 @@ namespace Protocol.Channels
          return script.ToBytes();
       }
 
-      public byte[] GetHtlcRedeemscript(
-         HtlcOutputInCommitment htlc,
-         PublicKey broadcasterHtlcKey,
-         PublicKey countersignatoryHtlcKey,
-         PublicKey revocationKey,
+      /* BOLT #3:
+       *
+       * #### Offered HTLC Outputs
+       *
+       * This output sends funds to either an HTLC-timeout transaction after the
+       * HTLC-timeout or to the remote node using the payment preimage or the
+       * revocation key. The output is a P2WSH, with a witness script (no
+       * option_anchor_outputs):
+       *
+       *     # To remote node with revocation key
+       *     OP_DUP OP_HASH160 <RIPEMD160(SHA256(revocationpubkey))> OP_EQUAL
+       *     OP_IF
+       *         OP_CHECKSIG
+       *     OP_ELSE
+       *         <remote_htlcpubkey> OP_SWAP OP_SIZE 32 OP_EQUAL
+       *         OP_NOTIF
+       *             # To local node via HTLC-timeout transaction (timelocked).
+       *             OP_DROP 2 OP_SWAP <local_htlcpubkey> 2 OP_CHECKMULTISIG
+       *         OP_ELSE
+       *             # To remote node with preimage.
+       *             OP_HASH160 <RIPEMD160(payment_hash)> OP_EQUALVERIFY
+       *             OP_CHECKSIG
+       *         OP_ENDIF
+       *     OP_ENDIF
+       *
+       * Or, with `option_anchor_outputs`:
+       *
+       *  # To remote node with revocation key
+       *  OP_DUP OP_HASH160 <RIPEMD160(SHA256(revocationpubkey))> OP_EQUAL
+       *  OP_IF
+       *      OP_CHECKSIG
+       *  OP_ELSE
+       *      <remote_htlcpubkey> OP_SWAP OP_SIZE 32 OP_EQUAL
+       *      OP_NOTIF
+       *          # To local node via HTLC-timeout transaction (timelocked).
+       *          OP_DROP 2 OP_SWAP <local_htlcpubkey> 2 OP_CHECKMULTISIG
+       *      OP_ELSE
+       *          # To remote node with preimage.
+       *          OP_HASH160 <RIPEMD160(payment_hash)> OP_EQUALVERIFY
+       *          OP_CHECKSIG
+       *      OP_ENDIF
+       *      1 OP_CHECKSEQUENCEVERIFY OP_DROP
+       *  OP_ENDIF
+       */
+
+      public byte[] GetHtlcOfferedRedeemscript(
+         PublicKey localhtlckey,
+         PublicKey remotehtlckey,
+         UInt256 paymenthash,
+         PublicKey revocationkey,
          bool optionAnchorOutputs)
       {
          // todo: dan - move this to a hashing interface
-         var paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(htlc.HtlcOutput.rhash.GetBytes().ToArray());
-         var revocationKey256 = NBitcoin.Crypto.Hashes.SHA256(revocationKey);
+         var paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(paymenthash.GetBytes().ToArray());
+         var revocationKey256 = NBitcoin.Crypto.Hashes.SHA256(revocationkey);
          var revocationKey160 = NBitcoin.Crypto.Hashes.RIPEMD160(revocationKey256);
 
-         Script script;
-
-         if (htlc.Offered)
-         {
-            if (optionAnchorOutputs)
+         List<Op> ops = new List<Op>
             {
-               script = new Script(
-                  OpcodeType.OP_DUP,
-                  OpcodeType.OP_HASH160,
-                  Op.GetPushOp(revocationKey160),
-                  OpcodeType.OP_EQUAL,
-                  OpcodeType.OP_IF,
-                  OpcodeType.OP_CHECKSIG,
-                  OpcodeType.OP_ELSE,
-                  Op.GetPushOp(countersignatoryHtlcKey),
-                  OpcodeType.OP_SWAP,
-                  OpcodeType.OP_SIZE,
-                  Op.GetPushOp(32),
-                  OpcodeType.OP_EQUAL,
-                  OpcodeType.OP_NOTIF,
-                  OpcodeType.OP_DROP,
-                  Op.GetPushOp(2),
-                  OpcodeType.OP_SWAP,
-                  Op.GetPushOp(broadcasterHtlcKey),
-                  Op.GetPushOp(2),
-                  OpcodeType.OP_CHECKMULTISIG,
-                  OpcodeType.OP_ELSE,
-                  OpcodeType.OP_HASH160,
-                  Op.GetPushOp(paymentHash160),
-                  OpcodeType.OP_EQUALVERIFY,
-                  OpcodeType.OP_CHECKSIG,
-                  OpcodeType.OP_ENDIF,
-                  Op.GetPushOp(1),
-                  OpcodeType.OP_CHECKSEQUENCEVERIFY,
-                  OpcodeType.OP_DROP,
-                  OpcodeType.OP_ENDIF);
-            }
-            else
-            {
-               script = new Script(
-                  OpcodeType.OP_DUP,
-                  OpcodeType.OP_HASH160,
-                  Op.GetPushOp(revocationKey160),
-                  OpcodeType.OP_EQUAL,
-                  OpcodeType.OP_IF,
-                  OpcodeType.OP_CHECKSIG,
-                  OpcodeType.OP_ELSE,
-                  Op.GetPushOp(countersignatoryHtlcKey),
-                  OpcodeType.OP_SWAP,
-                  OpcodeType.OP_SIZE,
-                  Op.GetPushOp(32),
-                  OpcodeType.OP_EQUAL,
-                  OpcodeType.OP_NOTIF,
-                  OpcodeType.OP_DROP,
-                  Op.GetPushOp(2),
-                  OpcodeType.OP_SWAP,
-                  Op.GetPushOp(broadcasterHtlcKey),
-                  Op.GetPushOp(2),
-                  OpcodeType.OP_CHECKMULTISIG,
-                  OpcodeType.OP_ELSE,
-                  OpcodeType.OP_HASH160,
-                  Op.GetPushOp(paymentHash160),
-                  OpcodeType.OP_EQUALVERIFY,
-                  OpcodeType.OP_CHECKSIG,
-                  OpcodeType.OP_ENDIF,
-                  OpcodeType.OP_ENDIF);
-            }
-         }
-         else
-         {
-            if (optionAnchorOutputs)
-            {
-               script = new Script(
-                  OpcodeType.OP_DUP,
-                  OpcodeType.OP_HASH160,
-                  Op.GetPushOp(revocationKey160),
-                  OpcodeType.OP_EQUAL,
-                  OpcodeType.OP_IF,
-                  OpcodeType.OP_CHECKSIG,
-                  OpcodeType.OP_ELSE,
-                  Op.GetPushOp(countersignatoryHtlcKey),
-                  OpcodeType.OP_SWAP,
-                  OpcodeType.OP_SIZE,
-                  Op.GetPushOp(32),
-                  OpcodeType.OP_EQUAL,
-                  OpcodeType.OP_IF,
-                  OpcodeType.OP_HASH160,
-                  Op.GetPushOp(paymentHash160),
-                  OpcodeType.OP_EQUALVERIFY,
-                  Op.GetPushOp(2),
-                  OpcodeType.OP_SWAP,
-                  Op.GetPushOp(broadcasterHtlcKey),
-                  Op.GetPushOp(2),
-                  OpcodeType.OP_CHECKMULTISIG,
-                  OpcodeType.OP_ELSE,
-                  OpcodeType.OP_DROP,
-                  Op.GetPushOp((long)htlc.HtlcOutput.expiry),
-                  OpcodeType.OP_CHECKLOCKTIMEVERIFY,
-                  OpcodeType.OP_DROP,
-                  OpcodeType.OP_CHECKSIG,
-                  OpcodeType.OP_ENDIF,
-                  Op.GetPushOp(1),
-                  OpcodeType.OP_CHECKSEQUENCEVERIFY,
-                  OpcodeType.OP_DROP,
-                  OpcodeType.OP_ENDIF);
-            }
-            else
-            {
-               script = new Script(
                OpcodeType.OP_DUP,
                OpcodeType.OP_HASH160,
                Op.GetPushOp(revocationKey160),
@@ -207,31 +153,140 @@ namespace Protocol.Channels
                OpcodeType.OP_IF,
                OpcodeType.OP_CHECKSIG,
                OpcodeType.OP_ELSE,
-               Op.GetPushOp(countersignatoryHtlcKey),
+               Op.GetPushOp(remotehtlckey),
                OpcodeType.OP_SWAP,
                OpcodeType.OP_SIZE,
                Op.GetPushOp(32),
                OpcodeType.OP_EQUAL,
-               OpcodeType.OP_IF,
-               OpcodeType.OP_HASH160,
-               Op.GetPushOp(paymentHash160),
-               OpcodeType.OP_EQUALVERIFY,
+               OpcodeType.OP_NOTIF,
+               OpcodeType.OP_DROP,
                Op.GetPushOp(2),
                OpcodeType.OP_SWAP,
-               Op.GetPushOp(broadcasterHtlcKey),
+               Op.GetPushOp(localhtlckey),
                Op.GetPushOp(2),
                OpcodeType.OP_CHECKMULTISIG,
                OpcodeType.OP_ELSE,
-               OpcodeType.OP_DROP,
-               Op.GetPushOp((long)htlc.HtlcOutput.expiry),
-               OpcodeType.OP_CHECKLOCKTIMEVERIFY,
-               OpcodeType.OP_DROP,
+               OpcodeType.OP_HASH160,
+               Op.GetPushOp(paymentHash160),
+               OpcodeType.OP_EQUALVERIFY,
                OpcodeType.OP_CHECKSIG,
                OpcodeType.OP_ENDIF,
-               OpcodeType.OP_ENDIF);
-            }
+               OpcodeType.OP_ENDIF
+         };
+
+         if (optionAnchorOutputs)
+         {
+            ops.Insert(ops.Count - 1, Op.GetPushOp(1));
+            ops.Insert(ops.Count - 1, OpcodeType.OP_CHECKSEQUENCEVERIFY);
+            ops.Insert(ops.Count - 1, OpcodeType.OP_DROP);
          }
 
+         var script = new Script(ops);
+         return script.ToBytes();
+      }
+
+      /* BOLT #3:
+       *
+       * #### Received HTLC Outputs
+       *
+       * This output sends funds to either the remote node after the HTLC-timeout or
+       * using the revocation key, or to an HTLC-success transaction with a
+       * successful payment preimage. The output is a P2WSH, with a witness script
+       * (no `option_anchor_outputs`):
+       *
+       *     # To remote node with revocation key
+       *     OP_DUP OP_HASH160 <RIPEMD160(SHA256(revocationpubkey))> OP_EQUAL
+       *     OP_IF
+       *         OP_CHECKSIG
+       *     OP_ELSE
+       *         <remote_htlcpubkey> OP_SWAP
+       *             OP_SIZE 32 OP_EQUAL
+       *         OP_IF
+       *             # To local node via HTLC-success transaction.
+       *             OP_HASH160 <RIPEMD160(payment_hash)> OP_EQUALVERIFY
+       *             2 OP_SWAP <local_htlcpubkey> 2 OP_CHECKMULTISIG
+       *         OP_ELSE
+       *             # To remote node after timeout.
+       *             OP_DROP <cltv_expiry> OP_CHECKLOCKTIMEVERIFY OP_DROP
+       *             OP_CHECKSIG
+       *         OP_ENDIF
+       *     OP_ENDIF
+       *
+       * Or, with `option_anchor_outputs`:
+       *
+       *  # To remote node with revocation key
+       *  OP_DUP OP_HASH160 <RIPEMD160(SHA256(revocationpubkey))> OP_EQUAL
+       *  OP_IF
+       *      OP_CHECKSIG
+       *  OP_ELSE
+       *      <remote_htlcpubkey> OP_SWAP OP_SIZE 32 OP_EQUAL
+       *      OP_IF
+       *          # To local node via HTLC-success transaction.
+       *          OP_HASH160 <RIPEMD160(payment_hash)> OP_EQUALVERIFY
+       *          2 OP_SWAP <local_htlcpubkey> 2 OP_CHECKMULTISIG
+       *      OP_ELSE
+       *          # To remote node after timeout.
+       *          OP_DROP <cltv_expiry> OP_CHECKLOCKTIMEVERIFY OP_DROP
+       *          OP_CHECKSIG
+       *      OP_ENDIF
+       *      1 OP_CHECKSEQUENCEVERIFY OP_DROP
+       *  OP_ENDIF
+       */
+
+      public byte[] GetHtlcReceivedRedeemscript(
+         long expirylocktime,
+         PublicKey localhtlckey,
+         PublicKey remotehtlckey,
+         UInt256 paymenthash,
+         PublicKey revocationkey,
+         bool optionAnchorOutputs)
+      {
+         // todo: dan - move this to a hashing interface
+         var paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(paymenthash.GetBytes().ToArray());
+         var revocationKey256 = NBitcoin.Crypto.Hashes.SHA256(revocationkey);
+         var revocationKey160 = NBitcoin.Crypto.Hashes.RIPEMD160(revocationKey256);
+
+         List<Op> ops = new List<Op>
+         {
+            OpcodeType.OP_DUP,
+            OpcodeType.OP_HASH160,
+            Op.GetPushOp(revocationKey160),
+            OpcodeType.OP_EQUAL,
+            OpcodeType.OP_IF,
+            OpcodeType.OP_CHECKSIG,
+            OpcodeType.OP_ELSE,
+            Op.GetPushOp(remotehtlckey),
+            OpcodeType.OP_SWAP,
+            OpcodeType.OP_SIZE,
+            Op.GetPushOp(32),
+            OpcodeType.OP_EQUAL,
+            OpcodeType.OP_IF,
+            OpcodeType.OP_HASH160,
+            Op.GetPushOp(paymentHash160),
+            OpcodeType.OP_EQUALVERIFY,
+            Op.GetPushOp(2),
+            OpcodeType.OP_SWAP,
+            Op.GetPushOp(localhtlckey),
+            Op.GetPushOp(2),
+            OpcodeType.OP_CHECKMULTISIG,
+            OpcodeType.OP_ELSE,
+            OpcodeType.OP_DROP,
+            Op.GetPushOp(expirylocktime),
+            OpcodeType.OP_CHECKLOCKTIMEVERIFY,
+            OpcodeType.OP_DROP,
+            OpcodeType.OP_CHECKSIG,
+            OpcodeType.OP_ENDIF,
+            OpcodeType.OP_ENDIF
+      };
+
+         if (optionAnchorOutputs)
+         {
+            ops.Insert(ops.Count - 1, Op.GetPushOp(1));
+            ops.Insert(ops.Count - 1, OpcodeType.OP_CHECKSEQUENCEVERIFY);
+            ops.Insert(ops.Count - 1, OpcodeType.OP_DROP);
+         }
+
+         var script = new Script(ops);
          return script.ToBytes();
       }
 
@@ -239,15 +294,81 @@ namespace Protocol.Channels
          PublicKey openerPaymentBasepoint,
          PublicKey accepterPaymentBasepoint)
       {
-         var bytes = new List<byte>();
-         bytes.AddRange((byte[])openerPaymentBasepoint);
-         bytes.AddRange((byte[])accepterPaymentBasepoint);
+         Span<byte> bytes = stackalloc byte[66];
+         openerPaymentBasepoint.GetSpan().CopyTo(bytes);
+         accepterPaymentBasepoint.GetSpan().CopyTo(bytes.Slice(33));
 
-         byte[] res = Hashes.SHA256(bytes.ToArray());
+         var hashed = HashGenerator.Sha256(bytes);
 
-         var ret = MemoryMarshal.Cast<byte, ulong>(res.AsSpan().Slice(0, 6));
+         // the lower 48 bits of the hash above
+         Span<byte> output = stackalloc byte[6];
+         hashed.Slice(26).CopyTo(output);
 
-         return ret[0];
+         Uint48 ret = new Uint48(output);//  BitConverter.ToUInt64(output);
+
+         Span<byte> output2 = stackalloc byte[8];
+         hashed.Slice(26).CopyTo(output2.Slice(2));
+         output2.Reverse();
+
+         var n2 = BitConverter.ToUInt64(output2);
+         return n2;
+         //return ret;
+      }
+
+      public byte[] FundingRedeemScript(PublicKey pubkey1, PublicKey pubkey2)
+      {
+         var comparer = new LexicographicByteComparer();
+
+         ReadOnlySpan<byte> first, second;
+         if (comparer.Compare(pubkey1, pubkey2) < 0)
+         {
+            first = pubkey1.GetSpan();
+            second = pubkey2.GetSpan();
+         }
+         else
+         {
+            first = pubkey2.GetSpan();
+            second = pubkey1.GetSpan();
+         }
+
+         List<Op> ops = new List<Op>
+         {
+            Op.GetPushOp(2),
+            Op.GetPushOp(first.ToArray()),
+            Op.GetPushOp(second.ToArray()),
+            Op.GetPushOp(2),
+            OpcodeType.OP_CHECKMULTISIG
+         };
+
+         var script = new Script(ops);
+         return script.ToBytes();
+      }
+
+      public Bitcoin.Primitives.Fundamental.TransactionSignature SignCommitmentInput(TransactionSerializer serializer, Transaction transaction, PrivateKey privateKey, uint inputIndex = 0, byte[]? redeemScript = null, ulong? amountSats = null)
+      {
+         // todo: dan move the trx serializer to the constructor
+
+         // Currently we use NBitcoin to create the transaction hash to be signed,
+         // the extra serialization to NBitcoin Transaction is costly so later
+         // we will move to generating the hash to sign and signatures directly in code.
+
+         var key = new NBitcoin.Key(privateKey);
+
+         var buffer = new ArrayBufferWriter<byte>();
+         serializer.Serialize(transaction, 1, buffer, new ProtocolTypeSerializerOptions((SerializerOptions.SERIALIZE_WITNESS, true)));
+         var trx = NBitcoin.Network.Main.CreateTransaction();
+         trx.FromBytes(buffer.WrittenSpan.ToArray());
+
+         // Create the P2WSH redeem script
+         var wscript = new Script(redeemScript);
+         var utxo = new NBitcoin.TxOut(Money.Satoshis(amountSats.Value), wscript.WitHash);
+         var outpoint = new NBitcoin.OutPoint(trx.Inputs[inputIndex].PrevOut);
+         ScriptCoin witnessCoin = new ScriptCoin(new Coin(outpoint, utxo), wscript);
+
+         var hashToSigh = trx.GetSignatureHash(witnessCoin.GetScriptCode(), (int)inputIndex, SigHash.All, utxo, HashVersion.WitnessV0);
+         var sig = key.Sign(hashToSigh, SigHash.All, useLowR: false);
+
+         return new Bitcoin.Primitives.Fundamental.TransactionSignature(sig.ToBytes());
       }
 
       public enum Side
@@ -306,7 +427,8 @@ namespace Protocol.Channels
          ulong self_pay,
          ulong other_pay,
          List<Htlc> htlcs,
-         ulong obscured_commitment_number,
+         ulong commitment_number,
+         ulong cn_obscurer,
          bool option_anchor_outputs,
          Side side)
       {
@@ -315,16 +437,18 @@ namespace Protocol.Channels
          // BOLT3 Commitment Transaction Construction
          // 1. Initialize the commitment transaction input and locktime
 
+         var obscured = commitment_number ^ cn_obscurer;
+
          var transaction = new Transaction
          {
             Version = 2,
-            LockTime = (((uint)0x20) << 8 * 3) | ((uint)(obscured_commitment_number & 0xffffff)),
+            LockTime = (uint)(0x20000000 | (obscured & 0xffffff)),
             Inputs = new[]
             {
                new TransactionInput
                {
                   PreviousOutput = funding_txout,
-                  Sequence = (((uint)0x80) << 8 * 3) | ((uint)(obscured_commitment_number >> 3 * 8)),
+                  Sequence = (uint)(0x80000000 | ((obscured>>24) & 0xFFFFFF)),
                   ScriptWitness = new TransactionWitness() // todo: dan - bring signatures
                }
             }
@@ -392,7 +516,18 @@ namespace Protocol.Channels
           */
          weight += 172 * num_untrimmed_htlcs;
 
-         base_fee = weight;
+         base_fee = feerate_per_kw * weight / 1000;
+
+         /* BOLT #3:
+	       * If `option_anchor_outputs` applies to the commitment
+	       * transaction, also subtract two times the fixed anchor size
+	       * of 330 sats from the funder (either `to_local` or
+	       * `to_remote`).
+	       */
+         if (option_anchor_outputs)
+         {
+            base_fee += 660;
+         }
 
          // todo log base fee
 
@@ -401,24 +536,37 @@ namespace Protocol.Channels
          // If option_anchor_outputs applies to the commitment transaction,
          // also subtract two times the fixed anchor size of 330 sats from the funder (either to_local or to_remote).
 
+         ulong base_fee_msat = base_fee * 1000;
+
          if (opener == side)
          {
-            self_pay -= base_fee;
-
-            if (option_anchor_outputs)
-            {
-               self_pay -= 660;
-            }
+            if (self_pay >= base_fee_msat)
+               self_pay = self_pay - base_fee_msat;
          }
          else
          {
-            other_pay -= base_fee;
-
-            if (option_anchor_outputs)
-            {
-               other_pay -= 660;
-            }
+            if (other_pay >= base_fee_msat)
+               other_pay = other_pay - base_fee_msat;
          }
+
+         //if (opener == side)
+         //{
+         //   self_pay -= base_fee;
+
+         //   if (option_anchor_outputs)
+         //   {
+         //      self_pay -= 660;
+         //   }
+         //}
+         //else
+         //{
+         //   other_pay -= base_fee;
+
+         //   if (option_anchor_outputs)
+         //   {
+         //      other_pay -= 660;
+         //   }
+         //}
 
          //#ifdef PRINT_ACTUAL_FEE
          //	{
@@ -459,10 +607,16 @@ namespace Protocol.Channels
                // todo round down msat to sat in s common method
                ulong amount = htlc.amount / 1000;
 
-               var wscript = GetHtlcRedeemscript(new HtlcOutputInCommitment { HtlcOutput = htlc, Offered = true },
-                  Keyset.self_htlc_key, Keyset.other_htlc_key, Keyset.self_revocation_key, option_anchor_outputs);
+               var wscript = GetHtlcOfferedRedeemscript(
+                  Keyset.self_htlc_key,
+                  Keyset.other_htlc_key,
+                  htlc.rhash,
+                  Keyset.self_revocation_key,
+                  option_anchor_outputs);
 
-               var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+               var wscriptinst = new Script(wscript);
+
+               var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
                outputs.Add(new HtlcOutputsInfo
                {
@@ -471,7 +625,7 @@ namespace Protocol.Channels
                      Value = (long)amount,
                      PublicKeyScript = p2wsh.ToBytes()
                   },
-                  CltvExpirey = htlc.expiry
+                  CltvExpirey = htlc.expirylocktime
                });
             }
          }
@@ -486,9 +640,17 @@ namespace Protocol.Channels
                // todo round down msat to sat in s common method
                ulong amount = htlc.amount / 1000;
 
-               var wscript = GetHtlcRedeemscript(new HtlcOutputInCommitment { HtlcOutput = htlc, Offered = false }, Keyset.self_htlc_key, Keyset.other_htlc_key, Keyset.self_revocation_key, option_anchor_outputs);
+               var wscript = GetHtlcReceivedRedeemscript(
+                  htlc.expirylocktime,
+                  Keyset.self_htlc_key,
+                  Keyset.other_htlc_key,
+                  htlc.rhash,
+                  Keyset.self_revocation_key,
+                  option_anchor_outputs);
 
-               var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+               var wscriptinst = new Script(wscript);
+
+               var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
                outputs.Add(new HtlcOutputsInfo
                {
@@ -497,7 +659,7 @@ namespace Protocol.Channels
                      Value = (long)amount,
                      PublicKeyScript = p2wsh.ToBytes()
                   },
-                  CltvExpirey = htlc.expiry
+                  CltvExpirey = htlc.expirylocktime
                });
             }
          }
@@ -513,7 +675,9 @@ namespace Protocol.Channels
 
             var wscript = GetRevokeableRedeemscript(Keyset.self_revocation_key, to_self_delay, Keyset.self_delayed_payment_key);
 
-            var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+            var wscriptinst = new Script(wscript);
+
+            var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
             outputs.Add(new HtlcOutputsInfo
             {
@@ -548,7 +712,9 @@ namespace Protocol.Channels
             {
                var wscript = AnchorToRemoteRedeem(Keyset.other_payment_key);
 
-               p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)).ScriptPubKey; // todo: dan - move this to interface
+               var wscriptinst = new Script(wscript);
+
+               p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
             }
             else
             {
@@ -582,7 +748,9 @@ namespace Protocol.Channels
 
                var wscript = bitcoin_wscript_anchor(local_funding_key);
 
-               var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+               var wscriptinst = new Script(wscript);
+
+               var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
                outputs.Add(new HtlcOutputsInfo
                {
@@ -602,7 +770,9 @@ namespace Protocol.Channels
 
                var wscript = bitcoin_wscript_anchor(remote_funding_key);
 
-               var p2wsh = ScriptCoin.GetRedeemHash(new Script(wscript)); // todo: dan - move this to interface
+               var wscriptinst = new Script(wscript);
+
+               var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
                outputs.Add(new HtlcOutputsInfo
                {
@@ -622,6 +792,8 @@ namespace Protocol.Channels
          var sorter = new HtlcLexicographicComparer(new LexicographicByteComparer());
 
          outputs.Sort(sorter);
+
+         transaction.Outputs = outputs.Select(s => s.TransactionOutput).ToArray();
 
          return transaction;
       }

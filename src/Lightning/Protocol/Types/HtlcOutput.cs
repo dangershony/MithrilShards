@@ -17,7 +17,7 @@ namespace Protocol.Channels
 
       /* When the HTLC can no longer be redeemed. */
 
-      public ulong expiry;
+      public uint expirylocktime;
 
       /* The hash of the preimage which can redeem this HTLC */
 
@@ -25,7 +25,7 @@ namespace Protocol.Channels
 
       /* The preimage which hashes to rhash (if known) */
 
-      public PublicKey r;
+      public Preimage r;
 
       /* If they fail the HTLC, we store why here. */
 
@@ -38,7 +38,13 @@ namespace Protocol.Channels
 
       public PublicKey blinding;
 
-      public LightningScripts.Side Side;
+      public LightningScripts.Side Side
+      {
+         get
+         {
+            return state > htlc_state.RCVD_ADD_HTLC ? LightningScripts.Side.LOCAL : LightningScripts.Side.REMOTE;
+         }
+      }
    };
 
    public enum htlc_state

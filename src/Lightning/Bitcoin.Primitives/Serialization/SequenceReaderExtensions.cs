@@ -165,7 +165,7 @@ namespace Bitcoin.Primitives.Serialization
       {
          int arraySize = (int)ReadVarInt(ref reader);
 
-         if (arraySize == 0) return null;
+         if (arraySize == 0) return new byte[0];
 
          ReadOnlySequence<byte> sequence = reader.Sequence.Slice(reader.Position, arraySize);
          reader.Advance(arraySize);

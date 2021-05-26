@@ -4,7 +4,7 @@ namespace Bitcoin.Primitives.Fundamental
 {
    public class PrivateKey
    {
-      private readonly byte[] _value;
+      protected readonly byte[] _value;
 
       public PrivateKey(byte[] value)
       {
@@ -28,5 +28,14 @@ namespace Bitcoin.Primitives.Fundamental
       public Secret(byte[] value) : base(value)
       {
       }
+   }
+
+   public class Preimage : PrivateKey
+   {
+      public Preimage(byte[] value) : base(value)
+      {
+      }
+
+      public static implicit operator byte[](Preimage hash) => hash._value;
    }
 }
