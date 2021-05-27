@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using Bitcoin.Primitives.Serialization;
+using Bitcoin.Primitives.Serialization.Serializers;
+using Bitcoin.Primitives.Types;
 
 namespace Protocol.Test
 {
@@ -36,6 +40,20 @@ namespace Protocol.Test
          }
 
          return sb.ToString();
+      }
+
+      public static Transaction SeriaizeTransaction(TransactionSerializer serializer, byte[] bytes)
+      {
+         var reader = new SequenceReader<byte>(new ReadOnlySequence<byte>(bytes));
+         var expectedtrx = serializer.Deserialize(ref reader, 1, new ProtocolTypeSerializerOptions((SerializerOptions.SERIALIZE_WITNESS, true)));
+         return expectedtrx;
+      }
+
+      public static byte[] DeseriaizeTransaction(TransactionSerializer serializer, Transaction transaction)
+      {
+         var buffer = new ArrayBufferWriter<byte>();
+         serializer.Serialize(transaction, 1, buffer, new ProtocolTypeSerializerOptions((SerializerOptions.SERIALIZE_WITNESS, true)));
+         return buffer.WrittenSpan.ToArray();
       }
    }
 }

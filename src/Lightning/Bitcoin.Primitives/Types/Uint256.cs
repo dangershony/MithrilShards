@@ -127,7 +127,7 @@ namespace Bitcoin.Primitives.Types
          {
             ReadOnlySpan<byte> rawData = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref src.part1, EXPECTED_SIZE / sizeof(ulong)));
 
-            const string hexValues = "0123456789ABCDEF";
+            const string hexValues = "0123456789abcdef"; // "0123456789ABCDEF";
 
             int i = rawData.Length - 1;
             int j = 0;

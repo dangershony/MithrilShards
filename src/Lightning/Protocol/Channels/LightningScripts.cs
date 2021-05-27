@@ -384,21 +384,6 @@ namespace Protocol.Channels
          return fee;
       }
 
-      private ulong HtlcTimeoutFee(uint feerate_per_kw, bool option_anchor_outputs)
-      {
-         /* BOLT #3:
-          *
-          * The fee for an HTLC-timeout transaction:
-          * - MUST BE calculated to match:
-          *   1. Multiply `feerate_per_kw` by 663 (666 if `option_anchor_outputs`
-          *      applies) and divide by 1000 (rounding down).
-          */
-
-         uint baseAmount = option_anchor_outputs ? (uint)666 : (uint)663;
-
-         return baseAmount * feerate_per_kw / 1000;
-      }
-
       private ulong HtlcSuccessFee(uint feerate_per_kw, bool option_anchor_outputs)
       {
          /* BOLT #3:
@@ -411,7 +396,7 @@ namespace Protocol.Channels
 
          uint baseAmount = option_anchor_outputs ? (uint)706 : (uint)703;
 
-         return baseAmount * feerate_per_kw / 1000;
+         return feerate_per_kw * baseAmount / 1000;
       }
 
       public Transaction CreateCommitmenTransaction(
@@ -424,8 +409,8 @@ namespace Protocol.Channels
          Keyset Keyset,
          uint feerate_per_kw,
          ulong dust_limit_satoshis,
-         ulong self_pay,
-         ulong other_pay,
+         ulong self_pay_msat,
+         ulong other_pay_msat,
          List<Htlc> htlcs,
          ulong commitment_number,
          ulong cn_obscurer,
@@ -449,7 +434,6 @@ namespace Protocol.Channels
                {
                   PreviousOutput = funding_txout,
                   Sequence = (uint)(0x80000000 | ((obscured>>24) & 0xFFFFFF)),
-                  ScriptWitness = new TransactionWitness() // todo: dan - bring signatures
                }
             }
          };
@@ -459,35 +443,75 @@ namespace Protocol.Channels
          var htlcsUntrimmed = new List<Htlc>();
          foreach (Htlc htlc in htlcs)
          {
-            /* BOLT #3:
-             *
-             *   - for every offered HTLC:
-             *    - if the HTLC amount minus the HTLC-timeout fee would be less than
-             *    `dust_limit_satoshis` set by the transaction owner:
-             *      - MUST NOT contain that output.
-             *    - otherwise:
-             *      - MUST be generated as specified in
-             *      [Offered HTLC Outputs](#offered-htlc-outputs).
-             */
-
-            ulong htlc_fee;
             if (htlc.Side == side)
-               htlc_fee = HtlcTimeoutFee(feerate_per_kw, option_anchor_outputs);
-            /* BOLT #3:
-             *
-             *  - for every received HTLC:
-             *    - if the HTLC amount minus the HTLC-success fee would be less than
-             *    `dust_limit_satoshis` set by the transaction owner:
-             *      - MUST NOT contain that output.
-             *    - otherwise:
-             *      - MUST be generated as specified in
-             */
-            else
-               htlc_fee = HtlcSuccessFee(feerate_per_kw, option_anchor_outputs);
-
-            if (htlc.amount >= htlc_fee + dust_limit_satoshis)
             {
-               htlcsUntrimmed.Add(htlc);
+               /* BOLT #3:
+               *
+               *   - for every offered HTLC:
+               *    - if the HTLC amount minus the HTLC-timeout fee would be less than
+               *    `dust_limit_satoshis` set by the transaction owner:
+               *      - MUST NOT contain that output.
+               *    - otherwise:
+               *      - MUST be generated as specified in
+               *      [Offered HTLC Outputs](#offered-htlc-outputs).
+               */
+
+               /* BOLT #3:
+               *
+               * The fee for an HTLC-timeout transaction:
+               * - MUST BE calculated to match:
+               *   1. Multiply `feerate_per_kw` by 663 (666 if `option_anchor_outputs`
+               *      applies) and divide by 1000 (rounding down).
+               */
+
+               uint base_time_out_fee = option_anchor_outputs ? (uint)666 : (uint)663;
+               ulong htlc_fee_timeout_fee = feerate_per_kw * base_time_out_fee / 1000;
+               ulong dust_plust_fee = dust_limit_satoshis + htlc_fee_timeout_fee;
+               ulong dust_plust_fee_msat = dust_plust_fee * 1000;
+
+               if (htlc.amount < dust_plust_fee_msat)
+               {
+                  // do not add the htlc outpout
+               }
+               else
+               {
+                  htlcsUntrimmed.Add(htlc);
+               }
+            }
+            else
+            {
+               /* BOLT #3:
+               *
+               *  - for every received HTLC:
+               *    - if the HTLC amount minus the HTLC-success fee would be less than
+               *    `dust_limit_satoshis` set by the transaction owner:
+               *      - MUST NOT contain that output.
+               *    - otherwise:
+               *      - MUST be generated as specified in
+               */
+
+               /* BOLT #3:
+                *
+                * The fee for an HTLC-success transaction:
+                * - MUST BE calculated to match:
+                *   1. Multiply `feerate_per_kw` by 703 (706 if `option_anchor_outputs`
+                *      applies) and divide by 1000 (rounding down).
+                */
+
+               uint base_success_fee = option_anchor_outputs ? (uint)706 : (uint)703;
+               ulong htlc_fee_success_fee = feerate_per_kw * base_success_fee / 1000;
+
+               ulong dust_plust_fee = dust_limit_satoshis + htlc_fee_success_fee;
+               ulong dust_plust_fee_msat = dust_plust_fee * 1000;
+
+               if (htlc.amount < dust_plust_fee_msat)
+               {
+                  // do not add the htlc outpout
+               }
+               else
+               {
+                  htlcsUntrimmed.Add(htlc);
+               }
             }
          }
 
@@ -540,13 +564,25 @@ namespace Protocol.Channels
 
          if (opener == side)
          {
-            if (self_pay >= base_fee_msat)
-               self_pay = self_pay - base_fee_msat;
+            if (self_pay_msat < base_fee_msat)
+            {
+               self_pay_msat = 0;
+            }
+            else
+            {
+               self_pay_msat = self_pay_msat - base_fee_msat;
+            }
          }
          else
          {
-            if (other_pay >= base_fee_msat)
-               other_pay = other_pay - base_fee_msat;
+            if (other_pay_msat < base_fee_msat)
+            {
+               other_pay_msat = 0;
+            }
+            else
+            {
+               other_pay_msat = other_pay_msat - base_fee_msat;
+            }
          }
 
          //if (opener == side)
@@ -664,14 +700,16 @@ namespace Protocol.Channels
             }
          }
 
+         ulong dust_limit_msat = dust_limit_satoshis * 1000;
+
          // BOLT3 Commitment Transaction Construction
          // 7. If the to_local amount is greater or equal to dust_limit_satoshis, add a to_local output.
 
          bool to_local = false;
-         if (self_pay >= dust_limit_satoshis)
+         if (self_pay_msat >= dust_limit_msat)
          {
             // todo round down msat to sat in s common method
-            ulong amount = self_pay / 1000;
+            ulong amount = self_pay_msat / 1000;
 
             var wscript = GetRevokeableRedeemscript(Keyset.self_revocation_key, to_self_delay, Keyset.self_delayed_payment_key);
 
@@ -696,10 +734,10 @@ namespace Protocol.Channels
          // 8. If the to_remote amount is greater or equal to dust_limit_satoshis, add a to_remote output.
 
          bool to_remote = false;
-         if (other_pay >= dust_limit_satoshis)
+         if (other_pay_msat >= dust_limit_msat)
          {
             // todo round down msat to sat in s common method
-            ulong amount = other_pay / 1000;
+            ulong amount = other_pay_msat / 1000;
 
             // BOLT3:
             // If option_anchor_outputs applies to the commitment transaction,
