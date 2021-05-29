@@ -35,11 +35,26 @@ namespace Protocol.Channels
          return script.ToBytes();
       }
 
-      /// A script either spendable by the revocation
-      /// key or the broadcaster_delayed_payment_key and satisfying the relative-locktime OP_CSV constrain.
-      /// Encumbering a `to_holder` output on a commitment transaction or 2nd-stage HTLC transactions.
-      public byte[] GetRevokeableRedeemscript(PublicKey revocationKey, ushort contestDelay,
-         PublicKey broadcasterDelayedPaymentKey)
+      /* BOLT #3:
+       *
+       * This output sends funds back to the owner of this commitment transaction and
+       * thus must be timelocked using `OP_CHECKSEQUENCEVERIFY`. It can be claimed, without delay,
+       * by the other party if they know the revocation private key. The output is a
+       * version-0 P2WSH, with a witness script:
+       *
+       *     OP_IF
+       *         # Penalty transaction
+       *         <revocationpubkey>
+       *     OP_ELSE
+       *         `to_self_delay`
+       *         OP_CHECKSEQUENCEVERIFY
+       *         OP_DROP
+       *         <local_delayedpubkey>
+       *     OP_ENDIF
+       *     OP_CHECKSIG
+       */
+
+      public byte[] GetRevokeableRedeemscript(PublicKey revocationKey, ushort contestDelay, PublicKey broadcasterDelayedPaymentKey)
       {
          var script = new Script(
             OpcodeType.OP_IF,
@@ -234,7 +249,7 @@ namespace Protocol.Channels
        */
 
       public byte[] GetHtlcReceivedRedeemscript(
-         long expirylocktime,
+         ulong expirylocktime,
          PublicKey localhtlckey,
          PublicKey remotehtlckey,
          UInt256 paymenthash,
@@ -271,7 +286,7 @@ namespace Protocol.Channels
             OpcodeType.OP_CHECKMULTISIG,
             OpcodeType.OP_ELSE,
             OpcodeType.OP_DROP,
-            Op.GetPushOp(expirylocktime),
+            Op.GetPushOp((long)expirylocktime),
             OpcodeType.OP_CHECKLOCKTIMEVERIFY,
             OpcodeType.OP_DROP,
             OpcodeType.OP_CHECKSIG,
@@ -344,7 +359,22 @@ namespace Protocol.Channels
          return script.ToBytes();
       }
 
-      public Bitcoin.Primitives.Fundamental.TransactionSignature SignCommitmentInput(TransactionSerializer serializer, Transaction transaction, PrivateKey privateKey, uint inputIndex = 0, byte[]? redeemScript = null, ulong? amountSats = null)
+      public void SetCommitmentInputWitness(TransactionInput transactionInput, BitcoinSignature localSignature, BitcoinSignature remoteSignature, byte[] pubkeyScriptToRedeem)
+      {
+         var redeemScript = new Script(
+            OpcodeType.OP_0,
+            Op.GetPushOp(localSignature),
+            Op.GetPushOp(remoteSignature),
+            Op.GetPushOp(pubkeyScriptToRedeem))
+            .ToWitScript();
+
+         transactionInput.ScriptWitness = new TransactionWitness
+         {
+            Components = redeemScript.Pushes.Select(opcode => new TransactionWitnessComponent { RawData = opcode }).ToArray()
+         };
+      }
+
+      public BitcoinSignature SignInput(TransactionSerializer serializer, Transaction transaction, PrivateKey privateKey, uint inputIndex = 0, byte[]? redeemScript = null, ulong? amountSats = null)
       {
          // todo: dan move the trx serializer to the constructor
 
@@ -368,7 +398,7 @@ namespace Protocol.Channels
          var hashToSigh = trx.GetSignatureHash(witnessCoin.GetScriptCode(), (int)inputIndex, SigHash.All, utxo, HashVersion.WitnessV0);
          var sig = key.Sign(hashToSigh, SigHash.All, useLowR: false);
 
-         return new Bitcoin.Primitives.Fundamental.TransactionSignature(sig.ToBytes());
+         return new BitcoinSignature(sig.ToBytes());
       }
 
       public enum Side
@@ -377,29 +407,131 @@ namespace Protocol.Channels
          REMOTE,
       };
 
-      public ulong amount_tx_fee(uint fee_per_kw, ulong weight)
+      public Transaction CreateHtlcSuccessTransaction(
+         bool option_anchor_outputs,
+         uint feerate_per_kw,
+         ulong amount_msat,
+         OutPoint commitOutPoint,
+         PublicKey revocation_pubkey,
+         PublicKey local_delayedkey,
+         ushort to_self_delay
+      )
       {
-         ulong fee = fee_per_kw * weight / 1000;
+         var htlc_fee = HtlcSuccessFee(option_anchor_outputs, feerate_per_kw);
 
-         return fee;
+         uint locktime = 0;
+
+         return CreateHtlcTransaction((uint)(option_anchor_outputs ? 1 : 0),
+            locktime,
+            amount_msat,
+            htlc_fee,
+            commitOutPoint,
+            revocation_pubkey,
+            local_delayedkey,
+            to_self_delay);
       }
 
-      private ulong HtlcSuccessFee(uint feerate_per_kw, bool option_anchor_outputs)
+      public Transaction CreateHtlcTimeoutTransaction(
+         bool option_anchor_outputs,
+         uint feerate_per_kw,
+         ulong amount_msat,
+         OutPoint commitOutPoint,
+         PublicKey revocation_pubkey,
+         PublicKey local_delayedkey,
+         ushort to_self_delay,
+         uint cltv_expiry
+      )
       {
-         /* BOLT #3:
-          *
-          * The fee for an HTLC-success transaction:
-          * - MUST BE calculated to match:
-          *   1. Multiply `feerate_per_kw` by 703 (706 if `option_anchor_outputs`
-          *      applies) and divide by 1000 (rounding down).
-          */
+         var htlc_fee = HtlcTimeoutFee(option_anchor_outputs, feerate_per_kw);
 
-         uint baseAmount = option_anchor_outputs ? (uint)706 : (uint)703;
+         uint locktime = cltv_expiry;
 
-         return feerate_per_kw * baseAmount / 1000;
+         return CreateHtlcTransaction((uint)(option_anchor_outputs ? 1 : 0),
+            locktime,
+            amount_msat,
+            htlc_fee,
+            commitOutPoint,
+            revocation_pubkey,
+            local_delayedkey,
+            to_self_delay);
       }
 
-      public Transaction CreateCommitmenTransaction(
+      public Transaction CreateHtlcTransaction(
+         uint sequence,
+         uint locktime,
+         ulong amount_msat,
+         ulong htlc_fee,
+         OutPoint commitOutPoint,
+         PublicKey revocation_pubkey,
+         PublicKey local_delayedkey,
+         ushort to_self_delay
+         )
+      {
+         var transaction = new Transaction
+         {
+            Version = 2,
+            LockTime = (uint)locktime,
+            Inputs = new[]
+            {
+               new TransactionInput
+               {
+                  PreviousOutput = commitOutPoint,
+                  Sequence = sequence ,
+               }
+            }
+         };
+
+         var wscript = GetRevokeableRedeemscript(revocation_pubkey, to_self_delay, local_delayedkey);
+         var wscriptinst = new Script(wscript);
+         var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+
+         ulong amount_sat = amount_msat / 1000;
+         if (htlc_fee > amount_sat) throw new Exception();
+         amount_sat -= htlc_fee;
+
+         transaction.Outputs = new TransactionOutput[]
+         {
+            new TransactionOutput
+            {
+               Value = (long)amount_sat,
+               PublicKeyScript = p2wsh.ToBytes()
+            },
+         };
+
+         return transaction;
+      }
+
+      /* BOLT #3:
+      *
+      * The fee for an HTLC-timeout transaction:
+      * - MUST BE calculated to match:
+      *   1. Multiply `feerate_per_kw` by 663 (666 if `option_anchor_outputs`
+      *      applies) and divide by 1000 (rounding down).
+      */
+
+      public ulong HtlcTimeoutFee(bool option_anchor_outputs, uint feerate_per_kw)
+      {
+         uint base_time_out_fee = option_anchor_outputs ? (uint)666 : (uint)663;
+         ulong htlc_fee_timeout_fee = feerate_per_kw * base_time_out_fee / 1000;
+         return htlc_fee_timeout_fee;
+      }
+
+      /* BOLT #3:
+       *
+       * The fee for an HTLC-success transaction:
+       * - MUST BE calculated to match:
+       *   1. Multiply `feerate_per_kw` by 703 (706 if `option_anchor_outputs`
+       *      applies) and divide by 1000 (rounding down).
+       */
+
+      public ulong HtlcSuccessFee(bool option_anchor_outputs, uint feerate_per_kw)
+      {
+         uint base_success_fee = option_anchor_outputs ? (uint)706 : (uint)703;
+         ulong htlc_fee_success_fee = feerate_per_kw * base_success_fee / 1000;
+         return htlc_fee_success_fee;
+      }
+
+      public CommitmenTransactionOut CreateCommitmenTransaction(
          OutPoint funding_txout,
          ulong funding,
          PublicKey local_funding_key,
@@ -456,16 +588,8 @@ namespace Protocol.Channels
                *      [Offered HTLC Outputs](#offered-htlc-outputs).
                */
 
-               /* BOLT #3:
-               *
-               * The fee for an HTLC-timeout transaction:
-               * - MUST BE calculated to match:
-               *   1. Multiply `feerate_per_kw` by 663 (666 if `option_anchor_outputs`
-               *      applies) and divide by 1000 (rounding down).
-               */
+               ulong htlc_fee_timeout_fee = HtlcTimeoutFee(option_anchor_outputs, feerate_per_kw);
 
-               uint base_time_out_fee = option_anchor_outputs ? (uint)666 : (uint)663;
-               ulong htlc_fee_timeout_fee = feerate_per_kw * base_time_out_fee / 1000;
                ulong dust_plust_fee = dust_limit_satoshis + htlc_fee_timeout_fee;
                ulong dust_plust_fee_msat = dust_plust_fee * 1000;
 
@@ -490,16 +614,7 @@ namespace Protocol.Channels
                *      - MUST be generated as specified in
                */
 
-               /* BOLT #3:
-                *
-                * The fee for an HTLC-success transaction:
-                * - MUST BE calculated to match:
-                *   1. Multiply `feerate_per_kw` by 703 (706 if `option_anchor_outputs`
-                *      applies) and divide by 1000 (rounding down).
-                */
-
-               uint base_success_fee = option_anchor_outputs ? (uint)706 : (uint)703;
-               ulong htlc_fee_success_fee = feerate_per_kw * base_success_fee / 1000;
+               ulong htlc_fee_success_fee = HtlcSuccessFee(option_anchor_outputs, feerate_per_kw);
 
                ulong dust_plust_fee = dust_limit_satoshis + htlc_fee_success_fee;
                ulong dust_plust_fee_msat = dust_plust_fee * 1000;
@@ -543,11 +658,11 @@ namespace Protocol.Channels
          base_fee = feerate_per_kw * weight / 1000;
 
          /* BOLT #3:
-	       * If `option_anchor_outputs` applies to the commitment
-	       * transaction, also subtract two times the fixed anchor size
-	       * of 330 sats from the funder (either `to_local` or
-	       * `to_remote`).
-	       */
+          * If `option_anchor_outputs` applies to the commitment
+          * transaction, also subtract two times the fixed anchor size
+          * of 330 sats from the funder (either `to_local` or
+          * `to_remote`).
+          */
          if (option_anchor_outputs)
          {
             base_fee += 660;
@@ -585,25 +700,6 @@ namespace Protocol.Channels
             }
          }
 
-         //if (opener == side)
-         //{
-         //   self_pay -= base_fee;
-
-         //   if (option_anchor_outputs)
-         //   {
-         //      self_pay -= 660;
-         //   }
-         //}
-         //else
-         //{
-         //   other_pay -= base_fee;
-
-         //   if (option_anchor_outputs)
-         //   {
-         //      other_pay -= 660;
-         //   }
-         //}
-
          //#ifdef PRINT_ACTUAL_FEE
          //	{
          //		 amount_sat out = private AMOUNT_SAT(0);
@@ -627,11 +723,7 @@ namespace Protocol.Channels
 
          //#endif
 
-         ///* We keep cltvs for tie-breaking HTLC outputs; we use the same order
-         // * for sending the htlc txs, so it may matter. */
-         //cltvs = tal_arr(tmpctx, u32, tx->wtx->outputs_allocation_len);
-
-         var outputs = new List<HtlcOutputsInfo>();
+         var outputs = new List<HtlcToOutputMaping>();
 
          // BOLT3 Commitment Transaction Construction
          // 5. For every offered HTLC, if it is not trimmed, add an offered HTLC output.
@@ -654,14 +746,16 @@ namespace Protocol.Channels
 
                var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
-               outputs.Add(new HtlcOutputsInfo
+               outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
                   {
                      Value = (long)amount,
                      PublicKeyScript = p2wsh.ToBytes()
                   },
-                  CltvExpirey = htlc.expirylocktime
+                  CltvExpirey = htlc.expirylocktime,
+                  WitnessHashRedeemScript = wscript,
+                  Htlc = htlc
                });
             }
          }
@@ -688,14 +782,16 @@ namespace Protocol.Channels
 
                var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
-               outputs.Add(new HtlcOutputsInfo
+               outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
                   {
                      Value = (long)amount,
                      PublicKeyScript = p2wsh.ToBytes()
                   },
-                  CltvExpirey = htlc.expirylocktime
+                  CltvExpirey = htlc.expirylocktime,
+                  WitnessHashRedeemScript = wscript,
+                  Htlc = htlc
                });
             }
          }
@@ -717,14 +813,14 @@ namespace Protocol.Channels
 
             var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
-            outputs.Add(new HtlcOutputsInfo
+            outputs.Add(new HtlcToOutputMaping
             {
                TransactionOutput = new TransactionOutput
                {
                   Value = (long)amount,
                   PublicKeyScript = p2wsh.ToBytes()
                },
-               CltvExpirey = to_self_delay
+               CltvExpirey = to_self_delay,
             });
 
             to_local = true;
@@ -759,7 +855,7 @@ namespace Protocol.Channels
                p2wsh = PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey(new PubKey(Keyset.other_payment_key)); // todo: dan - move this to interface
             }
 
-            outputs.Add(new HtlcOutputsInfo
+            outputs.Add(new HtlcToOutputMaping
             {
                TransactionOutput = new TransactionOutput
                {
@@ -790,7 +886,7 @@ namespace Protocol.Channels
 
                var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
-               outputs.Add(new HtlcOutputsInfo
+               outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
                   {
@@ -812,7 +908,7 @@ namespace Protocol.Channels
 
                var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
-               outputs.Add(new HtlcOutputsInfo
+               outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
                   {
@@ -833,17 +929,25 @@ namespace Protocol.Channels
 
          transaction.Outputs = outputs.Select(s => s.TransactionOutput).ToArray();
 
-         return transaction;
+         return new CommitmenTransactionOut { Transaction = transaction, Htlcs = outputs };
       }
    }
 
-   public class HtlcOutputsInfo
+   public class HtlcToOutputMaping
    {
       public TransactionOutput TransactionOutput { get; set; }
       public ulong CltvExpirey { get; set; }
+      public byte[] WitnessHashRedeemScript { get; set; }
+      public Htlc? Htlc { get; set; }
    }
 
-   public class HtlcLexicographicComparer : IComparer<HtlcOutputsInfo>
+   public class CommitmenTransactionOut
+   {
+      public List<HtlcToOutputMaping> Htlcs { get; set; }
+      public Transaction Transaction { get; set; }
+   }
+
+   public class HtlcLexicographicComparer : IComparer<HtlcToOutputMaping>
    {
       private readonly LexicographicByteComparer _lexicographicByteComparer;
 
@@ -852,7 +956,7 @@ namespace Protocol.Channels
          _lexicographicByteComparer = lexicographicByteComparer;
       }
 
-      public int Compare(HtlcOutputsInfo x, HtlcOutputsInfo y)
+      public int Compare(HtlcToOutputMaping x, HtlcToOutputMaping y)
       {
          if (x?.TransactionOutput?.PublicKeyScript == null) return 1;
          if (y?.TransactionOutput?.PublicKeyScript == null) return -1;

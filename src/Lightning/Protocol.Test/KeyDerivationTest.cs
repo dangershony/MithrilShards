@@ -17,8 +17,8 @@ namespace Protocol.Test
       {
          var keyDerivation = new KeyDerivation(new Mock<ILogger<KeyDerivation>>().Object);
 
-         var baseSecret = new PrivateKey("0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f".FromHexString());
-         var perCommitmentSecret = new PrivateKey("0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100".FromHexString());
+         var baseSecret = new PrivateKey(Hex.FromString("0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+         var perCommitmentSecret = new PrivateKey(Hex.FromString("0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100"));
 
          PublicKey perCommitmentPoint = keyDerivation.PublicKeyFromPrivateKey(perCommitmentSecret);
          PublicKey basePoint = keyDerivation.PublicKeyFromPrivateKey(baseSecret);

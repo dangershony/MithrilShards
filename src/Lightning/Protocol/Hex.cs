@@ -5,10 +5,10 @@ using System.Text;
 
 namespace Protocol
 {
-   public static class StringUtilities
+   public static class Hex
    {
       //TODO David move logic to utilities
-      public static byte[] FromHexString(this string hex)
+      public static byte[] FromString(string hex)
       {
          if (string.IsNullOrEmpty(hex)) return null;
 
@@ -20,7 +20,7 @@ namespace Protocol
              .ToArray();
       }
 
-      public static string ToHexString(this ReadOnlySpan<byte> span)
+      public static string ToString(ReadOnlySpan<byte> span)
       {
          var sb = new StringBuilder();
          sb.Append("0x");
@@ -30,7 +30,7 @@ namespace Protocol
          return sb.ToString().ToLower();
       }
 
-      public static string ToHexString(this Span<byte> span)
+      public static string ToString(Span<byte> span)
       {
          var sb = new StringBuilder();
          sb.Append("0x");
@@ -40,7 +40,7 @@ namespace Protocol
          return sb.ToString().ToLower();
       }
 
-      public static string ToHexString(this IEnumerable<byte> arr)
+      public static string ToString(IEnumerable<byte> arr)
       {
          var sb = new StringBuilder();
          sb.Append("0x");
@@ -48,11 +48,6 @@ namespace Protocol
             sb.Append(b.ToString("X2"));
 
          return sb.ToString().ToLower();
-      }
-
-      public static ReadOnlySpan<byte> TrimEnd(this ReadOnlySpan<byte> trim, int count)
-      {
-         return trim.Slice(0, trim.Length - count);
       }
    }
 }
