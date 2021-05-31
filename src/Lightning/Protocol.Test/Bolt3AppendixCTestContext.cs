@@ -27,7 +27,7 @@ namespace Protocol.Test
       public PublicKey local_delayed_payment_basepoint;
       public PublicKey remote_revocation_basepoint;
       public PublicKey local_per_commitment_point;
-      public PublicKey localkey, remotekey, tmpkey;
+      public PublicKey localkey, remotekey;
       public PublicKey local_htlckey, remote_htlckey;
       public PublicKey local_delayedkey;
       public PublicKey remote_revocation_key;
@@ -35,12 +35,12 @@ namespace Protocol.Test
       public uint funding_output_index;
       public ulong commitment_number;
       public ulong cn_obscurer;
-      public ulong to_local, to_remote;
-      public List<Htlc> htlcs;
-      public List<Htlc> inv_htlcs;
+
+      public bool option_anchor_outputs;
+      public bool option_static_remotekey;
 
       public UInt256 funding_txid;
-      public Bitcoin.Primitives.Types.OutPoint funding_tx_outpoint;
+      public OutPoint funding_tx_outpoint;
 
       public LightningScripts scripts;
       public KeyDerivation keyDerivation;
@@ -98,6 +98,7 @@ namespace Protocol.Test
          remote_htlcsecretkey = keyDerivation.DerivePrivatekey(remote_htlc_basepoint_secret, remote_htlc_basepoint, local_per_commitment_point);
 
          localkey = keyDerivation.DerivePublickey(local_payment_basepoint, local_per_commitment_point);
+
          remotekey = keyDerivation.DerivePublickey(remote_payment_basepoint, local_per_commitment_point);
 
          local_htlcsecretkey = keyDerivation.DerivePrivatekey(local_htlc_basepoint_secret, local_payment_basepoint, local_per_commitment_point);
