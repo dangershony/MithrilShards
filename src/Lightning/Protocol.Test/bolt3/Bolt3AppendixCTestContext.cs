@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Serialization.Serializers;
@@ -7,7 +6,7 @@ using Bitcoin.Primitives.Types;
 using Protocol.Channels;
 using Xunit;
 
-namespace Protocol.Test
+namespace Protocol.Test.bolt3
 {
    public class Bolt3AppendixCTestContext
    {

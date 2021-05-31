@@ -1,22 +1,15 @@
-using System;
-using System.Buffers;
-using System.Collections.Generic;
 using System.Linq;
 using Bitcoin.Primitives.Fundamental;
-using Bitcoin.Primitives.Serialization;
-using Bitcoin.Primitives.Serialization.Serializers;
-using Bitcoin.Primitives.Types;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Protocol.Channels;
-using Protocol.Hashing;
 using Xunit;
 using Block = NBitcoin.Block;
 using Transaction = NBitcoin.Transaction;
 
 #pragma warning disable IDE1006 // Naming Styles
 
-namespace Protocol.Test
+namespace Protocol.Test.bolt3
 {
    /// <summary>
    /// Tests for https://github.com/lightningnetwork/lightning-rfc/blob/master/03-transactions.md#appendix-b-funding-transaction-test-vectors

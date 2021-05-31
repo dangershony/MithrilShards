@@ -1,14 +1,10 @@
-using System;
-using System.Linq;
 using Bitcoin.Primitives.Fundamental;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NBitcoin;
-using NBitcoin.DataEncoders;
 using Protocol.Channels;
 using Xunit;
 
-namespace Protocol.Test
+namespace Protocol.Test.bolt3
 {
    public class KeyDerivationTest
    {

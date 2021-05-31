@@ -1,15 +1,8 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using Bitcoin.Primitives.Fundamental;
-using Bitcoin.Primitives.Types;
-using Castle.Components.DictionaryAdapter;
 using Protocol.Channels;
-using Protocol.Hashing;
-using Xunit;
 
-namespace Protocol.Test
+namespace Protocol.Test.bolt3
 {
    public class Bolt3AppendixCTestDataStaticRemotekey : IEnumerable<object[]>
    {

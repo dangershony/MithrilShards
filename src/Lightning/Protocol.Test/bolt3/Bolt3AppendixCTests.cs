@@ -9,7 +9,7 @@ using OutPoint = Bitcoin.Primitives.Types.OutPoint;
 
 #pragma warning disable IDE1006 // Naming Styles
 
-namespace Protocol.Test
+namespace Protocol.Test.bolt3
 {
    /// <summary>
    /// Tests for https://github.com/lightningnetwork/lightning-rfc/blob/master/03-transactions.md#appendix-b-funding-transaction-test-vectors
