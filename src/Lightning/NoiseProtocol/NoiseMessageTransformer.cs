@@ -10,7 +10,8 @@ namespace NoiseProtocol
       
       readonly IHkdf _hkdf;
       readonly ICipherFunction _writer, _reader;
-      readonly byte[] _chainingKey;
+      readonly byte[] _writerChainingKey;
+      readonly byte[] _readerChainingKey;
       bool _keysSet;
 
       public NoiseMessageTransformer(IHkdf hkdf, ICipherFunction writer, ICipherFunction reader, ILogger<NoiseMessageTransformer> logger)
@@ -19,12 +20,14 @@ namespace NoiseProtocol
          _writer = writer;
          _reader = reader;
          _logger = logger;
-         _chainingKey = new byte[32];
+         _writerChainingKey = new byte[32];
+         _readerChainingKey = new byte[32];
       }
 
       public void SetKeys(ReadOnlySpan<byte> chainingKey, ReadOnlySpan<byte> senderKey, ReadOnlySpan<byte> receiverKey)
       {
-         chainingKey.CopyTo(_chainingKey.AsSpan());
+         chainingKey.CopyTo(_writerChainingKey.AsSpan());
+         chainingKey.CopyTo(_readerChainingKey.AsSpan());
          _writer.SetKey(senderKey);
          _reader.SetKey(receiverKey);
          _keysSet = true;
@@ -44,7 +47,7 @@ namespace NoiseProtocol
          
          output.Advance(numOfBytesWritten);
          
-         KeyRecycle(_writer);
+         KeyRecycle(_writer,_writerChainingKey);
          
          return numOfBytesWritten;
       }
@@ -58,12 +61,12 @@ namespace NoiseProtocol
 
          output.Advance(numOfBytesRead);
          
-         KeyRecycle(_reader);
+         KeyRecycle(_reader, _readerChainingKey);
 
          return numOfBytesRead;
       }
       
-      private void KeyRecycle(ICipherFunction cipherFunction)
+      private void KeyRecycle(ICipherFunction cipherFunction, byte[] chainingKey)
       {
          if (cipherFunction.GetNonce() < LightningNetworkConfig.NUMBER_OF_NONCE_BEFORE_KEY_RECYCLE)
             return;
@@ -71,11 +74,11 @@ namespace NoiseProtocol
          _logger.LogDebug($"Recycling cipher key");
          
          Span<byte> keys = stackalloc byte[Aead.KEY_SIZE * 2];
-         _hkdf.ExtractAndExpand(_chainingKey, cipherFunction.GetKey(), keys);
+         _hkdf.ExtractAndExpand(chainingKey, cipherFunction.GetKey(), keys);
 
          // set new chaining key
          keys.Slice(0, Aead.KEY_SIZE)
-            .CopyTo(_chainingKey);
+            .CopyTo(chainingKey);
 
          // set new key
          cipherFunction.SetKey(keys.Slice(Aead.KEY_SIZE));
