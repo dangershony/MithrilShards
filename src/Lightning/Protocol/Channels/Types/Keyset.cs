@@ -1,6 +1,6 @@
 ﻿using Bitcoin.Primitives.Fundamental;
 
-namespace Protocol.Types
+namespace Protocol.Channels.Types
 {
    public struct Keyset
    {

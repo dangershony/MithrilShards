@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Types;
 using Protocol.Channels;
+using Protocol.Channels.Types;
 using Protocol.Hashing;
-using Protocol.Types;
 using Xunit;
 using OutPoint = Bitcoin.Primitives.Types.OutPoint;
 

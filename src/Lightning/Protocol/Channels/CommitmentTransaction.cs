@@ -8,7 +8,7 @@ using Bitcoin.Primitives.Serialization;
 using Bitcoin.Primitives.Serialization.Serializers;
 using Bitcoin.Primitives.Types;
 using NBitcoin;
-using Protocol.Types;
+using Protocol.Channels.Types;
 using OutPoint = Bitcoin.Primitives.Types.OutPoint;
 using Transaction = Bitcoin.Primitives.Types.Transaction;
 

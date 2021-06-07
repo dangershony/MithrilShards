@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Protocol.Types
+namespace Protocol.Channels.Types
 {
    public class HtlcLexicographicComparer : IComparer<HtlcToOutputMaping>
    {

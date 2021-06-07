@@ -1,4 +1,4 @@
-﻿namespace Protocol.Types
+﻿namespace Protocol.Channels.Types
 {
    public class ChannelConfig
    {

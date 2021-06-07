@@ -4,7 +4,7 @@ using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Serialization.Serializers;
 using Bitcoin.Primitives.Types;
 using Protocol.Channels;
-using Protocol.Types;
+using Protocol.Channels.Types;
 using Xunit;
 
 namespace Protocol.Test.bolt3

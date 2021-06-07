@@ -1,8 +1,7 @@
 ﻿using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Types;
-using Protocol.Channels;
 
-namespace Protocol.Types
+namespace Protocol.Channels.Types
 {
    public class Htlc
    {

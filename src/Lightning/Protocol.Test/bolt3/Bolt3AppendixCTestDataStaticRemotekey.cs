@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Protocol.Channels;
-using Protocol.Types;
+using Protocol.Channels.Types;
 
 namespace Protocol.Test.bolt3
 {
