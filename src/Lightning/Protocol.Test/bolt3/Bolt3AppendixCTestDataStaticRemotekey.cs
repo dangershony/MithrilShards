@@ -11,7 +11,7 @@ namespace Protocol.Test.bolt3
       public ulong to_remote_msat;
       public uint feerate_per_kw;
       public string output_commit_tx;
-      public (List<Htlc> htlcs, List<Htlc> invertedhtlcs) htlcs_0_to_4;
+      public (List<Htlc> htlcs, List<Htlc> invertedhtlcs) htlcs;
       public List<string> HtlcTx;
 
       public IEnumerator<object[]> GetEnumerator()

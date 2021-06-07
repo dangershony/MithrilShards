@@ -10,24 +10,34 @@ namespace Protocol.Test.bolt3
 {
    public class Bolt3AppendixCTestContext
    {
-      public ulong funding_amount, dust_limit;
+      public ulong funding_amount;
+      public ulong dust_limit;
       public ushort to_self_delay;
-      public PrivateKey local_funding_privkey, remote_funding_privkey;
-      public Secret local_payment_basepoint_secret, remote_payment_basepoint_secret;
-      public Secret local_htlc_basepoint_secret, remote_htlc_basepoint_secret;
+      public PrivateKey local_funding_privkey;
+      public PrivateKey remote_funding_privkey;
+      public Secret local_payment_basepoint_secret;
+      public Secret remote_payment_basepoint_secret;
+      public Secret local_htlc_basepoint_secret;
+      public Secret remote_htlc_basepoint_secret;
       public Secret local_per_commitment_secret;
       public Secret local_delayed_payment_basepoint_secret;
       public Secret remote_revocation_basepoint_secret;
-      public PrivateKey local_htlcsecretkey, remote_htlcsecretkey;
+      public PrivateKey local_htlcsecretkey;
+      public PrivateKey remote_htlcsecretkey;
       public PrivateKey local_delayed_secretkey;
-      public PublicKey local_funding_pubkey, remote_funding_pubkey;
-      public PublicKey local_payment_basepoint, remote_payment_basepoint;
-      public PublicKey local_htlc_basepoint, remote_htlc_basepoint;
+      public PublicKey local_funding_pubkey;
+      public PublicKey remote_funding_pubkey;
+      public PublicKey local_payment_basepoint;
+      public PublicKey remote_payment_basepoint;
+      public PublicKey local_htlc_basepoint;
+      public PublicKey remote_htlc_basepoint;
       public PublicKey local_delayed_payment_basepoint;
       public PublicKey remote_revocation_basepoint;
       public PublicKey local_per_commitment_point;
-      public PublicKey localkey, remotekey;
-      public PublicKey local_htlckey, remote_htlckey;
+      public PublicKey localkey;
+      public PublicKey remotekey;
+      public PublicKey local_htlckey;
+      public PublicKey remote_htlckey;
       public PublicKey local_delayedkey;
       public PublicKey remote_revocation_key;
       public Keyset keyset;
@@ -36,7 +46,6 @@ namespace Protocol.Test.bolt3
       public ulong cn_obscurer;
 
       public bool option_anchor_outputs;
-      public bool option_static_remotekey;
 
       public UInt256 funding_txid;
       public OutPoint funding_tx_outpoint;
