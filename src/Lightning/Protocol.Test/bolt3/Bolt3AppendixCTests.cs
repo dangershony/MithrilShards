@@ -44,12 +44,12 @@ namespace Protocol.Test.bolt3
 
       public void Bolt3AppendixC_CommitmentAndHTLCTransactionTest(Bolt3AppendixCTestVectors vectors)
       {
-         CommitmenTransactionOut localCommitmenTransactionOut = Context.Scripts.CreateCommitmenTransaction(
+         CommitmenTransactionOut localCommitmenTransactionOut = Context.CommitmentTransaction.CreateCommitmenTransaction(
                   Context.FundingTxOutpoint,
                   Context.FundingAmount,
                   Context.LocalFundingPubkey,
                   Context.RemoteFundingPubkey,
-                  LightningScripts.Side.Local,
+                  ChannelSide.Local,
                   Context.ToSelfDelay,
                   Context.Keyset,
                   vectors.FeeratePerKw,
@@ -60,14 +60,14 @@ namespace Protocol.Test.bolt3
                   Context.CommitmentNumber,
                   Context.CnObscurer,
                   Context.OptionAnchorOutputs,
-                  LightningScripts.Side.Local);
+                  ChannelSide.Local);
 
-         CommitmenTransactionOut? remoteCommitmenTransactionOut = Context.Scripts.CreateCommitmenTransaction(
+         CommitmenTransactionOut? remoteCommitmenTransactionOut = Context.CommitmentTransaction.CreateCommitmenTransaction(
                   Context.FundingTxOutpoint,
                   Context.FundingAmount,
                   Context.LocalFundingPubkey,
                   Context.RemoteFundingPubkey,
-                  LightningScripts.Side.Remote,
+                  ChannelSide.Remote,
                   Context.ToSelfDelay,
                   Context.Keyset,
                   vectors.FeeratePerKw,
@@ -78,7 +78,7 @@ namespace Protocol.Test.bolt3
                   Context.CommitmentNumber,
                   Context.CnObscurer,
                   Context.OptionAnchorOutputs,
-                  LightningScripts.Side.Remote);
+                  ChannelSide.Remote);
 
          Transaction? localTransaction = localCommitmenTransactionOut.Transaction;
          Transaction? remoteTransaction = remoteCommitmenTransactionOut.Transaction;
@@ -95,11 +95,11 @@ namespace Protocol.Test.bolt3
 
          byte[]? fundingWscript = Context.Scripts.FundingRedeemScript(Context.LocalFundingPubkey, Context.RemoteFundingPubkey);
 
-         var remoteSignature = Context.Scripts.SignInput(Context.TransactionSerializer, localTransaction, Context.RemoteFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
+         var remoteSignature = Context.CommitmentTransaction.SignInput(Context.TransactionSerializer, localTransaction, Context.RemoteFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
          var expectedRemoteSignature = Hex.ToString(outputCommitTx.Inputs[0].ScriptWitness.Components[2].RawData.AsSpan());
          Assert.Equal(expectedRemoteSignature, Hex.ToString(remoteSignature.GetSpan()));
 
-         var localSignature = Context.Scripts.SignInput(Context.TransactionSerializer, localTransaction, Context.LocalFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
+         var localSignature = Context.CommitmentTransaction.SignInput(Context.TransactionSerializer, localTransaction, Context.LocalFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
          var expectedLocalSignature = Hex.ToString(outputCommitTx.Inputs[0].ScriptWitness.Components[1].RawData.AsSpan());
          Assert.Equal(expectedLocalSignature, Hex.ToString(localSignature.GetSpan()));
 
@@ -136,7 +136,7 @@ namespace Protocol.Test.bolt3
             OutPoint outPoint = new OutPoint { Hash = localTransaction.Hash, Index = (uint)htlcIndex };
             Bitcoin.Primitives.Types.Transaction htlcTransaction;
             byte[] redeemScript;
-            if (htlc.Htlc.Side == LightningScripts.Side.Local)
+            if (htlc.Htlc.Side == ChannelSide.Local)
             {
                redeemScript = Context.Scripts.GetHtlcOfferedRedeemscript(
                               Context.LocalHtlckey,
@@ -145,7 +145,7 @@ namespace Protocol.Test.bolt3
                               Context.RemoteRevocationKey,
                               Context.OptionAnchorOutputs);
 
-               htlcTransaction = Context.Scripts.CreateHtlcTimeoutTransaction(
+               htlcTransaction = Context.CommitmentTransaction.CreateHtlcTimeoutTransaction(
                                  Context.OptionAnchorOutputs,
                                  vectors.FeeratePerKw,
                                  htlc.Htlc.Amount,
@@ -165,7 +165,7 @@ namespace Protocol.Test.bolt3
                               Context.RemoteRevocationKey,
                               Context.OptionAnchorOutputs);
 
-               htlcTransaction = Context.Scripts.CreateHtlcSuccessTransaction(
+               htlcTransaction = Context.CommitmentTransaction.CreateHtlcSuccessTransaction(
                                  Context.OptionAnchorOutputs,
                                  vectors.FeeratePerKw,
                                  htlc.Htlc.Amount,
@@ -177,7 +177,7 @@ namespace Protocol.Test.bolt3
 
             var htlcOutput = TransactionHelper.SeriaizeTransaction(Context.TransactionSerializer, Hex.FromString(vectors.HtlcTx[htlcOutputIndex++]));
 
-            var htlcRemoteSignature = Context.Scripts.SignInput(
+            var htlcRemoteSignature = Context.CommitmentTransaction.SignInput(
                Context.TransactionSerializer,
                htlcTransaction,
                Context.RemoteHtlcsecretkey,
@@ -188,7 +188,7 @@ namespace Protocol.Test.bolt3
             var expectedHtlcRemoteSignature = Hex.ToString(htlcOutput.Inputs[0].ScriptWitness.Components[1].RawData.AsSpan());
             Assert.Equal(expectedHtlcRemoteSignature, Hex.ToString(htlcRemoteSignature.GetSpan()));
 
-            var htlcLocalSignature = Context.Scripts.SignInput(
+            var htlcLocalSignature = Context.CommitmentTransaction.SignInput(
                Context.TransactionSerializer,
                htlcTransaction,
                Context.LocalHtlcsecretkey,

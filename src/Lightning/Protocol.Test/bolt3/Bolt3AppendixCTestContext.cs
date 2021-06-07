@@ -51,6 +51,7 @@ namespace Protocol.Test.bolt3
       public UInt256 FundingTxid;
       public OutPoint FundingTxOutpoint;
 
+      public CommitmentTransaction CommitmentTransaction;
       public LightningScripts Scripts;
       public KeyDerivation KeyDerivation;
       public TransactionSerializer TransactionSerializer;
@@ -60,6 +61,7 @@ namespace Protocol.Test.bolt3
 
       {
          Scripts = new LightningScripts();
+         CommitmentTransaction = new CommitmentTransaction(Scripts);
          KeyDerivation = new KeyDerivation(null);
 
          TransactionSerializer = new TransactionSerializer(new TransactionInputSerializer(new OutPointSerializer(new UInt256Serializer())), new TransactionOutputSerializer(), new TransactionWitnessSerializer(new TransactionWitnessComponentSerializer()));

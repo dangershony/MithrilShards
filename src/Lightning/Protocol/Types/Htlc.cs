@@ -39,11 +39,11 @@ namespace Protocol.Types
 
       public PublicKey Blinding;
 
-      public LightningScripts.Side Side
+      public ChannelSide Side
       {
          get
          {
-            return State > HtlcState.RcvdAddHtlc ? LightningScripts.Side.Local : LightningScripts.Side.Remote;
+            return State > HtlcState.RcvdAddHtlc ? ChannelSide.Local : ChannelSide.Remote;
          }
       }
    };
