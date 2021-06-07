@@ -1,20 +1,16 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using Bitcoin.Primitives.Fundamental;
-using Bitcoin.Primitives.Types;
-using NBitcoin;
-using NBitcoin.Crypto;
 using System.Linq;
+using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Serialization;
 using Bitcoin.Primitives.Serialization.Serializers;
-using NBitcoin.Policy;
-using Newtonsoft.Json.Linq;
+using Bitcoin.Primitives.Types;
+using NBitcoin;
+using Protocol.Hashing;
+using Protocol.Types;
 using OutPoint = Bitcoin.Primitives.Types.OutPoint;
 using Transaction = Bitcoin.Primitives.Types.Transaction;
-using Protocol.Hashing;
 
 namespace Protocol.Channels
 {
@@ -155,9 +151,9 @@ namespace Protocol.Channels
          bool optionAnchorOutputs)
       {
          // todo: dan - move this to a hashing interface
-         var paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(paymenthash.GetBytes().ToArray());
-         var revocationKey256 = NBitcoin.Crypto.Hashes.SHA256(revocationkey);
-         var revocationKey160 = NBitcoin.Crypto.Hashes.RIPEMD160(revocationKey256);
+         byte[]? paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(paymenthash.GetBytes().ToArray());
+         byte[]? revocationKey256 = NBitcoin.Crypto.Hashes.SHA256(revocationkey);
+         byte[]? revocationKey160 = NBitcoin.Crypto.Hashes.RIPEMD160(revocationKey256);
 
          List<Op> ops = new List<Op>
             {
@@ -257,9 +253,9 @@ namespace Protocol.Channels
          bool optionAnchorOutputs)
       {
          // todo: dan - move this to a hashing interface
-         var paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(paymenthash.GetBytes().ToArray());
-         var revocationKey256 = NBitcoin.Crypto.Hashes.SHA256(revocationkey);
-         var revocationKey160 = NBitcoin.Crypto.Hashes.RIPEMD160(revocationKey256);
+         byte[]? paymentHash160 = NBitcoin.Crypto.Hashes.RIPEMD160(paymenthash.GetBytes().ToArray());
+         byte[]? revocationKey256 = NBitcoin.Crypto.Hashes.SHA256(revocationkey);
+         byte[]? revocationKey160 = NBitcoin.Crypto.Hashes.RIPEMD160(revocationKey256);
 
          List<Op> ops = new List<Op>
          {
@@ -313,7 +309,7 @@ namespace Protocol.Channels
          openerPaymentBasepoint.GetSpan().CopyTo(bytes);
          accepterPaymentBasepoint.GetSpan().CopyTo(bytes.Slice(33));
 
-         var hashed = HashGenerator.Sha256(bytes);
+         ReadOnlySpan<byte> hashed = HashGenerator.Sha256(bytes);
 
          // the lower 48 bits of the hash above
          Span<byte> output = stackalloc byte[6];
@@ -325,7 +321,7 @@ namespace Protocol.Channels
          hashed.Slice(26).CopyTo(output2.Slice(2));
          output2.Reverse();
 
-         var n2 = BitConverter.ToUInt64(output2);
+         ulong n2 = BitConverter.ToUInt64(output2);
          return n2;
          //return ret;
       }
@@ -386,7 +382,7 @@ namespace Protocol.Channels
 
          var buffer = new ArrayBufferWriter<byte>();
          serializer.Serialize(transaction, 1, buffer, new ProtocolTypeSerializerOptions((SerializerOptions.SERIALIZE_WITNESS, true)));
-         var trx = NBitcoin.Network.Main.CreateTransaction();
+         NBitcoin.Transaction? trx = NBitcoin.Network.Main.CreateTransaction();
          trx.FromBytes(buffer.WrittenSpan.ToArray());
 
          // Create the P2WSH redeem script
@@ -395,76 +391,76 @@ namespace Protocol.Channels
          var outpoint = new NBitcoin.OutPoint(trx.Inputs[inputIndex].PrevOut);
          ScriptCoin witnessCoin = new ScriptCoin(new Coin(outpoint, utxo), wscript);
 
-         var hashToSigh = trx.GetSignatureHash(witnessCoin.GetScriptCode(), (int)inputIndex, SigHash.All, utxo, HashVersion.WitnessV0);
-         var sig = key.Sign(hashToSigh, SigHash.All, useLowR: false);
+         uint256? hashToSigh = trx.GetSignatureHash(witnessCoin.GetScriptCode(), (int)inputIndex, SigHash.All, utxo, HashVersion.WitnessV0);
+         TransactionSignature? sig = key.Sign(hashToSigh, SigHash.All, useLowR: false);
 
          return new BitcoinSignature(sig.ToBytes());
       }
 
       public enum Side
       {
-         LOCAL,
-         REMOTE,
+         Local,
+         Remote,
       };
 
       public Transaction CreateHtlcSuccessTransaction(
-         bool option_anchor_outputs,
-         uint feerate_per_kw,
-         ulong amount_msat,
+         bool optionAnchorOutputs,
+         uint feeratePerKw,
+         ulong amountMsat,
          OutPoint commitOutPoint,
-         PublicKey revocation_pubkey,
-         PublicKey local_delayedkey,
-         ushort to_self_delay
+         PublicKey revocationPubkey,
+         PublicKey localDelayedkey,
+         ushort toSelfDelay
       )
       {
-         var htlc_fee = HtlcSuccessFee(option_anchor_outputs, feerate_per_kw);
+         ulong htlcFee = HtlcSuccessFee(optionAnchorOutputs, feeratePerKw);
 
          uint locktime = 0;
 
-         return CreateHtlcTransaction((uint)(option_anchor_outputs ? 1 : 0),
+         return CreateHtlcTransaction((uint)(optionAnchorOutputs ? 1 : 0),
             locktime,
-            amount_msat,
-            htlc_fee,
+            amountMsat,
+            htlcFee,
             commitOutPoint,
-            revocation_pubkey,
-            local_delayedkey,
-            to_self_delay);
+            revocationPubkey,
+            localDelayedkey,
+            toSelfDelay);
       }
 
       public Transaction CreateHtlcTimeoutTransaction(
-         bool option_anchor_outputs,
-         uint feerate_per_kw,
-         ulong amount_msat,
+         bool optionAnchorOutputs,
+         uint feeratePerKw,
+         ulong amountMsat,
          OutPoint commitOutPoint,
-         PublicKey revocation_pubkey,
-         PublicKey local_delayedkey,
-         ushort to_self_delay,
-         uint cltv_expiry
+         PublicKey revocationPubkey,
+         PublicKey localDelayedkey,
+         ushort toSelfDelay,
+         uint cltvExpiry
       )
       {
-         var htlc_fee = HtlcTimeoutFee(option_anchor_outputs, feerate_per_kw);
+         ulong htlcFee = HtlcTimeoutFee(optionAnchorOutputs, feeratePerKw);
 
-         uint locktime = cltv_expiry;
+         uint locktime = cltvExpiry;
 
-         return CreateHtlcTransaction((uint)(option_anchor_outputs ? 1 : 0),
+         return CreateHtlcTransaction((uint)(optionAnchorOutputs ? 1 : 0),
             locktime,
-            amount_msat,
-            htlc_fee,
+            amountMsat,
+            htlcFee,
             commitOutPoint,
-            revocation_pubkey,
-            local_delayedkey,
-            to_self_delay);
+            revocationPubkey,
+            localDelayedkey,
+            toSelfDelay);
       }
 
       public Transaction CreateHtlcTransaction(
          uint sequence,
          uint locktime,
-         ulong amount_msat,
-         ulong htlc_fee,
+         ulong amountMsat,
+         ulong htlcFee,
          OutPoint commitOutPoint,
-         PublicKey revocation_pubkey,
-         PublicKey local_delayedkey,
-         ushort to_self_delay
+         PublicKey revocationPubkey,
+         PublicKey localDelayedkey,
+         ushort toSelfDelay
          )
       {
          var transaction = new Transaction
@@ -481,20 +477,20 @@ namespace Protocol.Channels
             }
          };
 
-         var wscript = GetRevokeableRedeemscript(revocation_pubkey, to_self_delay, local_delayedkey);
+         byte[]? wscript = GetRevokeableRedeemscript(revocationPubkey, toSelfDelay, localDelayedkey);
          var wscriptinst = new Script(wscript);
-         var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+         Script? p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
-         ulong amount_sat = amount_msat / 1000;
-         if (htlc_fee > amount_sat) throw new Exception();
-         amount_sat -= htlc_fee;
+         ulong amountSat = amountMsat / 1000;
+         if (htlcFee > amountSat) throw new Exception();
+         amountSat -= htlcFee;
 
          transaction.Outputs = new TransactionOutput[]
          {
             new TransactionOutput
             {
-               Value = (long)amount_sat,
-               PublicKeyScript = p2wsh.ToBytes()
+               Value = (long)amountSat,
+               PublicKeyScript = p2Wsh.ToBytes()
             },
          };
 
@@ -509,11 +505,11 @@ namespace Protocol.Channels
       *      applies) and divide by 1000 (rounding down).
       */
 
-      public ulong HtlcTimeoutFee(bool option_anchor_outputs, uint feerate_per_kw)
+      public ulong HtlcTimeoutFee(bool optionAnchorOutputs, uint feeratePerKw)
       {
-         uint base_time_out_fee = option_anchor_outputs ? (uint)666 : (uint)663;
-         ulong htlc_fee_timeout_fee = feerate_per_kw * base_time_out_fee / 1000;
-         return htlc_fee_timeout_fee;
+         uint baseTimeOutFee = optionAnchorOutputs ? (uint)666 : (uint)663;
+         ulong htlcFeeTimeoutFee = feeratePerKw * baseTimeOutFee / 1000;
+         return htlcFeeTimeoutFee;
       }
 
       /* BOLT #3:
@@ -524,29 +520,29 @@ namespace Protocol.Channels
        *      applies) and divide by 1000 (rounding down).
        */
 
-      public ulong HtlcSuccessFee(bool option_anchor_outputs, uint feerate_per_kw)
+      public ulong HtlcSuccessFee(bool optionAnchorOutputs, uint feeratePerKw)
       {
-         uint base_success_fee = option_anchor_outputs ? (uint)706 : (uint)703;
-         ulong htlc_fee_success_fee = feerate_per_kw * base_success_fee / 1000;
-         return htlc_fee_success_fee;
+         uint baseSuccessFee = optionAnchorOutputs ? (uint)706 : (uint)703;
+         ulong htlcFeeSuccessFee = feeratePerKw * baseSuccessFee / 1000;
+         return htlcFeeSuccessFee;
       }
 
       public CommitmenTransactionOut CreateCommitmenTransaction(
-         OutPoint funding_txout,
+         OutPoint fundingTxout,
          ulong funding,
-         PublicKey local_funding_key,
-         PublicKey remote_funding_key,
+         PublicKey localFundingKey,
+         PublicKey remoteFundingKey,
          Side opener,
-         ushort to_self_delay,
-         Keyset Keyset,
-         uint feerate_per_kw,
-         ulong dust_limit_satoshis,
-         ulong self_pay_msat,
-         ulong other_pay_msat,
+         ushort toSelfDelay,
+         Keyset keyset,
+         uint feeratePerKw,
+         ulong dustLimitSatoshis,
+         ulong selfPayMsat,
+         ulong otherPayMsat,
          List<Htlc> htlcs,
-         ulong commitment_number,
-         ulong cn_obscurer,
-         bool option_anchor_outputs,
+         ulong commitmentNumber,
+         ulong cnObscurer,
+         bool optionAnchorOutputs,
          Side side)
       {
          // TODO: ADD TRACE LOGS
@@ -554,7 +550,7 @@ namespace Protocol.Channels
          // BOLT3 Commitment Transaction Construction
          // 1. Initialize the commitment transaction input and locktime
 
-         var obscured = commitment_number ^ cn_obscurer;
+         ulong obscured = commitmentNumber ^ cnObscurer;
 
          var transaction = new Transaction
          {
@@ -564,7 +560,7 @@ namespace Protocol.Channels
             {
                new TransactionInput
                {
-                  PreviousOutput = funding_txout,
+                  PreviousOutput = fundingTxout,
                   Sequence = (uint)(0x80000000 | ((obscured>>24) & 0xFFFFFF)),
                }
             }
@@ -588,12 +584,12 @@ namespace Protocol.Channels
                *      [Offered HTLC Outputs](#offered-htlc-outputs).
                */
 
-               ulong htlc_fee_timeout_fee = HtlcTimeoutFee(option_anchor_outputs, feerate_per_kw);
+               ulong htlcFeeTimeoutFee = HtlcTimeoutFee(optionAnchorOutputs, feeratePerKw);
 
-               ulong dust_plust_fee = dust_limit_satoshis + htlc_fee_timeout_fee;
-               ulong dust_plust_fee_msat = dust_plust_fee * 1000;
+               ulong dustPlustFee = dustLimitSatoshis + htlcFeeTimeoutFee;
+               ulong dustPlustFeeMsat = dustPlustFee * 1000;
 
-               if (htlc.amount < dust_plust_fee_msat)
+               if (htlc.Amount < dustPlustFeeMsat)
                {
                   // do not add the htlc outpout
                }
@@ -614,12 +610,12 @@ namespace Protocol.Channels
                *      - MUST be generated as specified in
                */
 
-               ulong htlc_fee_success_fee = HtlcSuccessFee(option_anchor_outputs, feerate_per_kw);
+               ulong htlcFeeSuccessFee = HtlcSuccessFee(optionAnchorOutputs, feeratePerKw);
 
-               ulong dust_plust_fee = dust_limit_satoshis + htlc_fee_success_fee;
-               ulong dust_plust_fee_msat = dust_plust_fee * 1000;
+               ulong dustPlustFee = dustLimitSatoshis + htlcFeeSuccessFee;
+               ulong dustPlustFeeMsat = dustPlustFee * 1000;
 
-               if (htlc.amount < dust_plust_fee_msat)
+               if (htlc.Amount < dustPlustFeeMsat)
                {
                   // do not add the htlc outpout
                }
@@ -634,15 +630,15 @@ namespace Protocol.Channels
          // 1. Calculate the base commitment transaction fee.
 
          ulong weight;
-         ulong base_fee;
-         ulong num_untrimmed_htlcs = (ulong)htlcsUntrimmed.Count;
+         ulong baseFee;
+         ulong numUntrimmedHtlcs = (ulong)htlcsUntrimmed.Count;
          /* BOLT #3:
           *
           * The base fee for a commitment transaction:
           *  - MUST be calculated to match:
           *    1. Start with `weight` = 724 (1124 if `option_anchor_outputs` applies).
           */
-         if (option_anchor_outputs)
+         if (optionAnchorOutputs)
             weight = 1124;
          else
             weight = 724;
@@ -653,9 +649,9 @@ namespace Protocol.Channels
           *       specified in [Trimmed Outputs](#trimmed-outputs), add 172
           *       to `weight`.
           */
-         weight += 172 * num_untrimmed_htlcs;
+         weight += 172 * numUntrimmedHtlcs;
 
-         base_fee = feerate_per_kw * weight / 1000;
+         baseFee = feeratePerKw * weight / 1000;
 
          /* BOLT #3:
           * If `option_anchor_outputs` applies to the commitment
@@ -663,9 +659,9 @@ namespace Protocol.Channels
           * of 330 sats from the funder (either `to_local` or
           * `to_remote`).
           */
-         if (option_anchor_outputs)
+         if (optionAnchorOutputs)
          {
-            base_fee += 660;
+            baseFee += 660;
          }
 
          // todo log base fee
@@ -675,28 +671,28 @@ namespace Protocol.Channels
          // If option_anchor_outputs applies to the commitment transaction,
          // also subtract two times the fixed anchor size of 330 sats from the funder (either to_local or to_remote).
 
-         ulong base_fee_msat = base_fee * 1000;
+         ulong baseFeeMsat = baseFee * 1000;
 
          if (opener == side)
          {
-            if (self_pay_msat < base_fee_msat)
+            if (selfPayMsat < baseFeeMsat)
             {
-               self_pay_msat = 0;
+               selfPayMsat = 0;
             }
             else
             {
-               self_pay_msat = self_pay_msat - base_fee_msat;
+               selfPayMsat = selfPayMsat - baseFeeMsat;
             }
          }
          else
          {
-            if (other_pay_msat < base_fee_msat)
+            if (otherPayMsat < baseFeeMsat)
             {
-               other_pay_msat = 0;
+               otherPayMsat = 0;
             }
             else
             {
-               other_pay_msat = other_pay_msat - base_fee_msat;
+               otherPayMsat = otherPayMsat - baseFeeMsat;
             }
          }
 
@@ -733,27 +729,27 @@ namespace Protocol.Channels
             if (htlc.Side == side)
             {
                // todo round down msat to sat in s common method
-               ulong amount = htlc.amount / 1000;
+               ulong amount = htlc.Amount / 1000;
 
-               var wscript = GetHtlcOfferedRedeemscript(
-                  Keyset.self_htlc_key,
-                  Keyset.other_htlc_key,
-                  htlc.rhash,
-                  Keyset.self_revocation_key,
-                  option_anchor_outputs);
+               byte[]? wscript = GetHtlcOfferedRedeemscript(
+                  keyset.SelfHtlcKey,
+                  keyset.OtherHtlcKey,
+                  htlc.Rhash,
+                  keyset.SelfRevocationKey,
+                  optionAnchorOutputs);
 
                var wscriptinst = new Script(wscript);
 
-               var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+               Script? p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
                outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
                   {
                      Value = (long)amount,
-                     PublicKeyScript = p2wsh.ToBytes()
+                     PublicKeyScript = p2Wsh.ToBytes()
                   },
-                  CltvExpirey = htlc.expirylocktime,
+                  CltvExpirey = htlc.Expirylocktime,
                   WitnessHashRedeemScript = wscript,
                   Htlc = htlc
                });
@@ -768,72 +764,72 @@ namespace Protocol.Channels
             if (htlc.Side != side)
             {
                // todo round down msat to sat in s common method
-               ulong amount = htlc.amount / 1000;
+               ulong amount = htlc.Amount / 1000;
 
                var wscript = GetHtlcReceivedRedeemscript(
-                  htlc.expirylocktime,
-                  Keyset.self_htlc_key,
-                  Keyset.other_htlc_key,
-                  htlc.rhash,
-                  Keyset.self_revocation_key,
-                  option_anchor_outputs);
+                  htlc.Expirylocktime,
+                  keyset.SelfHtlcKey,
+                  keyset.OtherHtlcKey,
+                  htlc.Rhash,
+                  keyset.SelfRevocationKey,
+                  optionAnchorOutputs);
 
                var wscriptinst = new Script(wscript);
 
-               var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+               var p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
                outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
                   {
                      Value = (long)amount,
-                     PublicKeyScript = p2wsh.ToBytes()
+                     PublicKeyScript = p2Wsh.ToBytes()
                   },
-                  CltvExpirey = htlc.expirylocktime,
+                  CltvExpirey = htlc.Expirylocktime,
                   WitnessHashRedeemScript = wscript,
                   Htlc = htlc
                });
             }
          }
 
-         ulong dust_limit_msat = dust_limit_satoshis * 1000;
+         ulong dustLimitMsat = dustLimitSatoshis * 1000;
 
          // BOLT3 Commitment Transaction Construction
          // 7. If the to_local amount is greater or equal to dust_limit_satoshis, add a to_local output.
 
-         bool to_local = false;
-         if (self_pay_msat >= dust_limit_msat)
+         bool toLocal = false;
+         if (selfPayMsat >= dustLimitMsat)
          {
             // todo round down msat to sat in s common method
-            ulong amount = self_pay_msat / 1000;
+            ulong amount = selfPayMsat / 1000;
 
-            var wscript = GetRevokeableRedeemscript(Keyset.self_revocation_key, to_self_delay, Keyset.self_delayed_payment_key);
+            var wscript = GetRevokeableRedeemscript(keyset.SelfRevocationKey, toSelfDelay, keyset.SelfDelayedPaymentKey);
 
             var wscriptinst = new Script(wscript);
 
-            var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+            var p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
             outputs.Add(new HtlcToOutputMaping
             {
                TransactionOutput = new TransactionOutput
                {
                   Value = (long)amount,
-                  PublicKeyScript = p2wsh.ToBytes()
+                  PublicKeyScript = p2Wsh.ToBytes()
                },
-               CltvExpirey = to_self_delay,
+               CltvExpirey = toSelfDelay,
             });
 
-            to_local = true;
+            toLocal = true;
          }
 
          // BOLT3 Commitment Transaction Construction
          // 8. If the to_remote amount is greater or equal to dust_limit_satoshis, add a to_remote output.
 
-         bool to_remote = false;
-         if (other_pay_msat >= dust_limit_msat)
+         bool toRemote = false;
+         if (otherPayMsat >= dustLimitMsat)
          {
             // todo round down msat to sat in s common method
-            ulong amount = other_pay_msat / 1000;
+            ulong amount = otherPayMsat / 1000;
 
             // BOLT3:
             // If option_anchor_outputs applies to the commitment transaction,
@@ -841,18 +837,18 @@ namespace Protocol.Channels
             // <remote_pubkey> OP_CHECKSIGVERIFY 1 OP_CHECKSEQUENCEVERIFY
             // Otherwise, this output is a simple P2WPKH to `remotepubkey`.
 
-            Script p2wsh;
-            if (option_anchor_outputs)
+            Script p2Wsh;
+            if (optionAnchorOutputs)
             {
-               var wscript = AnchorToRemoteRedeem(Keyset.other_payment_key);
+               var wscript = AnchorToRemoteRedeem(keyset.OtherPaymentKey);
 
                var wscriptinst = new Script(wscript);
 
-               p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+               p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
             }
             else
             {
-               p2wsh = PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey(new PubKey(Keyset.other_payment_key)); // todo: dan - move this to interface
+               p2Wsh = PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey(new PubKey(keyset.OtherPaymentKey)); // todo: dan - move this to interface
             }
 
             outputs.Add(new HtlcToOutputMaping
@@ -860,12 +856,12 @@ namespace Protocol.Channels
                TransactionOutput = new TransactionOutput
                {
                   Value = (long)amount,
-                  PublicKeyScript = p2wsh.ToBytes()
+                  PublicKeyScript = p2Wsh.ToBytes()
                },
                CltvExpirey = 0
             });
 
-            to_remote = true;
+            toRemote = true;
          }
 
          // BOLT3 Commitment Transaction Construction
@@ -873,47 +869,47 @@ namespace Protocol.Channels
          //   if to_local exists or there are untrimmed HTLCs, add a to_local_anchor output
          //   if to_remote exists or there are untrimmed HTLCs, add a to_remote_anchor output
 
-         if (option_anchor_outputs)
+         if (optionAnchorOutputs)
          {
-            if (to_local || htlcsUntrimmed.Count != 0)
+            if (toLocal || htlcsUntrimmed.Count != 0)
             {
                // todo round down msat to sat in s common method
                ulong amount = 330;
 
-               var wscript = bitcoin_wscript_anchor(local_funding_key);
+               var wscript = bitcoin_wscript_anchor(localFundingKey);
 
                var wscriptinst = new Script(wscript);
 
-               var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+               var p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
                outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
                   {
                      Value = (long)amount,
-                     PublicKeyScript = p2wsh.ToBytes()
+                     PublicKeyScript = p2Wsh.ToBytes()
                   },
                   CltvExpirey = 0
                });
             }
 
-            if (to_remote || htlcsUntrimmed.Count != 0)
+            if (toRemote || htlcsUntrimmed.Count != 0)
             {
                // todo round down msat to sat in s common method
                ulong amount = 330;
 
-               var wscript = bitcoin_wscript_anchor(remote_funding_key);
+               var wscript = bitcoin_wscript_anchor(remoteFundingKey);
 
                var wscriptinst = new Script(wscript);
 
-               var p2wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+               var p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
                outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
                   {
                      Value = (long)amount,
-                     PublicKeyScript = p2wsh.ToBytes()
+                     PublicKeyScript = p2Wsh.ToBytes()
                   },
                   CltvExpirey = 0
                });
@@ -1011,39 +1007,39 @@ namespace Protocol.Channels
        *
        * `dust_limit_satoshis` is the threshold below which outputs should
        * not be generated for this node's commitment or HTLC transaction */
-      public ulong dust_limit { get; set; }
+      public ulong DustLimit { get; set; }
 
       /* BOLT #2:
        *
        * `max_htlc_value_in_flight_msat` is a cap on total value of
        * outstanding HTLCs, which allows a node to limit its exposure to
        * HTLCs */
-      public ulong max_htlc_value_in_flight { get; set; }
+      public ulong MaxHtlcValueInFlight { get; set; }
 
       /* BOLT #2:
        *
        * `channel_reserve_satoshis` is the minimum amount that the other
        * node is to keep as a direct payment. */
-      public ulong channel_reserve { get; set; }
+      public ulong ChannelReserve { get; set; }
 
       /* BOLT #2:
        *
        * `htlc_minimum_msat` indicates the smallest value HTLC this node
        * will accept.
        */
-      public ulong htlc_minimum { get; set; }
+      public ulong HtlcMinimum { get; set; }
 
       /* BOLT #2:
        *
        * `to_self_delay` is the number of blocks that the other node's
        * to-self outputs must be delayed, using `OP_CHECKSEQUENCEVERIFY`
        * delays */
-      public ushort to_self_delay { get; set; }
+      public ushort ToSelfDelay { get; set; }
 
       /* BOLT #2:
        *
        * similarly, `max_accepted_htlcs` limits the number of outstanding
        * HTLCs the other node can offer. */
-      public ushort max_accepted_htlcs { get; set; }
+      public ushort MaxAcceptedHtlcs { get; set; }
    };
 }

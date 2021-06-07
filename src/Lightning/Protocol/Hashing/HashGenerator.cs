@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
+using Bitcoin.Primitives.Types;
 
 namespace Protocol.Hashing
 {
@@ -36,6 +37,24 @@ namespace Protocol.Hashing
          sha.TryComputeHash(data, result, out _);
          sha.TryComputeHash(result, result, out _);
          return result.Slice(0, 32);
+      }
+
+      public static UInt256 DoubleSha256AsUInt256(ReadOnlySpan<byte> data)
+      {
+         using var sha = new SHA256Managed();
+         Span<byte> result = stackalloc byte[32];
+         if (!sha.TryComputeHash(data, result, out _)) throw new HashGeneratorException($"Failed to perform {nameof(DoubleSha256AsUInt256)}");
+         if (!sha.TryComputeHash(result, result, out _)) throw new HashGeneratorException($"Failed to perform {nameof(DoubleSha256AsUInt256)}");
+         return new UInt256(result);
+      }
+
+      public static UInt256 DoubleSha512AsUInt256(ReadOnlySpan<byte> data)
+      {
+         using var sha = new SHA512Managed();
+         Span<byte> result = stackalloc byte[64];
+         if (!sha.TryComputeHash(data, result, out _)) throw new HashGeneratorException($"Failed to perform {nameof(DoubleSha512AsUInt256)}");
+         if (!sha.TryComputeHash(result, result, out _)) throw new HashGeneratorException($"Failed to perform {nameof(DoubleSha512AsUInt256)}");
+         return new UInt256(result.Slice(0, 32));
       }
 
       [DoesNotReturn]

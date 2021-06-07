@@ -4,10 +4,7 @@ using System.Text;
 
 namespace Protocol.Channels
 {
-   public enum InboundHtlcRemovalReason
+   public class CommitmentTransaction
    {
-      FailRelay,
-      FailMalformed,
-      Fulfill,
    }
 }

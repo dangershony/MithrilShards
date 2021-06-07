@@ -4,132 +4,133 @@ using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Serialization.Serializers;
 using Bitcoin.Primitives.Types;
 using Protocol.Channels;
+using Protocol.Types;
 using Xunit;
 
 namespace Protocol.Test.bolt3
 {
    public class Bolt3AppendixCTestContext
    {
-      public ulong funding_amount;
-      public ulong dust_limit;
-      public ushort to_self_delay;
-      public PrivateKey local_funding_privkey;
-      public PrivateKey remote_funding_privkey;
-      public Secret local_payment_basepoint_secret;
-      public Secret remote_payment_basepoint_secret;
-      public Secret local_htlc_basepoint_secret;
-      public Secret remote_htlc_basepoint_secret;
-      public Secret local_per_commitment_secret;
-      public Secret local_delayed_payment_basepoint_secret;
-      public Secret remote_revocation_basepoint_secret;
-      public PrivateKey local_htlcsecretkey;
-      public PrivateKey remote_htlcsecretkey;
-      public PrivateKey local_delayed_secretkey;
-      public PublicKey local_funding_pubkey;
-      public PublicKey remote_funding_pubkey;
-      public PublicKey local_payment_basepoint;
-      public PublicKey remote_payment_basepoint;
-      public PublicKey local_htlc_basepoint;
-      public PublicKey remote_htlc_basepoint;
-      public PublicKey local_delayed_payment_basepoint;
-      public PublicKey remote_revocation_basepoint;
-      public PublicKey local_per_commitment_point;
-      public PublicKey localkey;
-      public PublicKey remotekey;
-      public PublicKey local_htlckey;
-      public PublicKey remote_htlckey;
-      public PublicKey local_delayedkey;
-      public PublicKey remote_revocation_key;
-      public Keyset keyset;
-      public uint funding_output_index;
-      public ulong commitment_number;
-      public ulong cn_obscurer;
+      public ulong FundingAmount;
+      public ulong DustLimit;
+      public ushort ToSelfDelay;
+      public PrivateKey LocalFundingPrivkey;
+      public PrivateKey RemoteFundingPrivkey;
+      public Secret LocalPaymentBasepointSecret;
+      public Secret RemotePaymentBasepointSecret;
+      public Secret LocalHtlcBasepointSecret;
+      public Secret RemoteHtlcBasepointSecret;
+      public Secret LocalPerCommitmentSecret;
+      public Secret LocalDelayedPaymentBasepointSecret;
+      public Secret RemoteRevocationBasepointSecret;
+      public PrivateKey LocalHtlcsecretkey;
+      public PrivateKey RemoteHtlcsecretkey;
+      public PrivateKey LocalDelayedSecretkey;
+      public PublicKey LocalFundingPubkey;
+      public PublicKey RemoteFundingPubkey;
+      public PublicKey LocalPaymentBasepoint;
+      public PublicKey RemotePaymentBasepoint;
+      public PublicKey LocalHtlcBasepoint;
+      public PublicKey RemoteHtlcBasepoint;
+      public PublicKey LocalDelayedPaymentBasepoint;
+      public PublicKey RemoteRevocationBasepoint;
+      public PublicKey LocalPerCommitmentPoint;
+      public PublicKey Localkey;
+      public PublicKey Remotekey;
+      public PublicKey LocalHtlckey;
+      public PublicKey RemoteHtlckey;
+      public PublicKey LocalDelayedkey;
+      public PublicKey RemoteRevocationKey;
+      public Keyset Keyset;
+      public uint FundingOutputIndex;
+      public ulong CommitmentNumber;
+      public ulong CnObscurer;
 
-      public bool option_anchor_outputs;
+      public bool OptionAnchorOutputs;
 
-      public UInt256 funding_txid;
-      public OutPoint funding_tx_outpoint;
+      public UInt256 FundingTxid;
+      public OutPoint FundingTxOutpoint;
 
-      public LightningScripts scripts;
-      public KeyDerivation keyDerivation;
-      public TransactionSerializer transactionSerializer;
-      public TransactionHashCalculator transactionHashCalculator;
+      public LightningScripts Scripts;
+      public KeyDerivation KeyDerivation;
+      public TransactionSerializer TransactionSerializer;
+      public TransactionHashCalculator TransactionHashCalculator;
 
       public Bolt3AppendixCTestContext()
 
       {
-         scripts = new LightningScripts();
-         keyDerivation = new KeyDerivation(null);
+         Scripts = new LightningScripts();
+         KeyDerivation = new KeyDerivation(null);
 
-         transactionSerializer = new TransactionSerializer(new TransactionInputSerializer(new OutPointSerializer(new UInt256Serializer())), new TransactionOutputSerializer(), new TransactionWitnessSerializer(new TransactionWitnessComponentSerializer()));
-         transactionHashCalculator = new TransactionHashCalculator(transactionSerializer);
+         TransactionSerializer = new TransactionSerializer(new TransactionInputSerializer(new OutPointSerializer(new UInt256Serializer())), new TransactionOutputSerializer(), new TransactionWitnessSerializer(new TransactionWitnessComponentSerializer()));
+         TransactionHashCalculator = new TransactionHashCalculator(TransactionSerializer);
 
-         funding_output_index = 0;
-         funding_amount = 10000000;
-         funding_txid = Bitcoin.Primitives.Types.UInt256.Parse("8984484a580b825b9972d7adb15050b3ab624ccd731946b3eeddb92f4e7ef6be");
-         funding_tx_outpoint = new Bitcoin.Primitives.Types.OutPoint { Hash = funding_txid, Index = funding_output_index };
+         FundingOutputIndex = 0;
+         FundingAmount = 10000000;
+         FundingTxid = Bitcoin.Primitives.Types.UInt256.Parse("8984484a580b825b9972d7adb15050b3ab624ccd731946b3eeddb92f4e7ef6be");
+         FundingTxOutpoint = new Bitcoin.Primitives.Types.OutPoint { Hash = FundingTxid, Index = FundingOutputIndex };
 
-         commitment_number = 42;
-         to_self_delay = 144;
-         dust_limit = 546;
+         CommitmentNumber = 42;
+         ToSelfDelay = 144;
+         DustLimit = 546;
 
-         local_funding_privkey = new Secret(Hex.FromString("30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f374901").Take(32).ToArray());
-         remote_funding_privkey = new Secret(Hex.FromString("1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e1301").Take(32).ToArray());
+         LocalFundingPrivkey = new Secret(Hex.FromString("30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f374901").Take(32).ToArray());
+         RemoteFundingPrivkey = new Secret(Hex.FromString("1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e1301").Take(32).ToArray());
 
-         local_per_commitment_secret = new Secret(Hex.FromString("1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100"));
-         local_payment_basepoint_secret = new Secret(Hex.FromString("1111111111111111111111111111111111111111111111111111111111111111"));
-         remote_revocation_basepoint_secret = new Secret(Hex.FromString("2222222222222222222222222222222222222222222222222222222222222222"));
-         local_delayed_payment_basepoint_secret = new Secret(Hex.FromString("3333333333333333333333333333333333333333333333333333333333333333"));
-         remote_payment_basepoint_secret = new Secret(Hex.FromString("4444444444444444444444444444444444444444444444444444444444444444"));
+         LocalPerCommitmentSecret = new Secret(Hex.FromString("1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100"));
+         LocalPaymentBasepointSecret = new Secret(Hex.FromString("1111111111111111111111111111111111111111111111111111111111111111"));
+         RemoteRevocationBasepointSecret = new Secret(Hex.FromString("2222222222222222222222222222222222222222222222222222222222222222"));
+         LocalDelayedPaymentBasepointSecret = new Secret(Hex.FromString("3333333333333333333333333333333333333333333333333333333333333333"));
+         RemotePaymentBasepointSecret = new Secret(Hex.FromString("4444444444444444444444444444444444444444444444444444444444444444"));
 
-         local_delayed_payment_basepoint = keyDerivation.PublicKeyFromPrivateKey(local_delayed_payment_basepoint_secret);
-         local_per_commitment_point = keyDerivation.PublicKeyFromPrivateKey(local_per_commitment_secret);
+         LocalDelayedPaymentBasepoint = KeyDerivation.PublicKeyFromPrivateKey(LocalDelayedPaymentBasepointSecret);
+         LocalPerCommitmentPoint = KeyDerivation.PublicKeyFromPrivateKey(LocalPerCommitmentSecret);
 
-         local_delayed_secretkey = keyDerivation.DerivePrivatekey(local_delayed_payment_basepoint_secret, local_delayed_payment_basepoint, local_per_commitment_point);
+         LocalDelayedSecretkey = KeyDerivation.DerivePrivatekey(LocalDelayedPaymentBasepointSecret, LocalDelayedPaymentBasepoint, LocalPerCommitmentPoint);
 
-         remote_revocation_basepoint = keyDerivation.PublicKeyFromPrivateKey(remote_revocation_basepoint_secret);
-         local_per_commitment_point = keyDerivation.PublicKeyFromPrivateKey(local_per_commitment_secret);
-         remote_revocation_key = keyDerivation.DeriveRevocationPublicKey(remote_revocation_basepoint, local_per_commitment_point);
+         RemoteRevocationBasepoint = KeyDerivation.PublicKeyFromPrivateKey(RemoteRevocationBasepointSecret);
+         LocalPerCommitmentPoint = KeyDerivation.PublicKeyFromPrivateKey(LocalPerCommitmentSecret);
+         RemoteRevocationKey = KeyDerivation.DeriveRevocationPublicKey(RemoteRevocationBasepoint, LocalPerCommitmentPoint);
 
-         local_delayedkey = keyDerivation.PublicKeyFromPrivateKey(local_delayed_secretkey);
-         local_payment_basepoint = keyDerivation.PublicKeyFromPrivateKey(local_payment_basepoint_secret);
+         LocalDelayedkey = KeyDerivation.PublicKeyFromPrivateKey(LocalDelayedSecretkey);
+         LocalPaymentBasepoint = KeyDerivation.PublicKeyFromPrivateKey(LocalPaymentBasepointSecret);
 
-         remote_payment_basepoint = keyDerivation.PublicKeyFromPrivateKey(remote_payment_basepoint_secret);
+         RemotePaymentBasepoint = KeyDerivation.PublicKeyFromPrivateKey(RemotePaymentBasepointSecret);
 
          // TODO: thjis comment comes from c-lightning dan to investigate:
          /* FIXME: BOLT should include separate HTLC keys */
-         local_htlc_basepoint = local_payment_basepoint;
-         remote_htlc_basepoint = remote_payment_basepoint;
-         local_htlc_basepoint_secret = local_payment_basepoint_secret;
-         remote_htlc_basepoint_secret = remote_payment_basepoint_secret;
+         LocalHtlcBasepoint = LocalPaymentBasepoint;
+         RemoteHtlcBasepoint = RemotePaymentBasepoint;
+         LocalHtlcBasepointSecret = LocalPaymentBasepointSecret;
+         RemoteHtlcBasepointSecret = RemotePaymentBasepointSecret;
 
-         remote_htlcsecretkey = keyDerivation.DerivePrivatekey(remote_htlc_basepoint_secret, remote_htlc_basepoint, local_per_commitment_point);
+         RemoteHtlcsecretkey = KeyDerivation.DerivePrivatekey(RemoteHtlcBasepointSecret, RemoteHtlcBasepoint, LocalPerCommitmentPoint);
 
-         localkey = keyDerivation.DerivePublickey(local_payment_basepoint, local_per_commitment_point);
+         Localkey = KeyDerivation.DerivePublickey(LocalPaymentBasepoint, LocalPerCommitmentPoint);
 
-         remotekey = keyDerivation.DerivePublickey(remote_payment_basepoint, local_per_commitment_point);
+         Remotekey = KeyDerivation.DerivePublickey(RemotePaymentBasepoint, LocalPerCommitmentPoint);
 
-         local_htlcsecretkey = keyDerivation.DerivePrivatekey(local_htlc_basepoint_secret, local_payment_basepoint, local_per_commitment_point);
+         LocalHtlcsecretkey = KeyDerivation.DerivePrivatekey(LocalHtlcBasepointSecret, LocalPaymentBasepoint, LocalPerCommitmentPoint);
 
-         local_htlckey = keyDerivation.PublicKeyFromPrivateKey(local_htlcsecretkey);
-         remote_htlckey = keyDerivation.DerivePublickey(remote_htlc_basepoint, local_per_commitment_point);
+         LocalHtlckey = KeyDerivation.PublicKeyFromPrivateKey(LocalHtlcsecretkey);
+         RemoteHtlckey = KeyDerivation.DerivePublickey(RemoteHtlcBasepoint, LocalPerCommitmentPoint);
 
-         local_funding_pubkey = keyDerivation.PublicKeyFromPrivateKey(local_funding_privkey);
+         LocalFundingPubkey = KeyDerivation.PublicKeyFromPrivateKey(LocalFundingPrivkey);
 
-         remote_funding_pubkey = keyDerivation.PublicKeyFromPrivateKey(remote_funding_privkey);
+         RemoteFundingPubkey = KeyDerivation.PublicKeyFromPrivateKey(RemoteFundingPrivkey);
 
-         cn_obscurer = scripts.CommitNumberObscurer(local_payment_basepoint, remote_payment_basepoint);
+         CnObscurer = Scripts.CommitNumberObscurer(LocalPaymentBasepoint, RemotePaymentBasepoint);
 
          // dotnet has no uint48 types so we use ulong instead, however ulong (which is uint64) has two
          // more bytes in the array then just drop the last to bytes form the array to compute the hex
-         Assert.Equal("0x2bb038521914", Hex.ToString(BitConverter.GetBytes(cn_obscurer).Reverse().ToArray().AsSpan().Slice(2)));
+         Assert.Equal("0x2bb038521914", Hex.ToString(BitConverter.GetBytes(CnObscurer).Reverse().ToArray().AsSpan().Slice(2)));
 
-         keyset.self_revocation_key = remote_revocation_key;
-         keyset.self_delayed_payment_key = local_delayedkey;
-         keyset.self_payment_key = localkey;
-         keyset.other_payment_key = remotekey;
-         keyset.self_htlc_key = local_htlckey;
-         keyset.other_htlc_key = remote_htlckey;
+         Keyset.SelfRevocationKey = RemoteRevocationKey;
+         Keyset.SelfDelayedPaymentKey = LocalDelayedkey;
+         Keyset.SelfPaymentKey = Localkey;
+         Keyset.OtherPaymentKey = Remotekey;
+         Keyset.SelfHtlcKey = LocalHtlckey;
+         Keyset.OtherHtlcKey = RemoteHtlckey;
       }
    }
 }
