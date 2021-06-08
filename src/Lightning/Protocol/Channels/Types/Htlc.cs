@@ -13,7 +13,7 @@ namespace Protocol.Channels.Types
       public ulong Id;
       /* The amount in millisatoshi. */
 
-      public ulong Amount;
+      public MiliSatoshis AmountMsat;
 
       /* When the HTLC can no longer be redeemed. */
 

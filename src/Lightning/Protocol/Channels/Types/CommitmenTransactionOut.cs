@@ -5,7 +5,7 @@ namespace Protocol.Channels.Types
 {
    public class CommitmenTransactionOut
    {
-      public List<HtlcToOutputMaping> Htlcs { get; set; }
-      public Transaction Transaction { get; set; }
+      public List<HtlcToOutputMaping>? Htlcs { get; set; }
+      public Transaction? Transaction { get; set; }
    }
 }

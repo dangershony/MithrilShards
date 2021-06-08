@@ -44,41 +44,47 @@ namespace Protocol.Test.bolt3
 
       public void Bolt3AppendixC_CommitmentAndHTLCTransactionTest(Bolt3AppendixCTestVectors vectors)
       {
-         CommitmenTransactionOut localCommitmenTransactionOut = Context.CommitmentTransaction.CreateCommitmenTransaction(
-                  Context.FundingTxOutpoint,
-                  Context.FundingAmount,
-                  Context.LocalFundingPubkey,
-                  Context.RemoteFundingPubkey,
-                  ChannelSide.Local,
-                  Context.ToSelfDelay,
-                  Context.Keyset,
-                  vectors.FeeratePerKw,
-                  Context.DustLimit,
-                  vectors.ToLocalMsat,
-                  vectors.ToRemoteMsat,
-                  vectors.Htlcs.htlcs,
-                  Context.CommitmentNumber,
-                  Context.CnObscurer,
-                  Context.OptionAnchorOutputs,
-                  ChannelSide.Local);
+         CommitmenTransactionOut localCommitmenTransactionOut = Context.LightningTransactions.CommitmenTransaction(
+            new CommitmentTransactionIn
+            {
+               FundingTxout = Context.FundingTxOutpoint,
+               Funding = Context.FundingAmount,
+               LocalFundingKey = Context.LocalFundingPubkey,
+               RemoteFundingKey = Context.RemoteFundingPubkey,
+               Opener = ChannelSide.Local,
+               ToSelfDelay = Context.ToSelfDelay,
+               Keyset = Context.Keyset,
+               FeeratePerKw = vectors.FeeratePerKw,
+               DustLimitSatoshis = Context.DustLimit,
+               SelfPayMsat = vectors.ToLocalMsat,
+               OtherPayMsat = vectors.ToRemoteMsat,
+               Htlcs = vectors.Htlcs.htlcs,
+               CommitmentNumber = Context.CommitmentNumber,
+               CnObscurer = Context.CnObscurer,
+               OptionAnchorOutputs = Context.OptionAnchorOutputs,
+               Side = ChannelSide.Local
+            });
 
-         CommitmenTransactionOut? remoteCommitmenTransactionOut = Context.CommitmentTransaction.CreateCommitmenTransaction(
-                  Context.FundingTxOutpoint,
-                  Context.FundingAmount,
-                  Context.LocalFundingPubkey,
-                  Context.RemoteFundingPubkey,
-                  ChannelSide.Remote,
-                  Context.ToSelfDelay,
-                  Context.Keyset,
-                  vectors.FeeratePerKw,
-                  Context.DustLimit,
-                  vectors.ToLocalMsat,
-                  vectors.ToRemoteMsat,
-                  vectors.Htlcs.invertedhtlcs,
-                  Context.CommitmentNumber,
-                  Context.CnObscurer,
-                  Context.OptionAnchorOutputs,
-                  ChannelSide.Remote);
+         CommitmenTransactionOut remoteCommitmenTransactionOut = Context.LightningTransactions.CommitmenTransaction(
+            new CommitmentTransactionIn
+            {
+               FundingTxout = Context.FundingTxOutpoint,
+               Funding = Context.FundingAmount,
+               LocalFundingKey = Context.LocalFundingPubkey,
+               RemoteFundingKey = Context.RemoteFundingPubkey,
+               Opener = ChannelSide.Remote,
+               ToSelfDelay = Context.ToSelfDelay,
+               Keyset = Context.Keyset,
+               FeeratePerKw = vectors.FeeratePerKw,
+               DustLimitSatoshis = Context.DustLimit,
+               SelfPayMsat = vectors.ToLocalMsat,
+               OtherPayMsat = vectors.ToRemoteMsat,
+               Htlcs = vectors.Htlcs.invertedhtlcs,
+               CommitmentNumber = Context.CommitmentNumber,
+               CnObscurer = Context.CnObscurer,
+               OptionAnchorOutputs = Context.OptionAnchorOutputs,
+               Side = ChannelSide.Remote
+            });
 
          Transaction? localTransaction = localCommitmenTransactionOut.Transaction;
          Transaction? remoteTransaction = remoteCommitmenTransactionOut.Transaction;
@@ -95,11 +101,11 @@ namespace Protocol.Test.bolt3
 
          byte[]? fundingWscript = Context.Scripts.FundingRedeemScript(Context.LocalFundingPubkey, Context.RemoteFundingPubkey);
 
-         var remoteSignature = Context.CommitmentTransaction.SignInput(Context.TransactionSerializer, localTransaction, Context.RemoteFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
+         var remoteSignature = Context.LightningTransactions.SignInput(Context.TransactionSerializer, localTransaction, Context.RemoteFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
          var expectedRemoteSignature = Hex.ToString(outputCommitTx.Inputs[0].ScriptWitness.Components[2].RawData.AsSpan());
          Assert.Equal(expectedRemoteSignature, Hex.ToString(remoteSignature.GetSpan()));
 
-         var localSignature = Context.CommitmentTransaction.SignInput(Context.TransactionSerializer, localTransaction, Context.LocalFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
+         var localSignature = Context.LightningTransactions.SignInput(Context.TransactionSerializer, localTransaction, Context.LocalFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
          var expectedLocalSignature = Hex.ToString(outputCommitTx.Inputs[0].ScriptWitness.Components[1].RawData.AsSpan());
          Assert.Equal(expectedLocalSignature, Hex.ToString(localSignature.GetSpan()));
 
@@ -145,10 +151,10 @@ namespace Protocol.Test.bolt3
                               Context.RemoteRevocationKey,
                               Context.OptionAnchorOutputs);
 
-               htlcTransaction = Context.CommitmentTransaction.CreateHtlcTimeoutTransaction(
+               htlcTransaction = Context.LightningTransactions.CreateHtlcTimeoutTransaction(
                                  Context.OptionAnchorOutputs,
                                  vectors.FeeratePerKw,
-                                 htlc.Htlc.Amount,
+                                 htlc.Htlc.AmountMsat,
                                  outPoint,
                                  keyset.SelfRevocationKey,
                                  keyset.SelfDelayedPaymentKey,
@@ -165,10 +171,10 @@ namespace Protocol.Test.bolt3
                               Context.RemoteRevocationKey,
                               Context.OptionAnchorOutputs);
 
-               htlcTransaction = Context.CommitmentTransaction.CreateHtlcSuccessTransaction(
+               htlcTransaction = Context.LightningTransactions.CreateHtlcSuccessTransaction(
                                  Context.OptionAnchorOutputs,
                                  vectors.FeeratePerKw,
-                                 htlc.Htlc.Amount,
+                                 htlc.Htlc.AmountMsat,
                                  outPoint,
                                  keyset.SelfRevocationKey,
                                  keyset.SelfDelayedPaymentKey,
@@ -177,24 +183,24 @@ namespace Protocol.Test.bolt3
 
             var htlcOutput = TransactionHelper.SeriaizeTransaction(Context.TransactionSerializer, Hex.FromString(vectors.HtlcTx[htlcOutputIndex++]));
 
-            var htlcRemoteSignature = Context.CommitmentTransaction.SignInput(
+            var htlcRemoteSignature = Context.LightningTransactions.SignInput(
                Context.TransactionSerializer,
                htlcTransaction,
                Context.RemoteHtlcsecretkey,
                inputIndex: 0,
                redeemScript: redeemScript,
-               htlc.Htlc.Amount / 1000);
+               htlc.Htlc.AmountMsat);
 
             var expectedHtlcRemoteSignature = Hex.ToString(htlcOutput.Inputs[0].ScriptWitness.Components[1].RawData.AsSpan());
             Assert.Equal(expectedHtlcRemoteSignature, Hex.ToString(htlcRemoteSignature.GetSpan()));
 
-            var htlcLocalSignature = Context.CommitmentTransaction.SignInput(
+            var htlcLocalSignature = Context.LightningTransactions.SignInput(
                Context.TransactionSerializer,
                htlcTransaction,
                Context.LocalHtlcsecretkey,
                inputIndex: 0,
                redeemScript: redeemScript,
-               htlc.Htlc.Amount / 1000);
+               htlc.Htlc.AmountMsat);
 
             var expectedHtlcLocalSignature = Hex.ToString(htlcOutput.Inputs[0].ScriptWitness.Components[2].RawData.AsSpan());
             Assert.Equal(expectedHtlcLocalSignature, Hex.ToString(htlcLocalSignature.GetSpan()));
@@ -219,7 +225,7 @@ namespace Protocol.Test.bolt3
             new Htlc
             {
                State = HtlcState.RcvdAddAckRevocation,
-               Amount = 2000000,
+               AmountMsat = 2000000,
                Expirylocktime = 501,
                R = new Preimage(Hex.FromString("0101010101010101010101010101010101010101010101010101010101010101")),
             },
@@ -227,14 +233,14 @@ namespace Protocol.Test.bolt3
             new Htlc
             {
                State = HtlcState.SentAddAckRevocation,
-               Amount = 5000000,
+               AmountMsat = 5000000,
                Expirylocktime = 505,
                R = new Preimage(Hex.FromString("0505050505050505050505050505050505050505050505050505050505050505")),
             },
             new Htlc
             {
                State = HtlcState.SentAddAckRevocation,
-               Amount = 5000000,
+               AmountMsat = 5000000,
                Expirylocktime = 506,
                R = new Preimage(Hex.FromString("0505050505050505050505050505050505050505050505050505050505050505")),
             },
@@ -281,35 +287,35 @@ namespace Protocol.Test.bolt3
             new Htlc
             {
                State = HtlcState.RcvdAddAckRevocation,
-               Amount = 1000000,
+               AmountMsat = 1000000,
                Expirylocktime = 500,
                R = new Preimage(Hex.FromString("0000000000000000000000000000000000000000000000000000000000000000")),
             },
             new Htlc
             {
                State = HtlcState.RcvdAddAckRevocation,
-               Amount = 2000000,
+               AmountMsat = 2000000,
                Expirylocktime = 501,
                R = new Preimage(Hex.FromString("0101010101010101010101010101010101010101010101010101010101010101")),
             },
             new Htlc
             {
                State = HtlcState.SentAddAckRevocation,
-               Amount = 2000000,
+               AmountMsat = 2000000,
                Expirylocktime = 502,
                R = new Preimage(Hex.FromString("0202020202020202020202020202020202020202020202020202020202020202")),
             },
             new Htlc
             {
                State = HtlcState.SentAddAckRevocation,
-               Amount = 3000000,
+               AmountMsat = 3000000,
                Expirylocktime = 503,
                R = new Preimage(Hex.FromString("0303030303030303030303030303030303030303030303030303030303030303")),
             },
             new Htlc
             {
                State = HtlcState.RcvdAddAckRevocation,
-               Amount = 4000000,
+               AmountMsat = 4000000,
                Expirylocktime = 504,
                R = new Preimage(Hex.FromString("0404040404040404040404040404040404040404040404040404040404040404")),
             },
@@ -337,7 +343,7 @@ namespace Protocol.Test.bolt3
 
             Htlc inv = new Htlc
             {
-               Amount = htlc.Amount,
+               AmountMsat = htlc.AmountMsat,
                Expirylocktime = htlc.Expirylocktime,
                Id = htlc.Id,
                R = htlc.R,
