@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Types;
+using NBitcoin;
 using Protocol.Channels;
 using Protocol.Channels.Types;
 using Protocol.Hashing;
 using Xunit;
 using OutPoint = Bitcoin.Primitives.Types.OutPoint;
+using Transaction = Bitcoin.Primitives.Types.Transaction;
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -15,34 +17,46 @@ namespace Protocol.Test.bolt3
    /// <summary>
    /// Tests for https://github.com/lightningnetwork/lightning-rfc/blob/master/03-transactions.md#appendix-b-funding-transaction-test-vectors
    /// </summary>
-   public class Bolt3AppendixCTests : IClassFixture<Bolt3AppendixCTestContext>
+   public class Bolt3CommitmentTests : IClassFixture<Bolt3CommitmentTestContext>
    {
-      public Bolt3AppendixCTestContext Context { get; set; }
+      public Bolt3CommitmentTestContext Context { get; set; }
 
-      public Bolt3AppendixCTests(Bolt3AppendixCTestContext context)
+      public Bolt3CommitmentTests(Bolt3CommitmentTestContext context)
       {
          Context = context;
       }
 
       [Theory]
       [ClassData(typeof(Bolt3AppendixCTestDataStaticRemotekey))]
-      public void Bolt3AppendixC_CommitmentAndHTLCTransactionStaticRemotekey(Bolt3AppendixCTestVectors vectors)
+      public void Bolt3AppendixC_CommitmentAndHTLCTransactionStaticRemotekey(Bolt3CommitmentTestVectors vectors)
       {
          Context.Keyset.OtherPaymentKey = Context.RemotePaymentBasepoint;
+         Context.OptionAnchorOutputs = false;
 
          Bolt3AppendixC_CommitmentAndHTLCTransactionTest(vectors);
       }
 
       [Theory]
-      [ClassData(typeof(Bolt3AppendixCTestData))]
-      public void Bolt3AppendixC_CommitmentAndHTLCTransaction(Bolt3AppendixCTestVectors vectors)
+      [ClassData(typeof(Bolt3AppendixCTestDataNoAnchors))]
+      public void Bolt3AppendixC_CommitmentAndHTLCTransactionNoAnchors(Bolt3CommitmentTestVectors vectors)
       {
          Context.Keyset.OtherPaymentKey = Context.Remotekey;
+         Context.OptionAnchorOutputs = false;
 
          Bolt3AppendixC_CommitmentAndHTLCTransactionTest(vectors);
       }
 
-      public void Bolt3AppendixC_CommitmentAndHTLCTransactionTest(Bolt3AppendixCTestVectors vectors)
+      [Theory]
+      [ClassData(typeof(Bolt3AppendixFTestDataAnchors))]
+      public void Bolt3AppendixC_CommitmentAndHTLCTransactionAnchors(Bolt3CommitmentTestVectors vectors)
+      {
+         Context.Keyset.OtherPaymentKey = Context.RemotePaymentBasepoint;
+         Context.OptionAnchorOutputs = true;
+
+         Bolt3AppendixC_CommitmentAndHTLCTransactionTest(vectors);
+      }
+
+      public void Bolt3AppendixC_CommitmentAndHTLCTransactionTest(Bolt3CommitmentTestVectors vectors)
       {
          CommitmenTransactionOut localCommitmenTransactionOut = Context.LightningTransactions.CommitmenTransaction(
             new CommitmentTransactionIn
@@ -95,21 +109,23 @@ namespace Protocol.Test.bolt3
          Assert.Equal(localTransaction.Hash, remoteTransaction.Hash);
 
          // == helper code==
-         var outputCommitTx = TransactionHelper.SeriaizeTransaction(Context.TransactionSerializer, Hex.FromString(vectors.OutputCommitTx));
+         var expectedCommitTx = TransactionHelper.SeriaizeTransaction(Context.TransactionSerializer, Hex.FromString(vectors.OutputCommitTx));
          var newtrx = TransactionHelper.ParseToString(localTransaction);
-         var curtrx = TransactionHelper.ParseToString(outputCommitTx);
+         var exptrx = TransactionHelper.ParseToString(expectedCommitTx);
 
-         byte[]? fundingWscript = Context.Scripts.FundingRedeemScript(Context.LocalFundingPubkey, Context.RemoteFundingPubkey);
+         byte[]? fundingWscript = Context.LightningScripts.FundingRedeemScript(Context.LocalFundingPubkey, Context.RemoteFundingPubkey);
 
          var remoteSignature = Context.LightningTransactions.SignInput(Context.TransactionSerializer, localTransaction, Context.RemoteFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
-         var expectedRemoteSignature = Hex.ToString(outputCommitTx.Inputs[0].ScriptWitness.Components[2].RawData.AsSpan());
-         Assert.Equal(expectedRemoteSignature, Hex.ToString(remoteSignature.GetSpan()));
+         var expectedRemoteSignature = Hex.ToString(expectedCommitTx.Inputs[0].ScriptWitness.Components[2].RawData.AsSpan());
+         var actualRemoteSignature = Hex.ToString(remoteSignature.GetSpan());
+         Assert.Equal(expectedRemoteSignature, actualRemoteSignature);
 
          var localSignature = Context.LightningTransactions.SignInput(Context.TransactionSerializer, localTransaction, Context.LocalFundingPrivkey, inputIndex: 0, redeemScript: fundingWscript, Context.FundingAmount);
-         var expectedLocalSignature = Hex.ToString(outputCommitTx.Inputs[0].ScriptWitness.Components[1].RawData.AsSpan());
-         Assert.Equal(expectedLocalSignature, Hex.ToString(localSignature.GetSpan()));
+         var expectedLocalSignature = Hex.ToString(expectedCommitTx.Inputs[0].ScriptWitness.Components[1].RawData.AsSpan());
+         var actualLocalSignature = Hex.ToString(localSignature.GetSpan());
+         Assert.Equal(expectedLocalSignature, actualLocalSignature);
 
-         Context.Scripts.SetCommitmentInputWitness(localTransaction.Inputs[0], localSignature, remoteSignature, fundingWscript);
+         Context.LightningScripts.SetCommitmentInputWitness(localTransaction.Inputs[0], localSignature, remoteSignature, fundingWscript);
 
          byte[] localTransactionBytes = TransactionHelper.DeseriaizeTransaction(Context.TransactionSerializer, localTransaction);
 
@@ -144,7 +160,7 @@ namespace Protocol.Test.bolt3
             byte[] redeemScript;
             if (htlc.Htlc.Side == ChannelSide.Local)
             {
-               redeemScript = Context.Scripts.GetHtlcOfferedRedeemscript(
+               redeemScript = Context.LightningScripts.GetHtlcOfferedRedeemscript(
                               Context.LocalHtlckey,
                               Context.RemoteHtlckey,
                               htlc.Htlc.Rhash,
@@ -163,7 +179,7 @@ namespace Protocol.Test.bolt3
             }
             else
             {
-               redeemScript = Context.Scripts.GetHtlcReceivedRedeemscript(
+               redeemScript = Context.LightningScripts.GetHtlcReceivedRedeemscript(
                               htlc.Htlc.Expirylocktime,
                               Context.LocalHtlckey,
                               Context.RemoteHtlckey,
@@ -181,7 +197,14 @@ namespace Protocol.Test.bolt3
                                  Context.ToSelfDelay);
             }
 
-            var htlcOutput = TransactionHelper.SeriaizeTransaction(Context.TransactionSerializer, Hex.FromString(vectors.HtlcTx[htlcOutputIndex++]));
+            string expectedHtlcHex = vectors.HtlcTx[htlcOutputIndex++];
+            var expectedHtlcOutput = TransactionHelper.SeriaizeTransaction(Context.TransactionSerializer, Hex.FromString(expectedHtlcHex));
+
+            var newhtlctrx = TransactionHelper.ParseToString(htlcTransaction);
+            var exphtlctrx = TransactionHelper.ParseToString(expectedHtlcOutput);
+
+            NBitcoin.Transaction? trx = NBitcoin.Network.Main.CreateTransaction();
+            trx.FromBytes(Hex.FromString(expectedHtlcHex));
 
             var htlcRemoteSignature = Context.LightningTransactions.SignInput(
                Context.TransactionSerializer,
@@ -189,10 +212,12 @@ namespace Protocol.Test.bolt3
                Context.RemoteHtlcsecretkey,
                inputIndex: 0,
                redeemScript: redeemScript,
-               htlc.Htlc.AmountMsat);
+               htlc.Htlc.AmountMsat,
+               vectors.RemoteAnchorOutputs ? (SigHash.Single | SigHash.AnyoneCanPay) : SigHash.All);
 
-            var expectedHtlcRemoteSignature = Hex.ToString(htlcOutput.Inputs[0].ScriptWitness.Components[1].RawData.AsSpan());
-            Assert.Equal(expectedHtlcRemoteSignature, Hex.ToString(htlcRemoteSignature.GetSpan()));
+            var expectedHtlcRemoteSignature = Hex.ToString(expectedHtlcOutput.Inputs[0].ScriptWitness.Components[1].RawData.AsSpan());
+            var actualHtlcRemoteSignature = Hex.ToString(htlcRemoteSignature.GetSpan());
+            Assert.Equal(expectedHtlcRemoteSignature, actualHtlcRemoteSignature);
 
             var htlcLocalSignature = Context.LightningTransactions.SignInput(
                Context.TransactionSerializer,
@@ -200,10 +225,25 @@ namespace Protocol.Test.bolt3
                Context.LocalHtlcsecretkey,
                inputIndex: 0,
                redeemScript: redeemScript,
-               htlc.Htlc.AmountMsat);
+               htlc.Htlc.AmountMsat,
+               vectors.LocalAnchorOutputs ? (SigHash.Single | SigHash.AnyoneCanPay) : SigHash.All);
 
-            var expectedHtlcLocalSignature = Hex.ToString(htlcOutput.Inputs[0].ScriptWitness.Components[2].RawData.AsSpan());
-            Assert.Equal(expectedHtlcLocalSignature, Hex.ToString(htlcLocalSignature.GetSpan()));
+            var expectedHtlcLocalSignature = Hex.ToString(expectedHtlcOutput.Inputs[0].ScriptWitness.Components[2].RawData.AsSpan());
+            var actualHtlcLocalSignature = Hex.ToString(htlcLocalSignature.GetSpan());
+            Assert.Equal(expectedHtlcLocalSignature, actualHtlcLocalSignature);
+
+            if (htlc.Htlc.Side == ChannelSide.Local)
+            {
+               Context.LightningScripts.SetHtlcTimeoutInputWitness(htlcTransaction.Inputs[0], htlcLocalSignature, htlcRemoteSignature, redeemScript);
+            }
+            else
+            {
+               Context.LightningScripts.SetHtlcSuccessInputWitness(htlcTransaction.Inputs[0], htlcLocalSignature, htlcRemoteSignature, htlc.Htlc.R, redeemScript);
+            }
+
+            byte[] htlcTransactionBytes = TransactionHelper.DeseriaizeTransaction(Context.TransactionSerializer, htlcTransaction);
+
+            Assert.Equal(expectedHtlcHex, Hex.ToString(htlcTransactionBytes.AsSpan()).Substring(2));
          }
       }
 

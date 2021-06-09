@@ -30,6 +30,7 @@ namespace Protocol.Test
                NBitcoin.Script witnesScript = new NBitcoin.Script(input.ScriptWitness.Components.Select(p => NBitcoin.Op.GetPushOp(p.RawData)).ToArray());
 
                sb.AppendLine($"ScriptWitness={witnesScript}");
+               sb.AppendLine($"WitnessRedeemScript={new NBitcoin.Script(witnesScript.ToOps().Last().PushData)}");
             }
          }
 

@@ -27,6 +27,6 @@ namespace Bitcoin.Primitives.Fundamental
 
       public static implicit operator MiliSatoshis(Satoshis sats) => new MiliSatoshis(sats._value * 1000);
 
-      public override string ToString() => $@"sats={_value.ToString()}";
+      public override string ToString() => $@"sats={_value}";
    }
 }

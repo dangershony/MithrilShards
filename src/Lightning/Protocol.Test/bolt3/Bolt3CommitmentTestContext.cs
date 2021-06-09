@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Protocol.Test.bolt3
 {
-   public class Bolt3AppendixCTestContext
+   public class Bolt3CommitmentTestContext
    {
       public ulong FundingAmount;
       public ulong DustLimit;
@@ -52,20 +52,21 @@ namespace Protocol.Test.bolt3
       public OutPoint FundingTxOutpoint;
 
       public LightningTransactions LightningTransactions;
-      public LightningScripts Scripts;
+      public LightningScripts LightningScripts;
       public KeyDerivation KeyDerivation;
       public TransactionSerializer TransactionSerializer;
       public TransactionHashCalculator TransactionHashCalculator;
 
-      public Bolt3AppendixCTestContext()
-
+      public Bolt3CommitmentTestContext()
       {
-         Scripts = new LightningScripts();
-         LightningTransactions = new LightningTransactions(Scripts);
+         LightningScripts = new LightningScripts();
+         LightningTransactions = new LightningTransactions(LightningScripts);
          KeyDerivation = new KeyDerivation(null);
 
          TransactionSerializer = new TransactionSerializer(new TransactionInputSerializer(new OutPointSerializer(new UInt256Serializer())), new TransactionOutputSerializer(), new TransactionWitnessSerializer(new TransactionWitnessComponentSerializer()));
          TransactionHashCalculator = new TransactionHashCalculator(TransactionSerializer);
+
+         OptionAnchorOutputs = false;
 
          FundingOutputIndex = 0;
          FundingAmount = 10000000;
@@ -121,7 +122,7 @@ namespace Protocol.Test.bolt3
 
          RemoteFundingPubkey = KeyDerivation.PublicKeyFromPrivateKey(RemoteFundingPrivkey);
 
-         CnObscurer = Scripts.CommitNumberObscurer(LocalPaymentBasepoint, RemotePaymentBasepoint);
+         CnObscurer = LightningScripts.CommitNumberObscurer(LocalPaymentBasepoint, RemotePaymentBasepoint);
 
          // dotnet has no uint48 types so we use ulong instead, however ulong (which is uint64) has two
          // more bytes in the array then just drop the last to bytes form the array to compute the hex

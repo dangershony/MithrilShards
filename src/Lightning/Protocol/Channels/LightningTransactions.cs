@@ -414,7 +414,7 @@ namespace Protocol.Channels
          return new CommitmenTransactionOut { Transaction = transaction, Htlcs = outputs };
       }
 
-      public BitcoinSignature SignInput(TransactionSerializer serializer, Transaction transaction, PrivateKey privateKey, uint inputIndex, byte[] redeemScript, Satoshis amountSats)
+      public BitcoinSignature SignInput(TransactionSerializer serializer, Transaction transaction, PrivateKey privateKey, uint inputIndex, byte[] redeemScript, Satoshis amountSats, SigHash sigHash = SigHash.All)
       {
          // todo: dan move the trx serializer to the constructor
 
@@ -435,8 +435,8 @@ namespace Protocol.Channels
          var outpoint = new NBitcoin.OutPoint(trx.Inputs[inputIndex].PrevOut);
          ScriptCoin witnessCoin = new ScriptCoin(new Coin(outpoint, utxo), wscript);
 
-         uint256? hashToSigh = trx.GetSignatureHash(witnessCoin.GetScriptCode(), (int)inputIndex, SigHash.All, utxo, HashVersion.WitnessV0);
-         TransactionSignature? sig = key.Sign(hashToSigh, SigHash.All, useLowR: false);
+         uint256? hashToSign = trx.GetSignatureHash(witnessCoin.GetScriptCode(), (int)inputIndex, sigHash, utxo, HashVersion.WitnessV0);
+         TransactionSignature? sig = key.Sign(hashToSign, sigHash, useLowR: false);
 
          return new BitcoinSignature(sig.ToBytes());
       }

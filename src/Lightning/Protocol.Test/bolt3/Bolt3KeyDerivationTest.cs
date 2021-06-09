@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Protocol.Test.bolt3
 {
-   public class KeyDerivationTest
+   public class Bolt3KeyDerivationTest
    {
       [Fact]
       public void TestKeyDerivation()

@@ -5,9 +5,11 @@ using Protocol.Channels.Types;
 
 namespace Protocol.Test.bolt3
 {
-   public class Bolt3AppendixCTestVectors
+   public class Bolt3CommitmentTestVectors
    {
       public string TestName;
+      public bool LocalAnchorOutputs;
+      public bool RemoteAnchorOutputs;
       public MiliSatoshis ToLocalMsat;
       public MiliSatoshis ToRemoteMsat;
       public Satoshis FeeratePerKw;

@@ -358,10 +358,42 @@ namespace Protocol.Channels
       public void SetCommitmentInputWitness(TransactionInput transactionInput, BitcoinSignature localSignature, BitcoinSignature remoteSignature, byte[] pubkeyScriptToRedeem)
       {
          var redeemScript = new Script(
-            OpcodeType.OP_0,
+               Op.GetPushOp(0),
             Op.GetPushOp(localSignature),
             Op.GetPushOp(remoteSignature),
             Op.GetPushOp(pubkeyScriptToRedeem))
+            .ToWitScript();
+
+         transactionInput.ScriptWitness = new TransactionWitness
+         {
+            Components = redeemScript.Pushes.Select(opcode => new TransactionWitnessComponent { RawData = opcode }).ToArray()
+         };
+      }
+
+      public void SetHtlcSuccessInputWitness(TransactionInput transactionInput, BitcoinSignature localSignature, BitcoinSignature remoteSignature, Preimage preimage, byte[] pubkeyScriptToRedeem)
+      {
+         var redeemScript = new Script(
+               Op.GetPushOp(0),
+               Op.GetPushOp(remoteSignature),
+               Op.GetPushOp(localSignature),
+               Op.GetPushOp(preimage),
+               Op.GetPushOp(pubkeyScriptToRedeem))
+            .ToWitScript();
+
+         transactionInput.ScriptWitness = new TransactionWitness
+         {
+            Components = redeemScript.Pushes.Select(opcode => new TransactionWitnessComponent { RawData = opcode }).ToArray()
+         };
+      }
+
+      public void SetHtlcTimeoutInputWitness(TransactionInput transactionInput, BitcoinSignature localSignature, BitcoinSignature remoteSignature, byte[] pubkeyScriptToRedeem)
+      {
+         var redeemScript = new Script(
+               Op.GetPushOp(0),
+               Op.GetPushOp(remoteSignature),
+               Op.GetPushOp(localSignature),
+               Op.GetPushOp(0),
+               Op.GetPushOp(pubkeyScriptToRedeem))
             .ToWitScript();
 
          transactionInput.ScriptWitness = new TransactionWitness

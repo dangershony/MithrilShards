@@ -11,7 +11,7 @@ namespace Protocol.Test.bolt3
       {
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "simple commitment tx with no HTLCs",
                ToLocalMsat = 7000000000,
@@ -24,14 +24,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with all five HTLCs untrimmed (minimum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 0,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8007e80300000000000022002052bfef0479d7b293c27e0f1eb294bea154c63a3294ef092c19af51409bce0e2ad007000000000000220020403d394747cae42e98ff01734ad5c08f82ba123d3d9a620abda88989651e2ab5d007000000000000220020748eba944fedc8827f6b06bc44678f93c0f9e6078b35c6331ed31e75f8ce0c2db80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484e0a06a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e040047304402206fc2d1f10ea59951eefac0b4b7c396a3c3d87b71ff0b019796ef4535beaf36f902201765b0181e514d04f4c8ad75659d7037be26cdb3f8bb6f78fe61decef484c3ea01473044022009b048187705a8cbc9ad73adbe5af148c3d012e1f067961486c822c7af08158c022006d66f3704cfab3eb2dc49dae24e4aa22a6910fc9b424007583204e3621af2e501475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
                HtlcTx = new List<string>
                {
                   "02000000000101ab84ff284f162cfbfef241f853b47d4368d171f9e2a1445160cd591c4c7d882b00000000000000000001e8030000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0500483045022100d9e29616b8f3959f1d3d7f7ce893ffedcdc407717d0de8e37d808c91d3a7c50d022078c3033f6d00095c8720a4bc943c1b45727818c082e4e3ddbc6d3116435b624b014730440220636de5682ef0c5b61f124ec74e8aa2461a69777521d6998295dcea36bc3338110220165285594b23c50b28b82df200234566628a27bcd17f7f14404bd865354eb3ce012000000000000000000000000000000000000000000000000000000000000000008a76a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c8201208763a914b8bcb07f6344b42ab04250c86a6e8b75d3fdbbc688527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae677502f401b175ac686800000000",
@@ -45,14 +45,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with seven outputs untrimmed (maximum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 647,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8007e80300000000000022002052bfef0479d7b293c27e0f1eb294bea154c63a3294ef092c19af51409bce0e2ad007000000000000220020403d394747cae42e98ff01734ad5c08f82ba123d3d9a620abda88989651e2ab5d007000000000000220020748eba944fedc8827f6b06bc44678f93c0f9e6078b35c6331ed31e75f8ce0c2db80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484e09c6a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e04004830450221009ec15c687898bb4da8b3a833e5ab8bfc51ec6e9202aaa8e66611edfd4a85ed1102203d7183e45078b9735c93450bc3415d3e5a8c576141a711ec6ddcb4a893926bb701483045022100a135f9e8a5ed25f7277446c67956b00ce6f610ead2bdec2c2f686155b7814772022059f1f6e1a8b336a68efcc1af3fe4d422d4827332b5b067501b099c47b7b5b5ee01475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -67,14 +67,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with six outputs untrimmed (minimum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 648,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8006d007000000000000220020403d394747cae42e98ff01734ad5c08f82ba123d3d9a620abda88989651e2ab5d007000000000000220020748eba944fedc8827f6b06bc44678f93c0f9e6078b35c6331ed31e75f8ce0c2db80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e4844e9d6a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400483045022100b15f72908ba3382a34ca5b32519240a22300cc6015b6f9418635fb41f3d01d8802207adb331b9ed1575383dca0f2355e86c173802feecf8298fbea53b9d4610583e90147304402203948f900a5506b8de36a4d8502f94f21dd84fd9c2314ab427d52feaa7a0a19f2022059b6a37a4adaa2c5419dc8aea63c6e2a2ec4c4bde46207f6dc1fcd22152fc6e501475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -88,14 +88,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with six outputs untrimmed (maximum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 2069,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8006d007000000000000220020403d394747cae42e98ff01734ad5c08f82ba123d3d9a620abda88989651e2ab5d007000000000000220020748eba944fedc8827f6b06bc44678f93c0f9e6078b35c6331ed31e75f8ce0c2db80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e48477956a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400483045022100ad9a9bbbb75d506ca3b716b336ee3cf975dd7834fcf129d7dd188146eb58a8b4022061a759ee417339f7fe2ea1e8deb83abb6a74db31a09b7648a932a639cda23e330148304502210090b96a2498ce0c0f2fadbec2aab278fed54c1a7838df793ec4d2c78d96ec096202204fdd439c50f90d483baa7b68feeef4bd33bc277695405447bcd0bfb2ca34d7bc01475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -109,14 +109,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with five outputs untrimmed (minimum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 2070,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8005d007000000000000220020403d394747cae42e98ff01734ad5c08f82ba123d3d9a620abda88989651e2ab5b80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484da966a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400473044022001014419b5ba00e083ac4e0a85f19afc848aacac2d483b4b525d15e2ae5adbfe022015ebddad6ee1e72b47cb09f3e78459da5be01ccccd95dceca0e056a00cc773c10147304402204ca1ba260dee913d318271d86e10ca0f5883026fb5653155cff600fb40895223022037b145204b7054a40e08bb1fefbd826f827b40838d3e501423bcc57924bcb50c01475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -129,14 +129,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with five outputs untrimmed (maximum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 2194,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8005d007000000000000220020403d394747cae42e98ff01734ad5c08f82ba123d3d9a620abda88989651e2ab5b80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e48440966a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400473044022072c2e2b1c899b2242656a537dde2892fa3801be0d6df0a87836c550137acde8302201654aa1974d37a829083c3ba15088689f30b56d6a4f6cb14c7bad0ee3116d3980147304402204bb3d6e279d71d9da414c82de42f1f954267c762b2e2eb8b76bc3be4ea07d4b0022014febc009c5edc8c3fc5d94015de163200f780046f1c293bfed8568f08b70fb301475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -149,14 +149,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with four outputs untrimmed (minimum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 2195,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8004b80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484b8976a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400473044022044d592025b610c0d678f65032e87035cdfe89d1598c522cc32524ae8172417c30220749fef9d5b2ae8cdd91ece442ba8809bc891efedae2291e578475f97715d17670147304402201a8c1b1f9671cd9e46c7323a104d7047cc48d3ee80d40d4512e0c72b8dc65666022066d7f9a2ce18c9eb22d2739ffcce05721c767f9b607622a31b6ea5793ddce40301475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -168,14 +168,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with four outputs untrimmed (maximum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 3702,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8004b80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e4846f916a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400483045022100e5efb73c32d32da2d79702299b6317de6fb24a60476e3855926d78484dd1b3c802203557cb66a42c944ef06e00bcc4da35a5bcb2f185aab0f8e403e519e1d66aaf750148304502210092a587aeb777f869e7ff0d7898ea619ee26a3dacd1f3672b945eea600be431100220077ee9eae3528d15251f2a52b607b189820e57a6ccfac8d1af502b132ee4016901475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -187,14 +187,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with three outputs untrimmed (minimum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 3703,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8003a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484eb936a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e040047304402201b736d1773a124c745586217a75bed5f66c05716fbe8c7db4fdb3c3069741cdd02205083f39c321c1bcadfc8d97e3c791a66273d936abac0c6a2fde2ed46019508e101483045022100b495d239772a237ff2cf354b1b11be152fd852704cb184e7356d13f2fb1e5e430220723db5cdb9cbd6ead7bfd3deb419cf41053a932418cbb22a67b581f40bc1f13e01475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -205,14 +205,14 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with three outputs untrimmed (maximum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 4914,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8003a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484ae8f6a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400483045022100d72638bc6308b88bb6d45861aae83e5b9ff6e10986546e13bce769c70036e2620220320be7c6d66d22f30b9fcd52af66531505b1310ca3b848c19285b38d8a1a8c1901483045022100b4b16d5f8cc9fc4c1aff48831e832a0d8990e133978a66e302c133550954a44d022073573ce127e2200d316f6b612803a5c0c97b8d20e1e44dbe2ac0dd2fb8c9524401475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
 
                HtlcTx = new List<string>
                {
@@ -223,66 +223,66 @@ namespace Protocol.Test.bolt3
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with two outputs untrimmed (minimum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 4915,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8002c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484fa926a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e04004830450221008a953551f4d67cb4df3037207fc082ddaf6be84d417b0bd14c80aab66f1b01a402207508796dc75034b2dee876fe01dc05a08b019f3e5d689ac8842ade2f1befccf50147304402203a286936e74870ca1459c700c71202af0381910a6bfab687ef494ef1bc3e02c902202506c362d0e3bee15e802aa729bf378e051644648253513f1c085b264cc2a72001475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
             }
          };
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with two outputs untrimmed (maximum feerate)",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 9651180,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b800222020000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80ec0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e4840400483045022100e11b638c05c650c2f63a421d36ef8756c5ce82f2184278643520311cdf50aa200220259565fb9c8e4a87ccaf17f27a3b9ca4f20625754a0920d9c6c239d8156a11de0147304402200a8544eba1d216f5c5e530597665fa9bec56943c0f66d98fc3d028df52d84f7002201e45fa5c6bc3a506cc2553e7d1c0043a9811313fc39c954692c0d47cfce2bbd301475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
             }
          };
 
          yield return new object[]
         {
-                  new Bolt3AppendixCTestVectors
+                  new Bolt3CommitmentTestVectors
                   {
                      TestName = "commitment tx with one outputs untrimmed (minimum feerate)",
                      ToLocalMsat = 6988000000,
                      ToRemoteMsat = 3000000000,
                      FeeratePerKw = 9651181,
                      OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8001c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484040047304402207e8d51e0c570a5868a78414f4e0cbfaed1106b171b9581542c30718ee4eb95ba02203af84194c97adf98898c9afe2f2ed4a7f8dba05a2dfab28ac9d9c604aa49a3790147304402202ade0142008309eb376736575ad58d03e5b115499709c6db0b46e36ff394b492022037b63d78d66404d6504d4c4ac13be346f3d1802928a6d3ad95a6a944227161a201475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-                     Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+                     Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
                   }
         };
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with fee greater than funder amount",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 9651936,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8001c0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484040047304402207e8d51e0c570a5868a78414f4e0cbfaed1106b171b9581542c30718ee4eb95ba02203af84194c97adf98898c9afe2f2ed4a7f8dba05a2dfab28ac9d9c604aa49a3790147304402202ade0142008309eb376736575ad58d03e5b115499709c6db0b46e36ff394b492022037b63d78d66404d6504d4c4ac13be346f3d1802928a6d3ad95a6a944227161a201475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_0_to_4(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_0_to_4(),
             }
          };
 
          yield return new object[]
          {
-            new Bolt3AppendixCTestVectors
+            new Bolt3CommitmentTestVectors
             {
                TestName = "commitment tx with 3 htlc outputs, 2 offered having the same amount and preimage",
                ToLocalMsat = 6988000000,
                ToRemoteMsat = 3000000000,
                FeeratePerKw = 253,
                OutputCommitTx = "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8005d007000000000000220020748eba944fedc8827f6b06bc44678f93c0f9e6078b35c6331ed31e75f8ce0c2d8813000000000000220020305c12e1a0bc21e283c131cea1c66d68857d28b7b2fce0a6fbc40c164852121b8813000000000000220020305c12e1a0bc21e283c131cea1c66d68857d28b7b2fce0a6fbc40c164852121bc0c62d0000000000160014cc1b07838e387deacd0e5232e1e8b49f4c29e484a79f6a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400483045022100c4f1d60b6fca9febc8b39de1a31e84c5f7c4b41c97239ef05f4350aa484c6b5e02200c5134ac8b20eb7a29d0dd4a501f6aa8fefb8489171f4cb408bd2a32324ab03f014730440220048705bec5288d28b3f29344b8d124853b1af423a568664d2c6f02c8ea886525022060f998a461052a2476b912db426ea2a06700953a241135c7957f2e79bc222df901475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220",
-               Htlcs = Bolt3AppendixCTests.Setup_htlcs_1_5_and_6(),
+               Htlcs = Bolt3CommitmentTests.Setup_htlcs_1_5_and_6(),
 
                HtlcTx = new List<string>
                {

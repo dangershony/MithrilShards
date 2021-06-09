@@ -19,6 +19,6 @@ namespace Bitcoin.Primitives.Fundamental
 
       public static implicit operator Satoshis(MiliSatoshis msats) => new Satoshis(msats._value / 1000);
 
-      public override string ToString() => $"msats={_value.ToString()}({(Satoshis)this})";
+      public override string ToString() => $"msats={_value}({(Satoshis)this})";
    }
 }
