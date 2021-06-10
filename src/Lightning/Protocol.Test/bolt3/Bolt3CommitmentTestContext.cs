@@ -53,7 +53,7 @@ namespace Protocol.Test.bolt3
 
       public LightningTransactions LightningTransactions;
       public LightningScripts LightningScripts;
-      public KeyDerivation KeyDerivation;
+      public LightningKeyDerivation KeyDerivation;
       public TransactionSerializer TransactionSerializer;
       public TransactionHashCalculator TransactionHashCalculator;
 
@@ -61,7 +61,7 @@ namespace Protocol.Test.bolt3
       {
          LightningScripts = new LightningScripts();
          LightningTransactions = new LightningTransactions(LightningScripts);
-         KeyDerivation = new KeyDerivation(null);
+         KeyDerivation = new LightningKeyDerivation(null);
 
          TransactionSerializer = new TransactionSerializer(new TransactionInputSerializer(new OutPointSerializer(new UInt256Serializer())), new TransactionOutputSerializer(), new TransactionWitnessSerializer(new TransactionWitnessComponentSerializer()));
          TransactionHashCalculator = new TransactionHashCalculator(TransactionSerializer);

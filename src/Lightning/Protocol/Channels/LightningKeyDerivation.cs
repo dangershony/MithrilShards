@@ -10,11 +10,11 @@ using NBitcoin.Secp256k1;
 
 namespace Protocol.Channels
 {
-   public class KeyDerivation
+   public class LightningKeyDerivation
    {
-      private readonly ILogger<KeyDerivation> _logger;
+      private readonly ILogger<LightningKeyDerivation> _logger;
 
-      public KeyDerivation(ILogger<KeyDerivation> logger)
+      public LightningKeyDerivation(ILogger<LightningKeyDerivation> logger)
       {
          _logger = logger;
       }

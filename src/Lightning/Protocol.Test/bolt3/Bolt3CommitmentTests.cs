@@ -28,35 +28,35 @@ namespace Protocol.Test.bolt3
 
       [Theory]
       [ClassData(typeof(Bolt3AppendixCTestDataStaticRemotekey))]
-      public void Bolt3AppendixC_CommitmentAndHTLCTransactionStaticRemotekey(Bolt3CommitmentTestVectors vectors)
+      public void AppendixC_CommitmentAndHTLCTransactionStaticRemotekeyTest(Bolt3CommitmentTestVectors vectors)
       {
          Context.Keyset.OtherPaymentKey = Context.RemotePaymentBasepoint;
          Context.OptionAnchorOutputs = false;
 
-         Bolt3AppendixC_CommitmentAndHTLCTransactionTest(vectors);
+         Bolt3CommitmentAndHtlcTransactionTest(vectors);
       }
 
       [Theory]
       [ClassData(typeof(Bolt3AppendixCTestDataNoAnchors))]
-      public void Bolt3AppendixC_CommitmentAndHTLCTransactionNoAnchors(Bolt3CommitmentTestVectors vectors)
+      public void AppendixC_CommitmentAndHTLCTransactionNoAnchorsTest(Bolt3CommitmentTestVectors vectors)
       {
          Context.Keyset.OtherPaymentKey = Context.Remotekey;
          Context.OptionAnchorOutputs = false;
 
-         Bolt3AppendixC_CommitmentAndHTLCTransactionTest(vectors);
+         Bolt3CommitmentAndHtlcTransactionTest(vectors);
       }
 
       [Theory]
       [ClassData(typeof(Bolt3AppendixFTestDataAnchors))]
-      public void Bolt3AppendixC_CommitmentAndHTLCTransactionAnchors(Bolt3CommitmentTestVectors vectors)
+      public void AppendixF_CommitmentAndHTLCTransactionAnchorsTest(Bolt3CommitmentTestVectors vectors)
       {
          Context.Keyset.OtherPaymentKey = Context.RemotePaymentBasepoint;
          Context.OptionAnchorOutputs = true;
 
-         Bolt3AppendixC_CommitmentAndHTLCTransactionTest(vectors);
+         Bolt3CommitmentAndHtlcTransactionTest(vectors);
       }
 
-      public void Bolt3AppendixC_CommitmentAndHTLCTransactionTest(Bolt3CommitmentTestVectors vectors)
+      public void Bolt3CommitmentAndHtlcTransactionTest(Bolt3CommitmentTestVectors vectors)
       {
          CommitmenTransactionOut localCommitmenTransactionOut = Context.LightningTransactions.CommitmenTransaction(
             new CommitmentTransactionIn
