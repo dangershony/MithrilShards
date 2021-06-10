@@ -182,29 +182,6 @@ namespace Protocol.Channels
             }
          }
 
-         //#ifdef PRINT_ACTUAL_FEE
-         //	{
-         //		 amount_sat out = private AMOUNT_SAT(0);
-
-         //      private bool ok = true;
-         //		for (i = 0; i<tal_count(htlcs); i++) {
-         //			if (!private trim(htlcs[i], feerate_per_kw, dust_limit,
-         //              option_anchor_outputs, side))
-
-         //				ok &= private amount_sat_add(&out, out, amount_msat_to_sat_round_down(htlcs[i]->amount));
-         //		}
-
-         //		if (amount_msat_greater_sat(self_pay, dust_limit))
-         //			ok &= amount_sat_add(&out, out, amount_msat_to_sat_round_down(self_pay));
-         //		if (amount_msat_greater_sat(other_pay, dust_limit))
-         //			ok &= amount_sat_add(&out, out, amount_msat_to_sat_round_down(other_pay));
-         //   assert(ok);
-         //   SUPERVERBOSE("# actual commitment transaction fee = %"PRIu64"\n",
-         //           funding.satoshis - out.satoshis);  /* Raw: test output */
-         //}
-
-         //#endif
-
          var outputs = new List<HtlcToOutputMaping>();
 
          // BOLT3 Commitment Transaction Construction
