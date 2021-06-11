@@ -7,6 +7,7 @@ using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Serialization;
 using Bitcoin.Primitives.Serialization.Serializers;
 using Bitcoin.Primitives.Types;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Protocol.Channels.Types;
 using OutPoint = Bitcoin.Primitives.Types.OutPoint;
@@ -16,22 +17,27 @@ namespace Protocol.Channels
 {
    public class LightningTransactions
    {
+      private readonly ILogger<LightningTransactions> _logger;
       private readonly LightningScripts _lightningScripts;
 
-      public LightningTransactions(LightningScripts lightningScripts)
+      public LightningTransactions(ILogger<LightningTransactions> logger, LightningScripts lightningScripts)
       {
+         _logger = logger;
          _lightningScripts = lightningScripts;
       }
 
-      public CommitmenTransactionOut CommitmenTransaction(CommitmentTransactionIn commitmentTransactionIn)
+      public CommitmenTransactionOut CommitmentTransaction(CommitmentTransactionIn commitmentTransactionIn)
       {
-         // TODO: ADD TRACE LOGS
+         _logger.LogDebug("Creating the commitment transaction {@CommitmentTransactionIn}", commitmentTransactionIn);
 
          MiliSatoshis totalPayMsat = commitmentTransactionIn.SelfPayMsat + commitmentTransactionIn.OtherPayMsat;
          MiliSatoshis fundingMsat = commitmentTransactionIn.Funding;
 
          if (totalPayMsat > fundingMsat)
+         {
+            _logger.LogError($"The total amount {totalPayMsat}msat is greater then the channels capacity of {fundingMsat}msat");
             throw new Exception($"The total amount {totalPayMsat}msat is greater then the channels capacity of {fundingMsat}msat");
+         }
 
          // BOLT3 Commitment Transaction Construction
          // 1. Initialize the commitment transaction input and locktime
@@ -51,6 +57,8 @@ namespace Protocol.Channels
                }
             }
          };
+
+         _logger.LogDebug("Initialize the commitment transaction input {Obscured}, {LockTime}, {Sequence}", obscured, transaction.LockTime, transaction.Inputs[0].Sequence);
 
          // BOLT3 Commitment Transaction Construction
          // 1. Calculate which committed HTLCs need to be trimmed
@@ -78,10 +86,12 @@ namespace Protocol.Channels
                if (htlc.AmountMsat < dustPlustFeeMsat)
                {
                   // do not add the htlc outpout
+                  _logger.LogDebug("Do not add Htlc {@Htlc}, dust limit{dustPlustFeeMsat}msat", htlc, dustPlustFeeMsat);
                }
                else
                {
                   htlcsUntrimmed.Add(htlc);
+                  _logger.LogDebug("Add Htlc {@Htlc}, dust limit{dustPlustFeeMsat}msat", htlc, dustPlustFeeMsat);
                }
             }
             else
@@ -104,10 +114,12 @@ namespace Protocol.Channels
                if (htlc.AmountMsat < dustPlustFeeMsat)
                {
                   // do not add the htlc outpout
+                  _logger.LogDebug("Do not add Htlc {@Htlc}, dust limit{dustPlustFeeMsat}msat", htlc, dustPlustFeeMsat);
                }
                else
                {
                   htlcsUntrimmed.Add(htlc);
+                  _logger.LogDebug("Add Htlc {@Htlc}, dust limit{dustPlustFeeMsat}msat", htlc, dustPlustFeeMsat);
                }
             }
          }
@@ -150,7 +162,7 @@ namespace Protocol.Channels
             baseFee += 660;
          }
 
-         // todo log base fee
+         _logger.LogDebug("baseFee = {baseFee}", baseFee);
 
          // BOLT3 Commitment Transaction Construction
          // 4. Subtract this base fee from the funder (either to_local or to_remote).
@@ -164,10 +176,12 @@ namespace Protocol.Channels
             if (commitmentTransactionIn.SelfPayMsat < baseFeeMsat)
             {
                commitmentTransactionIn.SelfPayMsat = 0;
+               _logger.LogDebug("SelfPayMsat = {SelfPayMsat}", commitmentTransactionIn.SelfPayMsat);
             }
             else
             {
                commitmentTransactionIn.SelfPayMsat = commitmentTransactionIn.SelfPayMsat - baseFeeMsat;
+               _logger.LogDebug("SelfPayMsat = {SelfPayMsat}", commitmentTransactionIn.SelfPayMsat);
             }
          }
          else
@@ -175,10 +189,12 @@ namespace Protocol.Channels
             if (commitmentTransactionIn.OtherPayMsat < baseFeeMsat)
             {
                commitmentTransactionIn.OtherPayMsat = 0;
+               _logger.LogDebug("OtherPayMsat = {OtherPayMsat}", commitmentTransactionIn.OtherPayMsat);
             }
             else
             {
                commitmentTransactionIn.OtherPayMsat = commitmentTransactionIn.OtherPayMsat - baseFeeMsat;
+               _logger.LogDebug("OtherPayMsat = {OtherPayMsat}", commitmentTransactionIn.OtherPayMsat);
             }
          }
 
@@ -204,6 +220,8 @@ namespace Protocol.Channels
                var wscriptinst = new Script(wscript);
 
                Script? p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+
+               _logger.LogDebug("Htlc Amount = {amount}, WitnessScript = {wscriptinst}, p2Wsh = {p2Wsh} ", wscriptinst, amount, p2Wsh);
 
                outputs.Add(new HtlcToOutputMaping
                {
@@ -241,6 +259,8 @@ namespace Protocol.Channels
 
                var p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
+               _logger.LogDebug("Htlc Amount = {amount}, WitnessScript = {wscriptinst}, p2Wsh = {p2Wsh} ", wscriptinst, amount, p2Wsh);
+
                outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
@@ -271,6 +291,8 @@ namespace Protocol.Channels
             var wscriptinst = new Script(wscript);
 
             var p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+
+            _logger.LogDebug("Add a to_local output Amount = {amount}, WitnessScript = {wscriptinst}, p2Wsh = {p2Wsh} ", wscriptinst, amount, p2Wsh);
 
             outputs.Add(new HtlcToOutputMaping
             {
@@ -308,10 +330,16 @@ namespace Protocol.Channels
                var wscriptinst = new Script(wscript);
 
                p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
+
+               _logger.LogDebug("Add a to_remote output (anchor) Amount = {amount} WitnessScript = {wscriptinst}, p2Wsh = {p2Wsh}", wscriptinst, amount, p2Wsh);
             }
             else
             {
-               p2Wsh = PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey(new PubKey(commitmentTransactionIn.Keyset.OtherPaymentKey)); // todo: dan - move this to interface
+               PubKey pubkey = new PubKey(commitmentTransactionIn.Keyset.OtherPaymentKey);
+
+               p2Wsh = PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey(pubkey); // todo: dan - move this to interface
+
+               _logger.LogDebug("Add a to_remote output Amount = {amount} pubkey = {pubkey}, p2Wsh = {p2Wsh}", pubkey, amount, p2Wsh);
             }
 
             outputs.Add(new HtlcToOutputMaping
@@ -345,6 +373,8 @@ namespace Protocol.Channels
 
                var p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
+               _logger.LogDebug("Anchor - toLocal Amount = {amount}, WitnessScript = {wscriptinst}, p2Wsh = {p2Wsh} ", wscriptinst, amount, p2Wsh);
+
                outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
@@ -367,6 +397,8 @@ namespace Protocol.Channels
 
                var p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
+               _logger.LogDebug("Anchor - toRemote Amount = {amount}, WitnessScript = {wscriptinst}, p2Wsh = {p2Wsh} ", wscriptinst, amount, p2Wsh);
+
                outputs.Add(new HtlcToOutputMaping
                {
                   TransactionOutput = new TransactionOutput
@@ -388,7 +420,10 @@ namespace Protocol.Channels
 
          transaction.Outputs = outputs.Select(s => s.TransactionOutput).ToArray();
 
-         return new CommitmenTransactionOut { Transaction = transaction, Htlcs = outputs };
+         var result = new CommitmenTransactionOut { Transaction = transaction, Htlcs = outputs };
+
+         _logger.LogDebug("CommitmenTransactionOut {@CommitmenTransactionOut}", result);
+         return result;
       }
 
       public BitcoinSignature SignInput(TransactionSerializer serializer, Transaction transaction, PrivateKey privateKey, uint inputIndex, byte[] redeemScript, Satoshis amountSats, SigHash sigHash = SigHash.All)

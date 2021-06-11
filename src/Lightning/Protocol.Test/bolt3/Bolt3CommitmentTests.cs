@@ -58,7 +58,7 @@ namespace Protocol.Test.bolt3
 
       public void Bolt3CommitmentAndHtlcTransactionTest(Bolt3CommitmentTestVectors vectors)
       {
-         CommitmenTransactionOut localCommitmenTransactionOut = Context.LightningTransactions.CommitmenTransaction(
+         CommitmenTransactionOut localCommitmenTransactionOut = Context.LightningTransactions.CommitmentTransaction(
             new CommitmentTransactionIn
             {
                FundingTxout = Context.FundingTxOutpoint,
@@ -79,7 +79,7 @@ namespace Protocol.Test.bolt3
                Side = ChannelSide.Local
             });
 
-         CommitmenTransactionOut remoteCommitmenTransactionOut = Context.LightningTransactions.CommitmenTransaction(
+         CommitmenTransactionOut remoteCommitmenTransactionOut = Context.LightningTransactions.CommitmentTransaction(
             new CommitmentTransactionIn
             {
                FundingTxout = Context.FundingTxOutpoint,

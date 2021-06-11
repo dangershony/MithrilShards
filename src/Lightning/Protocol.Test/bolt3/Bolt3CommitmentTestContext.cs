@@ -3,6 +3,8 @@ using System.Linq;
 using Bitcoin.Primitives.Fundamental;
 using Bitcoin.Primitives.Serialization.Serializers;
 using Bitcoin.Primitives.Types;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Protocol.Channels;
 using Protocol.Channels.Types;
 using Xunit;
@@ -60,8 +62,8 @@ namespace Protocol.Test.bolt3
       public Bolt3CommitmentTestContext()
       {
          LightningScripts = new LightningScripts();
-         LightningTransactions = new LightningTransactions(LightningScripts);
-         KeyDerivation = new LightningKeyDerivation(null);
+         LightningTransactions = new LightningTransactions(new Mock<ILogger<LightningTransactions>>().Object, LightningScripts);
+         KeyDerivation = new LightningKeyDerivation(new Mock<ILogger<LightningKeyDerivation>>().Object);
 
          TransactionSerializer = new TransactionSerializer(new TransactionInputSerializer(new OutPointSerializer(new UInt256Serializer())), new TransactionOutputSerializer(), new TransactionWitnessSerializer(new TransactionWitnessComponentSerializer()));
          TransactionHashCalculator = new TransactionHashCalculator(TransactionSerializer);
