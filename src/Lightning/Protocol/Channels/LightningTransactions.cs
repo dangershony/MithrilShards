@@ -453,62 +453,47 @@ namespace Protocol.Channels
          return new BitcoinSignature(sig.ToBytes());
       }
 
-      public Transaction CreateHtlcSuccessTransaction(
-       bool optionAnchorOutputs,
-       Satoshis feeratePerKw,
-       MiliSatoshis amountMsat,
-       OutPoint commitOutPoint,
-       PublicKey revocationPubkey,
-       PublicKey localDelayedkey,
-       ushort toSelfDelay
-    )
+      public Transaction CreateHtlcSuccessTransaction(CreateHtlcTransactionIn createHtlcTransactionIn)
       {
-         ulong htlcFee = HtlcSuccessFee(optionAnchorOutputs, feeratePerKw);
+         createHtlcTransactionIn.HtlcFee = HtlcSuccessFee(createHtlcTransactionIn.OptionAnchorOutputs, createHtlcTransactionIn.FeeratePerKw);
+         createHtlcTransactionIn.Locktime = 0;
+         createHtlcTransactionIn.Sequence = (uint)(createHtlcTransactionIn.OptionAnchorOutputs ? 1 : 0);
 
-         uint locktime = 0;
-
-         return CreateHtlcTransaction((uint)(optionAnchorOutputs ? 1 : 0),
-            locktime,
-            amountMsat,
-            htlcFee,
-            commitOutPoint,
-            revocationPubkey,
-            localDelayedkey,
-            toSelfDelay);
+         return CreateHtlcTransaction(createHtlcTransactionIn);
       }
 
-      public Transaction CreateHtlcTransaction(
-         uint sequence,
-         uint locktime,
-         MiliSatoshis amountMsat,
-         Satoshis htlcFee,
-         OutPoint commitOutPoint,
-         PublicKey revocationPubkey,
-         PublicKey localDelayedkey,
-         ushort toSelfDelay
-         )
+      public Transaction CreateHtlcTimeoutTransaction(CreateHtlcTransactionIn createHtlcTransactionIn)
+      {
+         createHtlcTransactionIn.HtlcFee = HtlcTimeoutFee(createHtlcTransactionIn.OptionAnchorOutputs, createHtlcTransactionIn.FeeratePerKw);
+         createHtlcTransactionIn.Locktime = createHtlcTransactionIn.CltvExpiry;
+         createHtlcTransactionIn.Sequence = (uint)(createHtlcTransactionIn.OptionAnchorOutputs ? 1 : 0);
+
+         return CreateHtlcTransaction(createHtlcTransactionIn);
+      }
+
+      private Transaction CreateHtlcTransaction(CreateHtlcTransactionIn createHtlcTransactionIn)
       {
          var transaction = new Transaction
          {
             Version = 2,
-            LockTime = (uint)locktime,
+            LockTime = (uint)createHtlcTransactionIn.Locktime,
             Inputs = new[]
             {
                new TransactionInput
                {
-                  PreviousOutput = commitOutPoint,
-                  Sequence = sequence ,
+                  PreviousOutput = createHtlcTransactionIn.CommitOutPoint,
+                  Sequence = createHtlcTransactionIn.Sequence ,
                }
             }
          };
 
-         byte[]? wscript = _lightningScripts.GetRevokeableRedeemscript(revocationPubkey, toSelfDelay, localDelayedkey);
+         byte[]? wscript = _lightningScripts.GetRevokeableRedeemscript(createHtlcTransactionIn.RevocationPubkey, createHtlcTransactionIn.ToSelfDelay, createHtlcTransactionIn.LocalDelayedkey);
          var wscriptinst = new Script(wscript);
          Script? p2Wsh = PayToWitScriptHashTemplate.Instance.GenerateScriptPubKey(new WitScriptId(wscriptinst)); // todo: dan - move this to interface
 
-         Satoshis amountSat = amountMsat;
-         if (htlcFee > amountSat) throw new Exception();
-         amountSat -= htlcFee;
+         Satoshis amountSat = createHtlcTransactionIn.AmountMsat;
+         if (createHtlcTransactionIn.HtlcFee > amountSat) throw new Exception();
+         amountSat -= createHtlcTransactionIn.HtlcFee;
 
          transaction.Outputs = new TransactionOutput[]
          {
@@ -520,31 +505,6 @@ namespace Protocol.Channels
          };
 
          return transaction;
-      }
-
-      public Transaction CreateHtlcTimeoutTransaction(
-         bool optionAnchorOutputs,
-         Satoshis feeratePerKw,
-         MiliSatoshis amountMsat,
-         OutPoint commitOutPoint,
-         PublicKey revocationPubkey,
-         PublicKey localDelayedkey,
-         ushort toSelfDelay,
-         uint cltvExpiry
-      )
-      {
-         ulong htlcFee = HtlcTimeoutFee(optionAnchorOutputs, feeratePerKw);
-
-         uint locktime = cltvExpiry;
-
-         return CreateHtlcTransaction((uint)(optionAnchorOutputs ? 1 : 0),
-            locktime,
-            amountMsat,
-            htlcFee,
-            commitOutPoint,
-            revocationPubkey,
-            localDelayedkey,
-            toSelfDelay);
       }
 
       /* BOLT #3:

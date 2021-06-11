@@ -168,14 +168,17 @@ namespace Protocol.Test.bolt3
                               Context.OptionAnchorOutputs);
 
                htlcTransaction = Context.LightningTransactions.CreateHtlcTimeoutTransaction(
-                                 Context.OptionAnchorOutputs,
-                                 vectors.FeeratePerKw,
-                                 htlc.Htlc.AmountMsat,
-                                 outPoint,
-                                 keyset.SelfRevocationKey,
-                                 keyset.SelfDelayedPaymentKey,
-                                 Context.ToSelfDelay,
-                                 (uint)htlc.CltvExpirey);
+                  new CreateHtlcTransactionIn
+                  {
+                     OptionAnchorOutputs = Context.OptionAnchorOutputs,
+                     FeeratePerKw = vectors.FeeratePerKw,
+                     AmountMsat = htlc.Htlc.AmountMsat,
+                     CommitOutPoint = outPoint,
+                     RevocationPubkey = keyset.SelfRevocationKey,
+                     LocalDelayedkey = keyset.SelfDelayedPaymentKey,
+                     ToSelfDelay = Context.ToSelfDelay,
+                     CltvExpiry = (uint)htlc.CltvExpirey
+                  });
             }
             else
             {
@@ -188,13 +191,16 @@ namespace Protocol.Test.bolt3
                               Context.OptionAnchorOutputs);
 
                htlcTransaction = Context.LightningTransactions.CreateHtlcSuccessTransaction(
-                                 Context.OptionAnchorOutputs,
-                                 vectors.FeeratePerKw,
-                                 htlc.Htlc.AmountMsat,
-                                 outPoint,
-                                 keyset.SelfRevocationKey,
-                                 keyset.SelfDelayedPaymentKey,
-                                 Context.ToSelfDelay);
+                  new CreateHtlcTransactionIn
+                  {
+                     OptionAnchorOutputs = Context.OptionAnchorOutputs,
+                     FeeratePerKw = vectors.FeeratePerKw,
+                     AmountMsat = htlc.Htlc.AmountMsat,
+                     CommitOutPoint = outPoint,
+                     RevocationPubkey = keyset.SelfRevocationKey,
+                     LocalDelayedkey = keyset.SelfDelayedPaymentKey,
+                     ToSelfDelay = Context.ToSelfDelay,
+                  });
             }
 
             string expectedHtlcHex = vectors.HtlcTx[htlcOutputIndex++];
